@@ -7,58 +7,49 @@ $params = [];
 
 // หากมีการส่ง searchTerm มา ให้ใช้เงื่อนไขแบบค้นหาทั่วไป
 if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
-    $where[] = "name LIKE :searchTerm";
+    $where[] = "RP.name LIKE :searchTerm";
     $params[':searchTerm'] = '%' . $_POST['searchTerm'] . '%';
 } else {
     // รับและตรวจสอบค่าจากตัวกรองทีละตัว
-    //
-    if (isset($_POST['name']) && $_POST['name'] !== '') {
-        $where[] = "name LIKE :name";
-        $params[':name'] = '%' . $_POST['name'] . '%';
+    //ประเภทอสังหา
+    if (isset($_POST['type']) && $_POST['type'] !== '') {
+        $where[] = "RP.type = :type";
+        $params[':propertytypeType'] = $_POST['type'];
     }
-    if (isset($_POST['propertyType']) && $_POST['propertyType'] !== '') {
-        $where[] = "property_type = :propertyType";
-        $params[':propertyType'] = $_POST['propertyType'];
-    }
+    //ราคาต่ำสุด
     if (isset($_POST['minPrice']) && $_POST['minPrice'] !== '') {
-        $where[] = "price >= :minPrice";
+        $where[] = "RP.price >= :minPrice";
         $params[':minPrice'] = $_POST['minPrice'];
     }
+    //ราคาสูงสุด
     if (isset($_POST['maxPrice']) && $_POST['maxPrice'] !== '') {
-        $where[] = "price <= :maxPrice";
+        $where[] = "RP.price <= :maxPrice";
         $params[':maxPrice'] = $_POST['maxPrice'];
     }
-    if (isset($_POST['bedrooms']) && $_POST['bedrooms'] !== '') {
-        $where[] = "bedrooms = :bedrooms";
-        $params[':bedrooms'] = $_POST['bedrooms'];
+    //จำนวนห้องนอน
+    if (isset($_POST['roomQty']) && $_POST['roomQty'] !== '') {
+        $where[] = "RP.roomQty = :roomQty";
+        $params[':roomQty'] = $_POST['roomQty'];
     }
-    if (isset($_POST['minArea']) && $_POST['minArea'] !== '') {
-        $where[] = "area >= :minArea";
-        $params[':minArea'] = $_POST['minArea'];
+    //ขนาดต่ำสุด
+    if (isset($_POST['minSize']) && $_POST['minSize'] !== '') {
+        $where[] = "RP.size >= :minSize";
+        $params[':minSize'] = $_POST['minSize'];
     }
-    if (isset($_POST['maxArea']) && $_POST['maxArea'] !== '') {
-        $where[] = "area <= :maxArea";
-        $params[':maxArea'] = $_POST['maxArea'];
+    //ขนาดสูงสุด
+    if (isset($_POST['maxSize']) && $_POST['maxSize'] !== '') {
+        $where[] = "RP.size <= :maxSize";
+        $params[':maxSize'] = $_POST['maxSize'];
     }
-    if (isset($_POST['stationDistance']) && $_POST['stationDistance'] !== '') {
-        $where[] = "station_distance <= :stationDistance";
-        $params[':stationDistance'] = $_POST['stationDistance'];
+    //ระยะห่างจากสถานีรถไฟฟ้า
+    if (isset($_POST['distance']) && $_POST['distance'] !== '') {
+        $where[] = "RPL.distance <= :distance";
+        $params[':distance'] = $_POST['distance'];
     }
-    if (isset($_POST['minPricePerSqm']) && $_POST['minPricePerSqm'] !== '') {
-        $where[] = "price_per_sqm >= :minPricePerSqm";
-        $params[':minPricePerSqm'] = $_POST['minPricePerSqm'];
-    }
-    if (isset($_POST['maxPricePerSqm']) && $_POST['maxPricePerSqm'] !== '') {
-        $where[] = "price_per_sqm <= :maxPricePerSqm";
-        $params[':maxPricePerSqm'] = $_POST['maxPricePerSqm'];
-    }
-    if (isset($_POST['bathrooms']) && $_POST['bathrooms'] !== '') {
-        $where[] = "bathrooms = :bathrooms";
-        $params[':bathrooms'] = $_POST['bathrooms'];
-    }
-    if (isset($_POST['ownership']) && $_POST['ownership'] !== '') {
-        $where[] = "ownership = :ownership";
-        $params[':ownership'] = $_POST['ownership'];
+    //จำนวนห้องน้ำ
+    if (isset($_POST['toiletQty']) && $_POST['toiletQty'] !== '') {
+        $where[] = "RP.toiletQty = :toiletQty";
+        $params[':toiletQty'] = $_POST['toiletQty'];
     }
     //จุดเด่น
     if (isset($_POST['feature']) && $_POST['feature'] !== '') {
@@ -69,14 +60,34 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
         $featureIds = array_map('intval', $featureIds);
         // สร้างเงื่อนไขที่ใช้ IN clause
         $inClause = implode(',', array_fill(0, count($featureIds), '?'));
-        $where[] = "feature_id IN ($inClause)";
+        $where[] = "RF.type = 'P'";
+        $where[] = "RPF.id IN ($inClause)";
         // รวมค่าลงใน $params ด้วย
         $params = array_merge($params, $featureIds);
+    }
+    //สิ่งอำนวยความสะดวก
+    if (isset($_POST['facility']) && $_POST['facility'] !== '') {
+        // สมมุติว่า $_POST['facility'] เป็น string ที่มี id คั่นด้วย comma เช่น "3,5,7"
+        // แล้วคุณต้องการค้นหาในตารางที่มีคอลัมน์ feature_id
+        $facilityIds = explode(',', $_POST['facility']);
+        // ทำให้เป็นค่าจำนวนเต็ม
+        $facilityIds = array_map('intval', $facilityIds);
+        // สร้างเงื่อนไขที่ใช้ IN clause
+        $inClause = implode(',', array_fill(0, count($facilityIds), '?'));
+        $where[] = "RF.type = 'F'";
+        $where[] = "feature_id IN ($inClause)";
+        // รวมค่าลงใน $params ด้วย
+        $params = array_merge($params, $facilityIds);
     }
 
 
 // สร้างคำสั่ง SQL เพื่อค้นหาข้อมูลจากตาราง RENT_PLACE ตามฟิลด์ name
-$sql = "SELECT name FROM RENT_PLACE WHERE 1=1 ";
+$sql = "SELECT name FROM RENT_PLACE RP ".
+        "LEFT JOIN RENT_PLACE_LANDMARKS RPL ON (RP.rent_place_id = RPL.id)".
+        "LEFT JOIN RENT_LANDMARKS RP ON (RPL.rent_landmark_id = RP.id)".
+        "LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RP.rent_place_id = RPF.id)".
+        "LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RP.id)".
+        " WHERE 1=1 ";
 if (count($where) > 0) {
     $sql =  $sql. implode(" AND ", $where);
 }

@@ -25,50 +25,35 @@
         if (applyButton) {
             applyButton.addEventListener('click', function() {
                 // ดึงค่าจากฟอร์มใน Modal
-                const name = document.querySelector('#filterModal select:nth-child(1)').value;
-                const propertyType = document.querySelector('#filterModal select:nth-child(2)').value;
-                const minPrice = document.querySelector('#filterModal .price-range input:nth-child(1)').value;
-                const maxPrice = document.querySelector('#filterModal .price-range input:nth-child(2)').value;
-                const bedrooms = document.querySelector('#filterModal select:nth-child(4)').value;
-                const minArea = document.querySelector('#filterModal .area-range input:nth-child(1)').value;
-                const maxArea = document.querySelector('#filterModal .area-range input:nth-child(2)').value;
-                const stationDistance = document.querySelector('#filterModal select:nth-child(6)').value;
-                const minPricePerSqm = document.querySelector('#filterModal .price-per-sqm-range input:nth-child(1)').value;
-                const maxPricePerSqm = document.querySelector('#filterModal .price-per-sqm-range input:nth-child(2)').value;
-                const bathrooms = document.querySelector('#filterModal select:nth-child(8)').value;
-                const ownership = document.querySelector('#filterModal select:nth-child(9)').value;
+                const type = document.getElementById("type").value;
+                const minPrice = document.getElementById("minPrice").value;
+                const maxPrice = document.getElementById("maxPrice").value;
+                const roomQty = document.getElementById("roomQty").value;
+                const minSize = document.getElementById("minSize").value;
+                const maxSize = document.getElementById("maxSize").value;
+                const distance = document.getElementById("distance").value;
+                const toiletQty = document.getElementById("toiletQty").value;
+                
+                // ดึง id จากจุดเด่นและสิ่งอำนวยความสะดวกที่ถูกเลือก
                 const selectedFeatureIds = getSelectedFeatureIds('rentFacilitiesCombo');
+                const selectedFacilityIds = getSelectedFeatureIds('rentFacilitiesFCombo');
 
-                // Log ค่า (เพื่อตรวจสอบ)
-                console.log("ชื่อ:", name);
-                console.log("ประเภทอสังหาฯ:", propertyType);
-                console.log("ราคาต่ำสุด:", minPrice);
-                console.log("ราคาสูงสุด:", maxPrice);
-                console.log("จำนวนห้องนอน:", bedrooms);
-                console.log("พื้นที่ต่ำสุด:", minArea);
-                console.log("พื้นที่สูงสุด:", maxArea);
-                console.log("ระยะจากสถานีไฟฟ้า:", stationDistance);
-                console.log("ราคาต่อตร.ม. ต่ำสุด:", minPricePerSqm);
-                console.log("ราคาต่อตร.ม. สูงสุด:", maxPricePerSqm);
-                console.log("จำนวนห้องน้ำ:", bathrooms);
-                console.log("การถือครอง:", ownership);
-                console.log("จุดเด่น:", feature);
+                // แปลง array เป็น string โดยใช้ comma เป็นตัวแบ่ง (หรือส่งเป็น array หาก server รองรับ)
+                const feature = selectedFeatureIds.join(',');
+                const facility = selectedFacilityIds.join(',');
 
                 // เรียกใช้ฟังก์ชันค้นหา (ปรับตามการใช้งานจริงของคุณ)
                 performFilterSearch({ 
-                    name, 
-                    propertyType, 
-                    minPrice, 
-                    maxPrice, 
-                    bedrooms, 
-                    minArea, 
-                    maxArea, 
-                    stationDistance, 
-                    minPricePerSqm, 
-                    maxPricePerSqm, 
-                    bathrooms, 
-                    ownership, 
-                    feature: selectedFeatureIds.join(',')  // ส่งเป็น string คั่นด้วย comma
+                    type,
+                    minPrice,
+                    maxPrice,
+                    roomQty,
+                    minSize,
+                    maxSize,
+                    distance,
+                    toiletQty,
+                    feature,
+                    facility
                 });
 
                 // ปิด Modal

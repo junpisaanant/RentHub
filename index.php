@@ -42,7 +42,7 @@ include 'header.php';
             <div class="modal-body">
                 <div class="filter-group">
                     <label>ประเภทอสังหาฯ:</label>
-                    <select class="form-select">
+                    <select class="form-select" id="type" name="type">
                         <option value="0">ทั้งหมด</option>
                         <option value="H">บ้าน</option>
                         <option value="C">คอนโด</option>
@@ -55,12 +55,12 @@ include 'header.php';
                 <div class="filter-group">
                     <label>ราคา:</label>
                     <div class="price-range">
-                        <input type="number" class="form-control" placeholder="ต่ำสุด"> - <input type="number" class="form-control" placeholder="สูงสุด">
+                        <input type="number" class="form-control" placeholder="ต่ำสุด"  id="minPrice" name="minPrice"> - <input type="number" class="form-control" placeholder="สูงสุด" id="maxPrice" name="maxPrice">
                     </div>
                 </div>
                 <div class="filter-group">
                     <label>ห้องนอน:</label>
-                    <select class="form-select">
+                    <select class="form-select" id="roomQty" name="roomQty">
                         <option value="0">ทั้งหมด</option>
                         <option value="1">1 ห้องนอน</option>
                         <option value="2">2 ห้องนอน</option>
@@ -72,12 +72,12 @@ include 'header.php';
                 <div class="filter-group">
                     <label>พื้นที่ใช้สอย:</label>
                     <div class="area-range">
-                        <input type="number" class="form-control" placeholder="ต่ำสุด"> - <input type="number" class="form-control" placeholder="สูงสุด">
+                        <input type="number" class="form-control" placeholder="ต่ำสุด" id="minSize" name="minSize"> - <input type="number" class="form-control" placeholder="สูงสุด" id="maxSize" name="maxSize">
                     </div>
                 </div>
                 <div class="filter-group">
                     <label>ระยะทางจากสถานีไฟฟ้า:</label>
-                    <select class="form-select">
+                    <select class="form-select" id="distance" name="distance">
                         <option>ห่างเท่าใดก็ได้</option>
                         <option>น้อยกว่า 500 เมตร (เดิน 5-7 นาที)</option>
                         <option>น้อยกว่า 1 กิโลเมตร (เดิน 10-15 นาที)</option>
@@ -86,14 +86,8 @@ include 'header.php';
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>ราคาต่อตร.ม.:</label>
-                    <div class="price-per-sqm-range">
-                        <input type="number" class="form-control" placeholder="ต่ำสุด"> - <input type="number" class="form-control" placeholder="สูงสุด">
-                    </div>
-                </div>
-                <div class="filter-group">
                     <label>ห้องน้ำ:</label>
-                    <select class="form-select">
+                    <select class="form-select" id="toiletQty" name="toiletQty">
                         <option value="0">ทั้งหมด</option>
                         <option value="1">1 ห้องน้ำ</option>
                         <option value="2">2 ห้องน้ำ</option>
