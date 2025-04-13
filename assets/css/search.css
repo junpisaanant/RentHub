@@ -1,0 +1,161 @@
+.search-bar {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: #f8f8f8; /* หรือสีพื้นหลังที่คุณต้องการ */
+    border-radius: 8px; /* ปรับขนาดความโค้งของมุม */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* เงา */
+}
+
+.search-input {
+    display: flex;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.search-input input[type="text"] {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    outline: none;
+}
+
+.clear-button {
+    background: none;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #888;
+}
+
+.create-alert-button {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.filter-buttons {
+    display: flex;
+    flex-wrap: wrap; /* ทำให้ปุ่มเรียงต่อกันเมื่อพื้นที่ไม่พอ */
+    gap: 5px; /* ระยะห่างระหว่างปุ่ม */
+    margin-bottom: 10px;
+}
+
+.filter-button {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.filter-count {
+    background-color: #f00;
+    color: #fff;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+}
+
+.new-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #f00;
+    border-radius: 50%;
+    margin-left: 5px;
+}
+
+.search-results-info {
+    font-size: 14px;
+    color: #555;
+}
+
+/*ปุ่ม search*/
+.search-icon-button {
+    background: none;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #888;
+}
+
+.search-input {
+    display: flex;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+.search-input input[type="text"] {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    outline: none;
+}
+
+/*modal ตอนกดตัวกรอง*/
+/* Other CSS styles */
+
+/* เพิ่ม CSS สำหรับ Modal (ถ้าต้องการปรับแต่ง) */
+.modal-content {
+    border-radius: 10px;
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6; /* เพิ่มเส้นขอบล่าง */
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6; /* เพิ่มเส้นขอบบน */
+    justify-content: flex-end; /* จัดปุ่มไปทางขวา */
+}
+
+.filter-group {
+    margin-bottom: 15px; /* ระยะห่างระหว่างกลุ่มตัวกรอง */
+}
+
+.filter-group label {
+    display: block; /* ให้ label ขึ้นบรรทัดใหม่ */
+    margin-bottom: 5px;
+    font-weight: bold; /* ทำให้ตัวอักษรหนา */
+}
+
+.price-range, .area-range, .price-per-sqm-range {
+    display: flex;
+    gap: 10px; /* ระยะห่างระหว่าง input */
+}
+
+.price-range input, .area-range input, .price-per-sqm-range input {
+    width: 45%; /* กำหนดความกว้างของ input */
+}
+
+/*จุดเด่น และสิ่งอำนวยความสะดวก*/
+.feature-buttons {
+    display: flex;
+    flex-wrap: wrap; /* ทำให้ปุ่มขึ้นบรรทัดใหม่เมื่อไม่พอ */
+    gap: 8px; /* ระยะห่างระหว่างปุ่ม */
+}
+
+.feature-button {
+    background-color: #f0f0f0; /* สีพื้นหลังปุ่ม */
+    border: none;
+    border-radius: 20px; /* ทำให้ปุ่มโค้งมน */
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333; /* สีตัวอักษร */
+}
+
+.feature-button.selected {
+    background-color: #007bff; /* สีพื้นหลังเมื่อเลือก */
+    color: #fff; /* สีตัวอักษรเมื่อเลือก */
+}
