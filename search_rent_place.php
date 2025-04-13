@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 include 'db.php';
 
 // รับค่าคำค้นหาจาก AJAX
@@ -48,7 +51,7 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
     }
     //จำนวนห้องน้ำ
     if (isset($_POST['toiletQty']) && $_POST['toiletQty'] !== '') {
-        $where[] = "RP.toilet_Qty = :toiletQty";
+        $where[] = "RP.toilet_qty = :toiletQty";
         $params[':toiletQty'] = $_POST['toiletQty'];
     }
     //จุดเด่น
@@ -61,7 +64,7 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
         // สร้างเงื่อนไขที่ใช้ IN clause
         $inClause = implode(',', array_fill(0, count($featureIds), '?'));
         $where[] = "RF.type = 'P'";
-        $where[] = "RPF.id IN ($inClause)";
+        $where[] = "RPF.rent_facilities_id IN ($inClause)";
         // รวมค่าลงใน $params ด้วย
         $params = array_merge($params, $featureIds);
     }
@@ -75,32 +78,32 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
         // สร้างเงื่อนไขที่ใช้ IN clause
         $inClause = implode(',', array_fill(0, count($facilityIds), '?'));
         $where[] = "RF.type = 'F'";
-        $where[] = "feature_id IN ($inClause)";
+        $where[] = "RPF.rent_facilities_id IN ($inClause)";
         // รวมค่าลงใน $params ด้วย
         $params = array_merge($params, $facilityIds);
     }
-
+}
 
 // สร้างคำสั่ง SQL เพื่อค้นหาข้อมูลจากตาราง RENT_PLACE ตามฟิลด์ name
 $sql = "SELECT 
-        RP.name AS rp_name, 
-        P.name AS province_name, 
-        D.name AS district_name, 
-        SD.name AS sub_district_name, 
-        RP.price, 
-        RP.room_qty, 
-        RP.toilet_qty, 
-        CASE WHEN RL.type = 'M' THEN CONCAT(RL.name, ' (', RPL.distance, ' เมตร)') ELSE '' END AS near_rail, 
-        CASE RP.type 
-            WHEN 'H' THEN 'บ้านเดี่ยว'
-            WHEN 'C' THEN 'คอนโด'
-            WHEN 'A' THEN 'อพาร์ทเม้นท์'
-            WHEN 'V' THEN 'วิลล่า'
-            WHEN 'T' THEN 'ทาวน์เฮ้าส์'
-            WHEN 'L' THEN 'ที่ดิน'
-            ELSE RP.type
-        END AS property_type, 
-        RP.create_datetime 
+            RP.name AS rp_name, 
+            P.name AS province_name, 
+            D.name AS district_name, 
+            SD.name AS sub_district_name, 
+            RP.price, 
+            RP.room_qty, 
+            RP.toilet_qty, 
+            CASE WHEN RL.type = 'M' THEN CONCAT(RL.name, ' (', RPL.distance, ' เมตร)') ELSE '' END AS near_rail, 
+            CASE RP.type 
+                WHEN 'H' THEN 'บ้านเดี่ยว'
+                WHEN 'C' THEN 'คอนโด'
+                WHEN 'A' THEN 'อพาร์ทเม้นท์'
+                WHEN 'V' THEN 'วิลล่า'
+                WHEN 'T' THEN 'ทาวน์เฮ้าส์'
+                WHEN 'L' THEN 'ที่ดิน'
+                ELSE RP.type
+            END AS property_type, 
+            RP.create_datetime 
         FROM RENT_PLACE RP 
         LEFT JOIN RENT_PROVINCE P ON (RP.province_id = P.id)
         LEFT JOIN RENT_DISTRICT D ON (RP.district_id = D.id)
@@ -109,22 +112,37 @@ $sql = "SELECT
         LEFT JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
         LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RPF.rent_place_id = RP.id)
         LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
-        WHERE 1=1 ";
+        WHERE 1=1";
+
 if (count($where) > 0) {
-    $sql =  $sql. implode(" AND ", $where);
-}
-try {
-    // เตรียม statement และประมวลผลคำสั่ง SQL
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // ส่งผลลัพธ์ออกมาเป็น JSON
-    echo json_encode($results);
-} catch (PDOException $e) {
-    // แจ้งข้อผิดพลาด (คุณอาจปรับปรุงให้มีการแจ้งเตือนที่เหมาะสม)
-    echo json_encode(['error' => $e->getMessage()]);
+    $sql .= " AND " . implode(" AND ", $where);
 }
 
+$stmt = $conn->prepare($sql);
+if ($stmt === false) {
+    die(json_encode(['error' => $conn->error]));
+}
+
+// Bind parameters ถ้ามี
+if (!empty($params)) {
+    // สร้าง array ของอ้างอิงเพื่อใช้กับ call_user_func_array
+    $bind_names = [];
+    $bind_names[] = $param_types;
+    for ($i = 0; $i < count($params); $i++) {
+        $bind_names[] = &$params[$i];
+    }
+    call_user_func_array(array($stmt, 'bind_param'), $bind_names);
+}
+
+if(!$stmt->execute()){
+    die(json_encode(['error' => $stmt->error]));
+}
+
+$result = $stmt->get_result();
+$results = $result->fetch_all(MYSQLI_ASSOC);
+
+echo json_encode($results, JSON_UNESCAPED_UNICODE);
+
+$stmt->close();
 $conn->close();
 ?>
