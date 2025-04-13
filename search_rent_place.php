@@ -82,9 +82,18 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
 
 
 // สร้างคำสั่ง SQL เพื่อค้นหาข้อมูลจากตาราง RENT_PLACE ตามฟิลด์ name
-$sql = "SELECT name FROM RENT_PLACE RP ".
+$sql = "SELECT RP.name, P.name, D.name, SD.name, P.price, RP.room_qty ".
+        ", RP.toilet_qty ".//จำนวนห้องน้ำ
+        ", CASE WHEN RL.type = 'M' THEN RL.name || '(' || RPL.distance || ' เมตร)' ELSE END AS NEAR_RAIL ".//ใกล้สถานีรถไฟฟ้า กี่เมตร
+        ", DECODE('H', 'บ้านเดี่ยว', 'C', 'คอนโด', 'A', 'อพาร์ตเม้นท์', 'V', 'วิลล่า', 'T', 'ทาวน์เฮ้าส์', 'L' 'ที่ดิน') ".//ประเภท
+        ", RP.create_datetime ".//ลงประกาศไว้เมื่อ
+        
+        "FROM RENT_PLACE RP ".
+        "LEFT JOIN RENT_PROVINCE P ON (P.province_id = RP.id)".
+        "LEFT JOIN RENT_DISTRICT D ON (D.district_id = RP.id)".
+        "LEFT JOIN RENT_SUB_DISTRICT SD ON (SD.sub_district_id = RP.id)".
         "LEFT JOIN RENT_PLACE_LANDMARKS RPL ON (RP.rent_place_id = RPL.id)".
-        "LEFT JOIN RENT_LANDMARKS RP ON (RPL.rent_landmark_id = RP.id)".
+        "LEFT JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)".
         "LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RP.rent_place_id = RPF.id)".
         "LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RP.id)".
         " WHERE 1=1 ";
