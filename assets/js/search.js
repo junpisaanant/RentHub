@@ -7,11 +7,23 @@
     document.addEventListener('DOMContentLoaded', function() {
         // ฟังก์ชันในการแสดงผลลัพธ์การค้นหา
         function performFilterSearch(filters) {
-            // แสดงผลลัพธ์การค้นหา (แทนที่ด้วย logic การค้นหาของคุณ)
-            let resultsDiv = document.querySelector('.search-results-info');
-            if (resultsDiv) {
-              resultsDiv.innerHTML = `<p>ค้นหาด้วยตัวกรอง: ${JSON.stringify(filters)} </p>`;
+            let formData = new URLSearchParams();
+            for (let key in filters) {
+                formData.append(key, filters[key]);
             }
+            fetch('search_rent_place.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                // แสดงผลลัพธ์ที่ได้รับจาก server (การ์ด หรือข้อความ "ไม่พบผลลัพธ์")
+                displaySearchResults(data);
+            })
+            .catch(error => console.error('Error:', error));
         }
 
         // ตัวอย่างการทำงานเมื่อคลิกปุ่ม "ปรับตามเงื่อนไข"
@@ -102,11 +114,23 @@
         function displaySearchResults(results) {
             let resultsDiv = document.querySelector('.search-results-info');
             if (resultsDiv) {
-                if (results.length > 0){
-                    let html = results.map(item => `<p>Name: ${item.name}</p>`).join('');
-                    resultsDiv.innerHTML = html
+                if (results.length > 0) {
+                    let html = results.map(item => `
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">${item.rp_name}</h5>
+                                <p>ประเภท: ${item.property_type}</p>
+                                <p>ราคา: ${item.price}</p>
+                                <p>ห้องนอน: ${item.room_qty}</p>
+                                <p>ห้องน้ำ: ${item.toilet_qty}</p>
+                                <p>ใกล้สถานีรถไฟฟ้า: ${item.near_rail}</p>
+                                <p>ลงประกาศเมื่อ: ${item.create_datetime}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                    resultsDiv.innerHTML = html;
                 } else {
-                    resultsDiv.innerHTML = "<p>ไม่พบผลลัพธ์</p>"
+                    resultsDiv.innerHTML = "<p>ไม่พบผลลัพธ์</p>";
                 }
             }
         }

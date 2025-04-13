@@ -14,7 +14,7 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
     //ประเภทอสังหา
     if (isset($_POST['type']) && $_POST['type'] !== '') {
         $where[] = "RP.type = :type";
-        $params[':propertytypeType'] = $_POST['type'];
+        $params[':type'] = $_POST['type'];
     }
     //ราคาต่ำสุด
     if (isset($_POST['minPrice']) && $_POST['minPrice'] !== '') {
@@ -28,7 +28,7 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
     }
     //จำนวนห้องนอน
     if (isset($_POST['roomQty']) && $_POST['roomQty'] !== '') {
-        $where[] = "RP.roomQty = :roomQty";
+        $where[] = "RP.room_qty = :roomQty";
         $params[':roomQty'] = $_POST['roomQty'];
     }
     //ขนาดต่ำสุด
@@ -48,7 +48,7 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
     }
     //จำนวนห้องน้ำ
     if (isset($_POST['toiletQty']) && $_POST['toiletQty'] !== '') {
-        $where[] = "RP.toiletQty = :toiletQty";
+        $where[] = "RP.toilet_Qty = :toiletQty";
         $params[':toiletQty'] = $_POST['toiletQty'];
     }
     //จุดเด่น
@@ -82,21 +82,34 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
 
 
 // สร้างคำสั่ง SQL เพื่อค้นหาข้อมูลจากตาราง RENT_PLACE ตามฟิลด์ name
-$sql = "SELECT RP.name, P.name, D.name, SD.name, P.price, RP.room_qty ".
-        ", RP.toilet_qty ".//จำนวนห้องน้ำ
-        ", CASE WHEN RL.type = 'M' THEN RL.name || '(' || RPL.distance || ' เมตร)' ELSE END AS NEAR_RAIL ".//ใกล้สถานีรถไฟฟ้า กี่เมตร
-        ", DECODE('H', 'บ้านเดี่ยว', 'C', 'คอนโด', 'A', 'อพาร์ตเม้นท์', 'V', 'วิลล่า', 'T', 'ทาวน์เฮ้าส์', 'L' 'ที่ดิน') ".//ประเภท
-        ", RP.create_datetime ".//ลงประกาศไว้เมื่อ
-        
-        "FROM RENT_PLACE RP ".
-        "LEFT JOIN RENT_PROVINCE P ON (P.province_id = RP.id)".
-        "LEFT JOIN RENT_DISTRICT D ON (D.district_id = RP.id)".
-        "LEFT JOIN RENT_SUB_DISTRICT SD ON (SD.sub_district_id = RP.id)".
-        "LEFT JOIN RENT_PLACE_LANDMARKS RPL ON (RP.rent_place_id = RPL.id)".
-        "LEFT JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)".
-        "LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RP.rent_place_id = RPF.id)".
-        "LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RP.id)".
-        " WHERE 1=1 ";
+$sql = "SELECT 
+        RP.name AS rp_name, 
+        P.name AS province_name, 
+        D.name AS district_name, 
+        SD.name AS sub_district_name, 
+        RP.price, 
+        RP.room_qty, 
+        RP.toilet_qty, 
+        CASE WHEN RL.type = 'M' THEN CONCAT(RL.name, ' (', RPL.distance, ' เมตร)') ELSE '' END AS near_rail, 
+        CASE RP.type 
+            WHEN 'H' THEN 'บ้านเดี่ยว'
+            WHEN 'C' THEN 'คอนโด'
+            WHEN 'A' THEN 'อพาร์ทเม้นท์'
+            WHEN 'V' THEN 'วิลล่า'
+            WHEN 'T' THEN 'ทาวน์เฮ้าส์'
+            WHEN 'L' THEN 'ที่ดิน'
+            ELSE RP.type
+        END AS property_type, 
+        RP.create_datetime 
+        FROM RENT_PLACE RP 
+        LEFT JOIN RENT_PROVINCE P ON (RP.province_id = P.id)
+        LEFT JOIN RENT_DISTRICT D ON (RP.district_id = D.id)
+        LEFT JOIN RENT_SUB_DISTRICT SD ON (RP.sub_district_id = SD.id)
+        LEFT JOIN RENT_PLACE_LANDMARKS RPL ON (RPL.rent_place_id = RP.id)
+        LEFT JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
+        LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RPF.rent_place_id = RP.id)
+        LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
+        WHERE 1=1 ";
 if (count($where) > 0) {
     $sql =  $sql. implode(" AND ", $where);
 }
