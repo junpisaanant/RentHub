@@ -134,6 +134,7 @@ $sql = "SELECT
 if (count($where) > 0) {
     $sql .= " AND " . implode(" AND ", $where);
 }
+$sql .= " ORDER BY RP.UPDATE_DATETIME DESC ";
 
 $stmt = $conn->prepare($sql);
 if ($stmt === false) {
