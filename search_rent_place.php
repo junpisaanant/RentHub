@@ -103,8 +103,9 @@ $sql = "SELECT
                 WHEN 'T' THEN 'ทาวน์เฮ้าส์'
                 WHEN 'L' THEN 'ที่ดิน'
                 ELSE RP.type
-            END AS C, 
-            RP.create_datetime 
+            END AS property_type, 
+            RP.create_datetime,
+            (SELECT COUNT(*) FROM RENT_ATTACH A INNER JOIN RENT_FILE F ON (A.id = F.attach_id) WHERE 1=1 AND A.id = RP.attach_id) AS place_cnt
         FROM RENT_PLACE RP 
         LEFT JOIN RENT_PROVINCE P ON (RP.province_id = P.id)
         LEFT JOIN RENT_DISTRICT D ON (RP.district_id = D.id)

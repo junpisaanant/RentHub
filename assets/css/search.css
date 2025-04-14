@@ -266,3 +266,27 @@
     /* เพิ่มเงาให้ชัดขึ้น */
     box-shadow: 0 8px 20px rgba(0,0,0,0.15);
   }
+
+  /*แสดงจำนวนรูปภาพ*/
+  .property-image {
+    position: relative; /* สำคัญ เพื่อให้องค์ประกอบแบบ absolute วางได้ */
+    width: 300px; /* กำหนดขนาดตามที่ต้องการ */
+    overflow: hidden;
+  }
+  
+  .property-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .image-count {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background-color: #fff; /* พื้นหลังสีขาว */
+    color: #000;           /* สีตัวอักษรสีดำ */
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }

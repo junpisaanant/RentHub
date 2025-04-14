@@ -15,7 +15,9 @@ include 'header.php';
             <button class="search-icon-button" id="searchButton"><i class="bi bi-search"></i></button>
             <input type="text" placeholder="ค้นหา ชื่ออสังหา" id="searchInput">
             <button class="clear-button">x</button>
+            <button class="filter-button" id="filterButton" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="bi bi-funnel"></i> ตัวกรอง </button>
         </div>
+        <!-- เก็บไว้ใส่ทีหลัง 
         <div class="filter-buttons">
         <button class="filter-button" id="filterButton" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="bi bi-funnel"></i> ตัวกรอง </button>
           <button class="filter-button"><i class="bi bi-house"></i> อสังหาริมทรัพย์เพื่ออยู่อาศัย</button>
@@ -26,6 +28,7 @@ include 'header.php';
           <button class="filter-button"><i class="bi bi-map"></i> โครงการใกล้โรงเรียน</button>
           <button class="filter-button">หรู</button>
         </div>
+        -->
     </div>
   </section>
 

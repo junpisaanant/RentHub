@@ -114,6 +114,8 @@
         function displaySearchResults(results) {
             let resultsDiv = document.querySelector('.search-results-info');
             if (resultsDiv) {
+                // เคลียร์ของเดิม
+                resultsDiv.innerHTML = '';
                 if (results.length > 0) {
                     // วน loop ใน results สร้างการ์ด
                     results.forEach(item => {
@@ -122,7 +124,7 @@
                         card.className = 'property-card';
 
                         // สมมุติว่าคุณมีรูปหรือมี URL ในฐานข้อมูลชื่อว่า item.image_url ถ้าไม่มีก็ใช้รูป placeholder
-                        let image_url = item.image_url || 'assets/img/placeholder.jpg';
+                        let image_url = item.image_url || 'assets/rent_place/1/1.jpg';
 
                         // (1) ส่วนซ้าย รูปภาพ
                         let imageDiv = document.createElement('div');
@@ -130,6 +132,13 @@
                         let img = document.createElement('img');
                         img.src = image_url;
                         imageDiv.appendChild(img);
+
+                         // **เพิ่มส่วนแสดงจำนวนภาพ**
+                        let imageCount = item.place_cnt || 0;  // ตรวจสอบฟิลด์ image_count จากฐานข้อมูล หรือให้ค่า default
+                        let imageCountDiv = document.createElement('div');
+                        imageCountDiv.className = 'image-count';
+                        imageCountDiv.innerHTML = '<i class="fa fa-image"></i> ' + imageCount;
+                        imageDiv.appendChild(imageCountDiv);
 
                         // ป้ายผู้พัฒนาโครงการ (ถ้ามีข้อมูล dev_name หรือ developer)
                         /*let developerLabel = document.createElement('span');
@@ -156,7 +165,8 @@
                         // ราคา
                         let priceEl = document.createElement('div');
                         priceEl.className = 'property-price';
-                        priceEl.textContent = `฿${item.price || 0}`;
+                        let formattedPrice = Number(item.price).toLocaleString('en-US');
+                        priceEl.textContent = `฿${formattedPrice || 0}`;
                         detailsDiv.appendChild(priceEl);
 
                         // เมตา: เช่น ห้องนอน, ขนาด, ราคา/ตร.ม. ฯลฯ
