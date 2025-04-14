@@ -10,13 +10,16 @@ include 'header.php';
   <main class="main">
     <!--Search -->
     <section id="search" class="services section">
-      <div class="search-bar">
-        <div class="search-input">
-            <button class="search-icon-button" id="searchButton"><i class="bi bi-search"></i></button>
-            <input type="text" placeholder="ค้นหา ชื่ออสังหา" id="searchInput">
-            <button class="clear-button">x</button>
-            <button class="filter-button" id="filterButton" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="bi bi-funnel"></i> ตัวกรอง </button>
-        </div>
+    <div class="search-bar">
+      <div class="search-input">
+        <button class="search-icon-button" id="searchButton"><i class="bi bi-search"></i></button>
+        <input type="text" placeholder="ค้นหา ชื่ออสังหา" id="searchInput">
+        <button class="clear-button">x</button>
+        <button class="filter-button" id="filterButton" data-bs-toggle="modal" data-bs-target="#filterModal">
+          <i class="bi bi-funnel"></i> ตัวกรอง
+        </button>
+      </div>
+    </div>
         <!-- เก็บไว้ใส่ทีหลัง 
         <div class="filter-buttons">
         <button class="filter-button" id="filterButton" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="bi bi-funnel"></i> ตัวกรอง </button>

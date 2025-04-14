@@ -1,19 +1,21 @@
 .search-bar {
     display: flex;
-    flex-direction: column;
-    padding: 20px;
-    background-color: #f8f8f8; /* หรือสีพื้นหลังที่คุณต้องการ */
-    border-radius: 8px; /* ปรับขนาดความโค้งของมุม */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* เงา */
-}
+    justify-content: center;  /* จัดให้อยู่กลางในแนวนอน */
+    align-items: center;      /* (ถ้าต้องการจัดกึ่งกลางในแนวตั้งด้วย) */
+    margin: 20px 0;           /* ระยะห่างด้านบน-ล่างตามต้องการ */
+  }
 
-.search-input {
-    display: flex;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    overflow: hidden;
-    margin-bottom: 10px;
-}
+  .search-input {
+    width: 600px;          /* กำหนดความกว้างตามต้องการ */
+    margin: 0 auto;        /* จัดกึ่งกลางแนวนอน */
+    padding: 10px 15px;     /* เพิ่ม padding เพื่อให้เนื้อหามีพื้นที่ห่างจากกรอบ */
+    border: 2px solid #b08b5b;  /* กำหนดกรอบด้วยสีธีม (เปลี่ยนเป็นสีที่ต้องการ) */
+    border-radius: 8px;    /* ทำให้มุมโค้งมน */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);  /* เพิ่มเงาเล็กน้อย */
+    display: flex;         /* ถ้าต้องการจัดวางภายในเป็น flex */
+    gap: 5px;              /* ระยะห่างระหว่างปุ่มและอินพุต */
+    background-color: #fff; /* สีพื้นหลัง */
+  }
 
 .search-input input[type="text"] {
     flex: 1;
