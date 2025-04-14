@@ -62,7 +62,7 @@ if(!$rent_name){
       <nav id="navmenu" class="navmenu">
         <ul>
           <li><a href="index.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='home'){ echo "active"; } else{echo "";} ?>">Home</a></li>
-          <li><a href="about.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='about'){ echo "active"; } else{echo "";} ?>">About</a></li>
+          <!--<li><a href="about.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='about'){ echo "active"; } else{echo "";} ?>">About</a></li>
           <li><a href="services.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='service'){ echo "active"; } else{echo "";} ?>">Services</a></li>
           <li><a href="properties.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='properties'){ echo "active"; } else{echo "";} ?>">Properties</a></li>
           <li><a href="agents.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='agents'){ echo "active"; } else{echo "";} ?>">Agents</a></li>
@@ -84,12 +84,13 @@ if(!$rent_name){
             </ul>
           </li>
           <li><a href="contact.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='contact'){ echo "active"; } else{echo "";} ?>">Contact</a></li>
+-->
           <?php
             if (!isset($user_id)) {
           ?>
           <li><a href="login.php" class="<?php if($mode=='login'){ echo "active"; } else{echo "";} ?>">Log In</a></li>
           <?php }else{ ?>
-          <li><a href="logout.php" class="<?php if($mode=='logout'){ echo "active"; } else{echo "";} ?>">Log Out</a></li>
+          <li><a href="logout.php" class="<?php if($mode=='logout'){ echo "active"; } else{echo "";} ?>">Log Out</a>
           <?php } ?>
         
         </ul>
