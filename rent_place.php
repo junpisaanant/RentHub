@@ -5,60 +5,61 @@
 <?php 
 $mode = 'home';
 include 'header.php'; 
+
+//ดึงข้อมูลมาแสดงในหน้าจอ
+include 'db.php'; // เชื่อมต่อฐานข้อมูลด้วย mysqli
+
+$id = $_REQUEST['id'];
+
+// Query ดึงข้อมูลสำหรับ แสดงภาพ (เลือกเฉพาะ 3 รายการแรก เช่น)
+$sql = "SELECT RP.id, RP.name
+, A.name AS attach_name
+, F.name AS file_name
+FROM RENT_PLACE RP
+LEFT JOIN RENT_ATTACH A ON (RP.attach_id = A.id)
+LEFT JOIN RENT_FILE F ON (A.id = F.attach_id)
+WHERE 1=1
+AND RP.id = ?
+ORDER BY RP.create_datetime DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+// execute statement
+$stmt->execute();
+
+// รับผลลัพธ์
+$result = $stmt->get_result();
+$heroItems = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $heroItems[] = $row;
+    }
+}
 ?>
   <main class="main">
 
     <!-- Hero Section -->
     <section id="hero" class="hero section dark-background">
-
-      <div id="hero-carousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
-
-        <div class="carousel-item active">
-          <img src="assets/img/hero-carousel/hero-carousel-1.jpg" alt="">
-          <div class="carousel-container">
-            <div>
-              <p>Doral, Florida</p>
-              <h2><span>204</span> Olive Road Two</h2>
-              <a href="property-single.html" class="btn-get-started">rent | $ 12.000</a>
+    <div id="hero-carousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+        <?php if (!empty($heroItems)): ?>
+            <?php foreach ($heroItems as $index => $item): ?>
+            <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
+                <img src="assets/rent_place/<?php echo $item['attach_name']; ?>/<?php echo $item['file_name']; ?>" alt="<?php echo htmlspecialchars($item['file_name']); ?>">
             </div>
-          </div>
-        </div><!-- End Carousel Item -->
-
-        <div class="carousel-item">
-          <img src="assets/img/hero-carousel/hero-carousel-2.jpg" alt="">
-          <div class="carousel-container">
-            <div>
-              <p>Doral, Florida</p>
-              <h2><span>247</span> Venda Road Five</h2>
-              <a href="property-single.html" class="btn-get-started">sale | $ 356.000</a>
-            </div>
-          </div>
-        </div><!-- End Carousel Item -->
-
-        <div class="carousel-item">
-          <img src="assets/img/hero-carousel/hero-carousel-3.jpg" alt="">
-          <div class="carousel-container">
-            <div>
-              <p>Doral, Florida</p>
-              <h2><span>247</span> Vitra Road three</h2>
-              <a href="property-single.html" class="btn-get-started">rent | $ 3.000</a>
-            </div>
-          </div>
-        </div><!-- End Carousel Item -->
-
+            <?php endforeach; ?>
+        <?php else: ?>
+        <p>ไม่พบข้อมูลสำหรับ Hero Section</p>
+        <?php endif; ?>
+        
         <a class="carousel-control-prev" href="#hero-carousel" role="button" data-bs-slide="prev">
-          <span class="carousel-control-prev-icon bi bi-chevron-left" aria-hidden="true"></span>
+        <span class="carousel-control-prev-icon bi bi-chevron-left" aria-hidden="true"></span>
         </a>
-
         <a class="carousel-control-next" href="#hero-carousel" role="button" data-bs-slide="next">
-          <span class="carousel-control-next-icon bi bi-chevron-right" aria-hidden="true"></span>
+        <span class="carousel-control-next-icon bi bi-chevron-right" aria-hidden="true"></span>
         </a>
-
         <ol class="carousel-indicators"></ol>
+    </div>
+    </section>
 
-      </div>
-
-    </section><!-- /Hero Section -->
 
     <!-- Services Section -->
     <section id="services" class="services section">
