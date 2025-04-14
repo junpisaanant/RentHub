@@ -93,24 +93,22 @@
         // ฟังก์ชันค้นหา
         function performSearch() {
             let searchTerm = document.querySelector('#searchInput').value;
-            if (searchTerm) {
-                // ส่งคำขอ AJAX ไปยังเซิร์ฟเวอร์ PHP
-                fetch('search_rent_place.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'searchTerm=' + encodeURIComponent(searchTerm)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // แสดงผลลัพธ์การค้นหา
-                    displaySearchResults(data);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            }
+            // ส่งคำขอ AJAX ไปยังเซิร์ฟเวอร์ PHP
+            fetch('search_rent_place.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'searchTerm=' + encodeURIComponent(searchTerm)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // แสดงผลลัพธ์การค้นหา
+                displaySearchResults(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         }
 
         // ฟังก์ชันแสดงผลลัพธ์การค้นหา
