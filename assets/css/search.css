@@ -159,3 +159,110 @@
     background-color: #007bff; /* สีพื้นหลังเมื่อเลือก */
     color: #fff; /* สีตัวอักษรเมื่อเลือก */
 }
+
+/*ส่วนแสดงผลลัพธ์การค้นหา*/
+.search-results-info {
+    display: flex;
+    flex-direction: column; /* วางการ์ดเรียงลงมาในแนวตั้ง */
+    gap: 20px;             /* ระยะห่างระหว่างการ์ด */
+  }
+  
+  /* สไตล์ของการ์ด */
+  .property-card {
+    display: flex;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  /* ส่วนรูปภาพ (ซ้าย) */
+  .property-image {
+    position: relative;
+    width: 300px;      /* กำหนดความกว้างตามต้องการ */
+    flex-shrink: 0;    /* ไม่ให้ย่อ */
+    overflow: hidden;
+  }
+  
+  .property-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  /* ป้ายบอกผู้พัฒนาโครงการ */
+  .developer-label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: teal;
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  /* ส่วนรายละเอียด (ขวา) */
+  .property-details {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .property-title {
+    font-size: 18px;
+    margin: 0 0 6px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .property-location {
+    margin: 0 0 10px;
+    color: #555;
+  }
+  
+  .property-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: #e74c3c; /* สีแดงๆ */
+    margin-bottom: 8px;
+  }
+  
+  .property-meta {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+  }
+  
+  .property-meta span {
+    margin: 0 4px;
+  }
+  
+  .property-additional-info {
+    font-size: 14px;
+    color: #888;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .property-card {
+    /* พื้นฐานการ์ด */
+    display: flex;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  
+    /* เพิ่ม transition สำหรับ transform และ box-shadow */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .property-card:hover {
+    /* ยกการ์ดขึ้นมาเล็กน้อย */
+    transform: translateY(-5px);
+    /* เพิ่มเงาให้ชัดขึ้น */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  }

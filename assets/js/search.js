@@ -115,20 +115,76 @@
             let resultsDiv = document.querySelector('.search-results-info');
             if (resultsDiv) {
                 if (results.length > 0) {
-                    let html = results.map(item => `
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">${item.rp_name}</h5>
-                                <p>ประเภท: ${item.property_type}</p>
-                                <p>ราคา: ${item.price}</p>
-                                <p>ห้องนอน: ${item.room_qty}</p>
-                                <p>ห้องน้ำ: ${item.toilet_qty}</p>
-                                <p>ใกล้สถานีรถไฟฟ้า: ${item.near_rail}</p>
-                                <p>ลงประกาศเมื่อ: ${item.create_datetime}</p>
-                            </div>
-                        </div>
-                    `).join('');
-                    resultsDiv.innerHTML = html;
+                    // วน loop ใน results สร้างการ์ด
+                    results.forEach(item => {
+                        // ตัวอย่าง field จากฐานข้อมูล: rp_name, province_name, district_name, sub_district_name, price, room_qty, toilet_qty, near_rail, property_type, create_datetime
+                        let card = document.createElement('div');
+                        card.className = 'property-card';
+
+                        // สมมุติว่าคุณมีรูปหรือมี URL ในฐานข้อมูลชื่อว่า item.image_url ถ้าไม่มีก็ใช้รูป placeholder
+                        let image_url = item.image_url || 'assets/img/placeholder.jpg';
+
+                        // (1) ส่วนซ้าย รูปภาพ
+                        let imageDiv = document.createElement('div');
+                        imageDiv.className = 'property-image';
+                        let img = document.createElement('img');
+                        img.src = image_url;
+                        imageDiv.appendChild(img);
+
+                        // ป้ายผู้พัฒนาโครงการ (ถ้ามีข้อมูล dev_name หรือ developer)
+                        /*let developerLabel = document.createElement('span');
+                        developerLabel.className = 'developer-label';
+                        developerLabel.textContent = item.developer_name || 'ผู้พัฒนาโครงการ';
+                        imageDiv.appendChild(developerLabel);*/
+
+                        // (2) ส่วนขวา รายละเอียด
+                        let detailsDiv = document.createElement('div');
+                        detailsDiv.className = 'property-details';
+
+                        // ชื่อประกาศ
+                        let titleEl = document.createElement('h3');
+                        titleEl.className = 'property-title';
+                        titleEl.textContent = item.rp_name || 'ไม่ทราบชื่อ';
+                        detailsDiv.appendChild(titleEl);
+
+                        // ที่อยู่ (เช่น ซอย, อำเภอ, จังหวัด)
+                        let locationEl = document.createElement('p');
+                        locationEl.className = 'property-location';
+                        locationEl.textContent = `${item.sub_district_name || ''}, ${item.district_name || ''}, ${item.province_name || ''}`;
+                        detailsDiv.appendChild(locationEl);
+
+                        // ราคา
+                        let priceEl = document.createElement('div');
+                        priceEl.className = 'property-price';
+                        priceEl.textContent = `฿${item.price || 0}`;
+                        detailsDiv.appendChild(priceEl);
+
+                        // เมตา: เช่น ห้องนอน, ขนาด, ราคา/ตร.ม. ฯลฯ
+                        let metaEl = document.createElement('div');
+                        metaEl.className = 'property-meta';
+                        // สมมุติว่า item.size มีขนาด, item.price_per_sqm คือราคาต่อตร.ม.
+                        let bedText = `${item.room_qty || 0} ห้องนอน`;
+                        let sizeText = `${item.size || 0} ตร.ม.`;
+                        let toiletText = `${item.toilet_qty || 0} ห้องน้ำ`;
+                        metaEl.innerHTML = `${bedText} <span>|</span> ${toiletText} <span>|</span> ${sizeText}`;
+                        detailsDiv.appendChild(metaEl);
+
+                        // ข้อมูลอื่น ๆ (ปีที่สร้างเสร็จ, วันเวลาที่ลงประกาศ)
+                        let addInfo = document.createElement('div');
+                        addInfo.className = 'property-additional-info';
+                        // สมมุติว่า item.year_built และ item.post_date
+                        addInfo.innerHTML = `
+                            <div>${item.property_type}</div>
+                            <div>${item.near_rail}</div>
+                        `;
+                        detailsDiv.appendChild(addInfo);
+
+                        // ประกอบร่าง
+                        card.appendChild(imageDiv);
+                        card.appendChild(detailsDiv);
+
+                        resultsDiv.appendChild(card);
+                    });
                 } else {
                     resultsDiv.innerHTML = "<p>ไม่พบผลลัพธ์</p>";
                 }

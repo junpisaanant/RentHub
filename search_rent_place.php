@@ -91,6 +91,7 @@ $sql = "SELECT
             D.name AS district_name, 
             SD.name AS sub_district_name, 
             RP.price, 
+            RP.size, 
             RP.room_qty, 
             RP.toilet_qty, 
             CASE WHEN RL.type = 'M' THEN CONCAT(RL.name, ' (', RPL.distance, ' เมตร)') ELSE '' END AS near_rail, 
@@ -102,7 +103,7 @@ $sql = "SELECT
                 WHEN 'T' THEN 'ทาวน์เฮ้าส์'
                 WHEN 'L' THEN 'ที่ดิน'
                 ELSE RP.type
-            END AS property_type, 
+            END AS C, 
             RP.create_datetime 
         FROM RENT_PLACE RP 
         LEFT JOIN RENT_PROVINCE P ON (RP.province_id = P.id)
