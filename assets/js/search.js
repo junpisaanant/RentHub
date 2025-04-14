@@ -130,7 +130,7 @@
                         // เพิ่ม event listener เมื่อคลิกที่การ์ด
                         card.addEventListener('click', function() {
                             // ส่ง id และ rp_name ใน URL query parameter
-                            window.location.href = "about.php?id=" + encodeURIComponent(item.id) + "&name=" + encodeURIComponent(item.rp_name);
+                            window.location.href = "rent_place.php?id=" + encodeURIComponent(item.id) + "&name=" + encodeURIComponent(item.rp_name);
                         });
 
                         // สมมุติว่าคุณมีรูปหรือมี URL ในฐานข้อมูลชื่อว่า item.image_url ถ้าไม่มีก็ใช้รูป placeholder
