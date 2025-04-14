@@ -124,7 +124,7 @@
                         card.className = 'property-card';
 
                         // สมมุติว่าคุณมีรูปหรือมี URL ในฐานข้อมูลชื่อว่า item.image_url ถ้าไม่มีก็ใช้รูป placeholder
-                        let image_url = item.image_url || 'assets/rent_place/1/1.jpg';
+                        let image_url = 'assets/rent_place/'+item.attach_name + '/1.jpg';
 
                         // (1) ส่วนซ้าย รูปภาพ
                         let imageDiv = document.createElement('div');

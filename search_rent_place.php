@@ -86,6 +86,7 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
 
 // สร้างคำสั่ง SQL เพื่อค้นหาข้อมูลจากตาราง RENT_PLACE ตามฟิลด์ name
 $sql = "SELECT 
+            RP.id,
             RP.name AS rp_name, 
             P.name AS province_name, 
             D.name AS district_name, 
@@ -105,7 +106,8 @@ $sql = "SELECT
                 ELSE RP.type
             END AS property_type, 
             RP.create_datetime,
-            (SELECT COUNT(*) FROM RENT_ATTACH A INNER JOIN RENT_FILE F ON (A.id = F.attach_id) WHERE 1=1 AND A.id = RP.attach_id) AS place_cnt
+            (SELECT COUNT(*) FROM RENT_FILE F WHERE 1=1 AND A.id = F.attach_id) AS place_cnt,
+            A.name AS attach_name
         FROM RENT_PLACE RP 
         LEFT JOIN RENT_PROVINCE P ON (RP.province_id = P.id)
         LEFT JOIN RENT_DISTRICT D ON (RP.district_id = D.id)
@@ -114,6 +116,7 @@ $sql = "SELECT
         LEFT JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
         LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RPF.rent_place_id = RP.id)
         LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
+        LEFT JOIN RENT_ATTACH A ON (A.id = RP.attach_id)
         WHERE 1=1";
 
 if (count($where) > 0) {
