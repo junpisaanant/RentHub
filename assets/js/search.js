@@ -183,9 +183,9 @@
                         let metaEl = document.createElement('div');
                         metaEl.className = 'property-meta';
                         // สมมุติว่า item.size มีขนาด, item.price_per_sqm คือราคาต่อตร.ม.
-                        let bedText = `${item.room_qty || 0} ห้องนอน`;
+                        let bedText = `<i class="fa fa-bed"></i> ${item.room_qty || 0}`;
                         let sizeText = `${item.size || 0} ตร.ม.`;
-                        let toiletText = `${item.toilet_qty || 0} ห้องน้ำ`;
+                        let toiletText = `<i class="fa fa-bath"></i> ${item.toilet_qty || 0}`; 
                         metaEl.innerHTML = `${bedText} <span>|</span> ${toiletText} <span>|</span> ${sizeText}`;
                         detailsDiv.appendChild(metaEl);
 
@@ -193,9 +193,10 @@
                         let addInfo = document.createElement('div');
                         addInfo.className = 'property-additional-info';
                         // สมมุติว่า item.year_built และ item.post_date
+                        let nearRailText = item.near_rail ? `<i class="fa fa-subway"></i> ${item.near_rail}` : '';
                         addInfo.innerHTML = `
                             <div>${item.property_type}</div>
-                            <div>${item.near_rail}</div>
+                            <div>${nearRailText}</div>
                         `;
                         detailsDiv.appendChild(addInfo);
 

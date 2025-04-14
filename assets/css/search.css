@@ -225,8 +225,8 @@
   
   .property-price {
     font-size: 20px;
-    font-weight: 700;
-    color: #e74c3c; /* สีแดงๆ */
+    color: #e67e22; /* สีส้ม */
+    font-weight: bold;
     margin-bottom: 8px;
   }
   
