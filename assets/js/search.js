@@ -1,8 +1,4 @@
 (function() {
-    //ปุ่ม clear
-    document.querySelector('.clear-button').addEventListener('click', function() {
-        document.querySelector('#searchInput').value = '';
-    });
 
     document.addEventListener('DOMContentLoaded', function() {
 
@@ -77,6 +73,13 @@
 
             });
         }
+        
+        //ปุ่ม clear
+        document.querySelector('.clear-button').addEventListener('click', function() {
+            document.querySelector('#searchInput').value = '';
+            // เรียกค้นหาเมื่อเคลียร์ช่องค้นหา
+            performSearch();
+        });
 
         //ปุ่มค้นหา
         let searchButton = document.querySelector('#searchButton');
