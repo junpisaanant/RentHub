@@ -6,15 +6,20 @@
   }
 
   .search-input {
-    width: 600px;          /* กำหนดความกว้างตามต้องการ */
-    margin: 0 auto;        /* จัดกึ่งกลางแนวนอน */
-    padding: 10px 15px;     /* เพิ่ม padding เพื่อให้เนื้อหามีพื้นที่ห่างจากกรอบ */
-    border: 2px solid #b08b5b;  /* กำหนดกรอบด้วยสีธีม (เปลี่ยนเป็นสีที่ต้องการ) */
-    border-radius: 8px;    /* ทำให้มุมโค้งมน */
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);  /* เพิ่มเงาเล็กน้อย */
-    display: flex;         /* ถ้าต้องการจัดวางภายในเป็น flex */
-    gap: 5px;              /* ระยะห่างระหว่างปุ่มและอินพุต */
-    background-color: #fff; /* สีพื้นหลัง */
+    width: 600px;
+    margin: 0 auto;
+    padding: 10px 15px;
+    border: 2px solid #b08b5b;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    background-color: #fff;
+    display: flex;
+    gap: 5px;
+    transition: transform 0.3s ease; /* เพิ่ม transition สำหรับ transform */
+  }
+  
+  .search-input:hover {
+    transform: translateY(-5px); /* ยกช่องค้นหาขึ้นเล็กน้อยเมื่อ hover */
   }
 
 .search-input input[type="text"] {

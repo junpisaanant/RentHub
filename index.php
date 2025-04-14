@@ -8,6 +8,19 @@ $mode = 'home';
 include 'header.php'; 
 ?>
   <main class="main">
+    <!-- Hero Section -->
+    <section id="hero" class="hero section dark-background">
+
+      <div id="hero-carousel" class="carousel slide" data-bs-ride="carousel" >
+
+        <div class="carousel-item active">
+          <img src="assets/img/theprestige-2.png" alt="">
+        </div><!-- End Carousel Item -->
+
+      </div>
+
+    </section><!-- /Hero Section -->
+
     <!--Search -->
     <section id="search" class="services section">
     <div class="search-bar">
