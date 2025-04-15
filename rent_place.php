@@ -61,7 +61,7 @@ if ($result && $result->num_rows > 0) {
 }
 
 //Query ดึงข้อมูลจุดเด่นของห้องเช่านี้
-$sql = "SELECT RF.id, RF.name, RF.icon
+$sql = "SELECT RF.id, RF.name, RF.icon, RF.description
 FROM RENT_PLACE RP
 LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RPF.rent_place_id = RP.id)
 LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
@@ -80,6 +80,55 @@ $points = [];//จุดเด่น
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $points[] = $row;
+    }
+}
+//Query ดึงข้อมูลสิ่งอำนวยความสะดวกของห้องเช่านี้
+$sql = "SELECT RF.id, RF.name, RF.icon, RF.description
+FROM RENT_PLACE RP
+LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RPF.rent_place_id = RP.id)
+LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
+WHERE 1=1
+AND RF.type='F'
+AND RP.id = ?
+ORDER BY RPF.create_datetime DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+// execute statement
+$stmt->execute();
+
+// รับผลลัพธ์
+$result = $stmt->get_result();
+$facilities = [];//จุดเด่น
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $facilities[] = $row;
+    }
+}
+//สถานที่สำคัญ Landmark
+$sql = "SELECT RL.id, RL.name, RL.type, RL.location_url,
+CASE WHEN RL.type = 'D' THEN 'fa-solid fa-store'
+WHEN RL.type = 'S' THEN 'fa-solid fa-school'
+WHEN RL.type = 'P' THEN 'fa-solid fa-fan'
+WHEN RL.type = 'M' THEN 'fa-solid fa-train-subway'
+ELSE 'fa-solid fa-road'
+END AS icon
+FROM RENT_PLACE RP
+LEFT JOIN RENT_PLACE_LANDMARKS RPL ON (RPL.rent_place_id = RP.id)
+LEFT JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
+WHERE 1=1
+AND RP.id = ?
+ORDER BY RL.type, RL.name DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+// execute statement
+$stmt->execute();
+
+// รับผลลัพธ์
+$result = $stmt->get_result();
+$landmarks = [];//จุดเด่น
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $landmarks[] = $row;
     }
 }
 ?>
@@ -111,24 +160,20 @@ if ($result && $result->num_rows > 0) {
         <ol class="carousel-indicators"></ol>
     </div>
     </section>
-
+    
+    <!-- Section Title -->
+    <div class="container section-title mt-2" data-aos="fade-up">
+      <h2><?php echo $data['name']; ?></h2>
+      <h3><?php echo $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></h3>
+      <p><?php echo $data['description']; ?></p>
+    </div><!-- End Section Title -->
 
     <!-- Services Section -->
+    <?php if (!empty($points)){ ?> 
     <section id="services" class="services section">
-
-      <!-- Section Title -->
-      <div class="container section-title" data-aos="fade-up">
-        <h2><?php echo $data['name']; ?></h2>
-        <h3><?php echo $data['description']; ?></h3>
-        <p><?php echo $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></p>
-      </div><!-- End Section Title -->
-      
       <!-- จุดเด่น -->
       <div class="container">
-
         <div class="row" style="row-gap: 0 !important;">
-        
-        <?php if (!empty($points)){ ?> 
             <div class="container section-title" data-aos="fade-up" style="margin-bottom: 0px;">
             <h2>จุดเด่น</h2>
             </div>
@@ -139,53 +184,67 @@ if ($result && $result->num_rows > 0) {
                     <i class="<?php echo $item['icon'];?>"></i>
                     </div>
                     <h3><?php echo $item['name'];?></h3>
+                    <p><?php echo $item['description'];?></p>
                     </div>
                 </div><!-- End Service Item -->
             <?php endforeach; ?>
-            <?php } ?>
+        </div>
+      </div>
+    </section><!-- /Services Section -->
+    <?php } ?>
+
+    <?php if (!empty($facilities)){ ?> 
+      <!-- สิ่งอำนวยความสะดวก -->
+      <section id="facilities" class="services section">
+        <!-- สิ่งอำนวยความสะดวก -->
+        <div class="container">
+          <div class="row" style="row-gap: 0 !important;">
+              <div class="container section-title" data-aos="fade-up" style="margin-bottom: 0px;">
+              <h2>สิ่งอำนวยความสะดวก</h2>
+              </div>
+              <?php foreach ($facilities as $index => $item): ?>
+                  <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                      <div class="service-item  position-relative" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                      <div class="icon">
+                      <i class="<?php echo $item['icon'];?>"></i>
+                      </div>
+                      <h3><?php echo $item['name'];?></h3>
+                      <p><?php echo $item['description'];?></p>
+                      </div>
+                  </div><!-- End Service Item -->
+              <?php endforeach; ?>
+          </div>
+        </div>
+      </section><!-- /Services Section -->
+    <?php } ?>
+    <?php if (!empty($landmarks)){ ?> 
+      <!-- สถานที่สำคัญ Landmark -->
+      <section id="facilities" class="services section" style="row-gap: 0 !important;">
+        <!-- สถานที่สำคัญ Landmark -->
+        <div class="container">
+          <div class="row" style="row-gap: 0 !important;">
+          
+              <div class="container section-title" data-aos="fade-up" style="margin-bottom: 0px;">
+              <h2>สถานที่สำคัญ</h2>
+              </div>
+              <?php foreach ($landmarks as $index => $item): ?>
+                  <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                      <div class="service-item  position-relative" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                      <div class="icon">
+                      <i class="<?php echo $item['icon'];?>"></i>
+                      </div>
+                      <h3><?php echo $item['name'];?></h3>
+                      </div>
+                  </div><!-- End Service Item -->
+              <?php endforeach; ?>
+              
+
+          </div>
 
         </div>
 
-      </div>
-
-    </section><!-- /Services Section -->
-
-    <!-- สิ่งอำนวยความสะดวก -->
-    <section id="facilities" class="services section">
-
-      <!-- Section Title -->
-      <div class="container section-title" data-aos="fade-up">
-        <h2><?php echo $data['name']; ?></h2>
-        <h3><?php echo $data['description']; ?></h3>
-        <p><?php echo $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></p>
-      </div><!-- End Section Title -->
-      
-      <!-- จุดเด่น -->
-      <div class="container">
-
-        <div class="row" style="row-gap: 0 !important;">
-        
-        <?php if (!empty($points)){ ?> 
-            <div class="container section-title" data-aos="fade-up" style="margin-bottom: 0px;">
-            <h2>จุดเด่น</h2>
-            </div>
-            <?php foreach ($points as $index => $item): ?>
-                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-                    <div class="service-item  position-relative" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <div class="icon">
-                    <i class="<?php echo $item['icon'];?>"></i>
-                    </div>
-                    <h3><?php echo $item['name'];?></h3>
-                    </div>
-                </div><!-- End Service Item -->
-            <?php endforeach; ?>
-            <?php } ?>
-
-        </div>
-
-      </div>
-
-    </section><!-- /Services Section -->
+      </section><!-- /Services Section -->
+    <?php } ?>
 
 
     <?php include 'footer.php'; ?>
