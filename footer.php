@@ -40,7 +40,7 @@
           <div class="social-links d-flex">
             <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
             <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
-            <a href="#" class="line"><i class="bi bi-line"></i></a>
+            <a href="#" class="line" data-bs-toggle="modal" data-bs-target="#lineModal"><i class="bi bi-line"></i></a>
           </div>
         </div>
 
@@ -50,5 +50,21 @@
     <div class="container copyright text-center mt-4">
       <p>© <span>Copyright</span> <strong class="px-1 sitename">The Prestige Living</strong> <span>All Rights Reserved</span></p>
     </div>
+
+    <!-- Modal สำหรับแสดง QR Code ของ Line -->
+  <div class="modal fade" id="lineModal" tabindex="-1" aria-labelledby="lineModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="lineModalLabel">ติดต่อเราใน Line</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img src="assets/img/line.jpg" alt="QR Code Line" class="img-fluid" style="max-width: 200px;">
+          <p>สแกน QR Code นี้ด้วย Line ของคุณ</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   </footer>
