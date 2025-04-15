@@ -143,9 +143,12 @@ if ($result && $result->num_rows > 0) {
             <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
                 <img src="assets/rent_place/<?php echo $item['attach_name']; ?>/<?php echo $item['file_name']; ?>" alt="<?php echo htmlspecialchars($item['file_name']); ?>">
                 <!-- Overlay ข้อความ -->
-                <div class="hero-overlay">
-                    <?php echo htmlspecialchars($item['name']); ?>
+                <div class="carousel-container">
+                <div>
+                  <h2><?php echo htmlspecialchars($item['name']); ?></h2>
+                  <a href="property-single.html" class="btn-get-started">ติดต่อขอเช่า | ฿ <?php echo $data['price']; ?></a>
                 </div>
+              </div>
             </div>
             <?php endforeach; ?>
         <?php else: ?>
