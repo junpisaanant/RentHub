@@ -41,7 +41,8 @@ $sql = "SELECT RP.id, RP.name
 , A.name AS attach_name
 , F.name AS file_name
 FROM RENT_PLACE RP
-LEFT JOIN RENT_ATTACH A ON (RP.attach_id = A.id)
+LEFT JOIN RENT_PLACE_ATTACH RPA ON (RP.id = RPA.rent_place_id)
+LEFT JOIN RENT_ATTACH A ON (RPA.attach_id = A.id)
 LEFT JOIN RENT_FILE F ON (A.id = F.attach_id)
 WHERE 1=1
 AND RP.id = ?
