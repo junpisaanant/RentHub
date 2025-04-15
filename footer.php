@@ -6,8 +6,8 @@
           <i class="bi bi-geo-alt icon"></i>
           <div class="address">
             <h4>Address</h4>
-            <p>A108 Adam Street</p>
-            <p>New York, NY 535022</p>
+            <p>163 ซอยเจริญราษฎร์ 8 </p>
+            <p>แขวงบางโคล่ เขตบางคอแหลม กรุงเทพมหานคร</p>
             <p></p>
           </div>
 
@@ -18,7 +18,7 @@
           <div>
             <h4>Contact</h4>
             <p>
-              <strong>Phone:</strong> <span>0819259928</span><br>
+              <strong>Phone:</strong> <span>062-245-5942</span><br>
               <strong>Email:</strong> <span>n.juiprasert@gmail.com</span><br>
             </p>
           </div>
@@ -38,10 +38,9 @@
         <div class="col-lg-3 col-md-6">
           <h4>Follow Us</h4>
           <div class="social-links d-flex">
-            <a href="#" class="twitter"><i class="bi bi-twitter-x"></i></a>
             <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
             <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
-            <a href="#" class="linkedin"><i class="bi bi-linkedin"></i></a>
+            <a href="#" class="line"><i class="bi bi-line"></i></a>
           </div>
         </div>
 

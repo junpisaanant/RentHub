@@ -70,10 +70,14 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
         $featureIds = array_filter(array_map('intval', $featureIds));
         if (!empty($featureIds)) {
             $placeholders = implode(',', array_fill(0, count($featureIds), '?'));
-            // ระบุให้ใช้เฉพาะ RF ที่เป็นจุดเด่น
-            $where[] = "RF.type = 'P'";
             // สมมุติว่าในตาราง RENT_PLACE_FACILITIES คอลัมน์สำหรับจุดเด่นคือ rent_facilities_id
-            $where[] = "RPF.rent_facilities_id IN ($placeholders)";
+            $where[] = "RP.id IN (SELECT RPF.id 
+                        FROM RENT_PLACE_FACILITIES RPF
+                        INNER JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
+                        WHERE 1=1
+                        AND RPF.rent_place_id = RP.id
+                        AND RF.type = 'P'
+                        AND RPF.rent_facilities_id IN ($placeholders)";
             foreach ($featureIds as $id) {
                 $params[] = $id;
                 $param_types .= 'i';
@@ -86,8 +90,13 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
         $facilityIds = array_filter(array_map('intval', $facilityIds));
         if (!empty($facilityIds)) {
             $placeholders = implode(',', array_fill(0, count($facilityIds), '?'));
-            $where[] = "RF.type = 'F'";
-            $where[] = "RPF.rent_facilities_id IN ($placeholders)";
+            $where[] = "RP.id IN (SELECT RPF.id 
+                        FROM RENT_PLACE_FACILITIES RPF
+                        INNER JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
+                        WHERE 1=1
+                        AND RPF.rent_place_id = RP.id
+                        AND RF.type = 'F'
+                        AND RPF.rent_facilities_id IN ($placeholders)";
             foreach ($facilityIds as $id) {
                 $params[] = $id;
                 $param_types .= 'i';
@@ -126,8 +135,6 @@ $sql = "SELECT
         LEFT JOIN RENT_SUB_DISTRICT SD ON (RP.sub_district_id = SD.id)
         LEFT JOIN RENT_PLACE_LANDMARKS RPL ON (RPL.rent_place_id = RP.id)
         LEFT JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
-        LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RPF.rent_place_id = RP.id)
-        LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
         LEFT JOIN RENT_ATTACH A ON (A.id = RP.attach_id)
         WHERE 1=1";
 

@@ -693,7 +693,7 @@ section,
 .hero .carousel-item:before {
   content: "";
   background: color-mix(in srgb, var(--background-color), transparent 60%);
-  position: absolute;
+  position: relative;
   inset: 0;
   z-index: 2;
 }
