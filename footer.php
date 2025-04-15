@@ -29,7 +29,7 @@
           <div>
             <h4>Opening Hours</h4>
             <p>
-              <strong>Mon-Sat:</strong> <span>11AM - 23PM</span><br>
+              <strong>Mon-Sat:</strong> <span>8:00 - 18:00 น.</span><br>
               <strong>Sunday</strong>: <span>Closed</span>
             </p>
           </div>
@@ -38,8 +38,8 @@
         <div class="col-lg-3 col-md-6">
           <h4>Follow Us</h4>
           <div class="social-links d-flex">
-            <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
-            <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
+            <a href="https://www.facebook.com/profile.php?id=61573999664508" class="facebook"><i class="bi bi-facebook"></i></a>
+            <a href="https://www.instagram.com/the_prestigeliving_sathorn?igsh=MTlvZDRvYnR2dHkycg==" class="instagram"><i class="bi bi-instagram"></i></a>
             <a href="#" class="line" data-bs-toggle="modal" data-bs-target="#lineModal"><i class="bi bi-line"></i></a>
           </div>
         </div>
