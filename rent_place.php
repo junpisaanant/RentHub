@@ -161,13 +161,19 @@ if ($result && $result->num_rows > 0) {
         <ol class="carousel-indicators"></ol>
     </div>
     </section>
-    
-    <!-- Section Title -->
-    <div class="container section-title mt-2" data-aos="fade-up">
-      <h2><?php echo $data['name']; ?></h2>
-      <h3><?php echo $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></h3>
-      <p><?php echo $data['description']; ?></p>
-    </div><!-- End Section Title -->
+
+    <section id="services" class="services section">
+      <div class="container">
+        <div class="row" style="row-gap: 0 !important;">
+            <div class="col-lg-12 col-md-12" data-aos="fade-up" data-aos-delay="100">
+                <div class="service-item  position-relative" style="text-align: left; display: flex; flex-direction: column; align-items: left; justify-content: left;">
+                <h2><?php echo $data['name']; ?></h2>
+                <h3><?php echo $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></h3>
+                <p><?php echo $data['description']; ?></p>
+            </div><!-- End Service Item -->
+        </div>
+      </div>
+    </section><!-- /Services Section -->
 
     <!-- Services Section -->
     <?php if (!empty($points)){ ?> 
