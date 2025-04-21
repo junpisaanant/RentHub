@@ -116,7 +116,7 @@ $sql = "SELECT
             RP.size, 
             RP.room_qty, 
             RP.toilet_qty, 
-            CASE WHEN RL.type = 'M' THEN CONCAT(RL.name, ' (', RPL.distance, ' เมตร)') ELSE '' END AS near_rail, 
+            CASE WHEN RL.type = 'M' THEN CONCAT(RL.name, ' (', (RPL.distance*1000), ' เมตร)') ELSE '' END AS near_rail, 
             CASE RP.type 
                 WHEN 'H' THEN 'บ้านเดี่ยว'
                 WHEN 'C' THEN 'คอนโด'
@@ -127,15 +127,14 @@ $sql = "SELECT
                 ELSE RP.type
             END AS property_type, 
             RP.create_datetime,
-            (SELECT COUNT(*) FROM RENT_FILE F WHERE 1=1 AND A.id = F.attach_id) AS place_cnt,
-            A.name AS attach_name
+            (SELECT COUNT(*) FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id) AS place_cnt,
+            (SELECT A.name FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id ORDER BY F.id ASC LIMIT 1) AS attach_name
         FROM RENT_PLACE RP 
         LEFT JOIN RENT_PROVINCE P ON (RP.province_id = P.id)
         LEFT JOIN RENT_DISTRICT D ON (RP.district_id = D.id)
         LEFT JOIN RENT_SUB_DISTRICT SD ON (RP.sub_district_id = SD.id)
         LEFT JOIN RENT_PLACE_LANDMARKS RPL ON (RPL.rent_place_id = RP.id)
         LEFT JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
-        LEFT JOIN RENT_ATTACH A ON (A.id = RP.attach_id)
         WHERE 1=1";
 
 if (count($where) > 0) {
