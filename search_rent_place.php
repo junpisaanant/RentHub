@@ -107,34 +107,38 @@ if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
 
 // สร้างคำสั่ง SQL เพื่อค้นหาข้อมูลจากตาราง RENT_PLACE ตามฟิลด์ name
 $sql = "SELECT 
-            RP.id,
-            RP.name AS rp_name, 
-            P.name AS province_name, 
-            D.name AS district_name, 
-            SD.name AS sub_district_name, 
-            RP.price, 
-            RP.size, 
-            RP.room_qty, 
-            RP.toilet_qty, 
-            CASE WHEN RL.type = 'M' THEN CONCAT(RL.name, ' (', (RPL.distance*1000), ' เมตร)') ELSE '' END AS near_rail, 
-            CASE RP.type 
-                WHEN 'H' THEN 'บ้านเดี่ยว'
-                WHEN 'C' THEN 'คอนโด'
-                WHEN 'A' THEN 'อพาร์ทเม้นท์'
-                WHEN 'V' THEN 'วิลล่า'
-                WHEN 'T' THEN 'ทาวน์เฮ้าส์'
-                WHEN 'L' THEN 'ที่ดิน'
-                ELSE RP.type
-            END AS property_type, 
-            RP.create_datetime,
-            (SELECT COUNT(*) FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id) AS place_cnt,
-            (SELECT A.name FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id ORDER BY F.id ASC LIMIT 1) AS attach_name
+        RP.id,
+        RP.name AS rp_name, 
+        P.name AS province_name, 
+        D.name AS district_name, 
+        SD.name AS sub_district_name, 
+        RP.price, 
+        RP.size, 
+        RP.room_qty, 
+        RP.toilet_qty, 
+        (
+            SELECT CONCAT(RL.name, ' (', (RPL.distance*1000), ' เมตร)')
+            FROM rent_place_landmarks RPL
+            INNER JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
+            WHERE RPL.rent_place_id = RP.id
+            AND RL.type = 'M'
+        ) AS near_rail,
+        CASE RP.type 
+            WHEN 'H' THEN 'บ้านเดี่ยว'
+            WHEN 'C' THEN 'คอนโด'
+            WHEN 'A' THEN 'อพาร์ทเม้นท์'
+            WHEN 'V' THEN 'วิลล่า'
+            WHEN 'T' THEN 'ทาวน์เฮ้าส์'
+            WHEN 'L' THEN 'ที่ดิน'
+            ELSE RP.type
+        END AS property_type, 
+        RP.create_datetime,
+        (SELECT COUNT(*) FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id) AS place_cnt,
+        (SELECT A.name FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id ORDER BY F.id ASC LIMIT 1) AS attach_name
         FROM RENT_PLACE RP 
         LEFT JOIN RENT_PROVINCE P ON (RP.province_id = P.id)
         LEFT JOIN RENT_DISTRICT D ON (RP.district_id = D.id)
         LEFT JOIN RENT_SUB_DISTRICT SD ON (RP.sub_district_id = SD.id)
-        LEFT JOIN RENT_PLACE_LANDMARKS RPL ON (RPL.rent_place_id = RP.id)
-        LEFT JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
         WHERE 1=1";
 
 if (count($where) > 0) {
