@@ -11,11 +11,20 @@ include 'db.php'; // เชื่อมต่อฐานข้อมูลด�
 
 $id = $_REQUEST['id'];
 $name = $_REQUEST['name'];
-//Query ดึงข้อมูลจุดเด่นของห้องเช่านี้
+//Query ดึงข้อมูลของห้องเช่านี้
 $sql = "SELECT RP.id, RP.name
 , RP.price, RP.size, RP.room_qty, RP.toilet_qty, RP.description
 , P.name AS province_name , D.name AS district_name, SD.name AS sub_district_name
 , RU.firstname || RU.lastname AS fullname
+, CASE RP.type 
+            WHEN 'H' THEN 'บ้านเดี่ยว'
+            WHEN 'C' THEN 'คอนโด'
+            WHEN 'A' THEN 'อพาร์ทเม้นท์'
+            WHEN 'V' THEN 'วิลล่า'
+            WHEN 'T' THEN 'ทาวน์เฮ้าส์'
+            WHEN 'L' THEN 'ที่ดิน'
+            ELSE RP.type
+        END AS property_type
 FROM RENT_PLACE RP
 INNER JOIN RENT_PROVINCE P ON (P.id = RP.province_id)
 INNER JOIN RENT_DISTRICT D ON (D.id = RP.district_id)
@@ -36,7 +45,8 @@ if ($result && $result->num_rows > 0) {
     $data = $result->fetch_assoc();
 }
 
-// Query ดึงข้อมูลสำหรับ แสดงภาพ (เลือกเฉพาะ 3 รายการแรก เช่น)
+//การแสดงภาพ
+// Query ดึงข้อมูลสำหรับ แสดงภาพ 
 $sql = "SELECT RP.id, RP.name
 , A.name AS attach_name
 , F.name AS file_name
@@ -58,6 +68,188 @@ $heroItems = [];
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $heroItems[] = $row;
+    }
+}
+
+// Query ดึงข้อมูลสำหรับ แสดงภาพห้องรับแขก 
+$sql = "SELECT RP.id, RP.name
+, A.name AS attach_name
+, F.name AS file_name
+FROM RENT_PLACE RP
+LEFT JOIN RENT_PLACE_ATTACH RPA ON (RP.id = RPA.rent_place_id)
+LEFT JOIN RENT_ATTACH A ON (RPA.attach_id = A.id)
+LEFT JOIN RENT_FILE F ON (A.id = F.attach_id)
+WHERE 1=1
+AND RP.id = ?
+AND F.type= 'L'
+ORDER BY RP.create_datetime DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+// execute statement
+$stmt->execute();
+
+// รับผลลัพธ์
+$result = $stmt->get_result();
+$livingRoomItems = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $livingRoomItems[] = $row;
+    }
+}
+
+// Query ดึงข้อมูลสำหรับ แสดงภาพห้องนอน
+$sql = "SELECT RP.id, RP.name
+, A.name AS attach_name
+, F.name AS file_name
+FROM RENT_PLACE RP
+LEFT JOIN RENT_PLACE_ATTACH RPA ON (RP.id = RPA.rent_place_id)
+LEFT JOIN RENT_ATTACH A ON (RPA.attach_id = A.id)
+LEFT JOIN RENT_FILE F ON (A.id = F.attach_id)
+WHERE 1=1
+AND RP.id = ?
+AND F.type= 'B'
+ORDER BY RP.create_datetime DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+// execute statement
+$stmt->execute();
+
+// รับผลลัพธ์
+$result = $stmt->get_result();
+$bedRoomItems = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $bedRoomItems[] = $row;
+    }
+}
+
+// Query ดึงข้อมูลสำหรับ แสดงภาพห้องน้ำ
+$sql = "SELECT RP.id, RP.name
+, A.name AS attach_name
+, F.name AS file_name
+FROM RENT_PLACE RP
+LEFT JOIN RENT_PLACE_ATTACH RPA ON (RP.id = RPA.rent_place_id)
+LEFT JOIN RENT_ATTACH A ON (RPA.attach_id = A.id)
+LEFT JOIN RENT_FILE F ON (A.id = F.attach_id)
+WHERE 1=1
+AND RP.id = ?
+AND F.type= 'T'
+ORDER BY RP.create_datetime DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+// execute statement
+$stmt->execute();
+
+// รับผลลัพธ์
+$result = $stmt->get_result();
+$toiletItems = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $toiletItems[] = $row;
+    }
+}
+
+// Query ดึงข้อมูลสำหรับ แสดงภาพห้องครัว
+$sql = "SELECT RP.id, RP.name
+, A.name AS attach_name
+, F.name AS file_name
+FROM RENT_PLACE RP
+LEFT JOIN RENT_PLACE_ATTACH RPA ON (RP.id = RPA.rent_place_id)
+LEFT JOIN RENT_ATTACH A ON (RPA.attach_id = A.id)
+LEFT JOIN RENT_FILE F ON (A.id = F.attach_id)
+WHERE 1=1
+AND RP.id = ?
+AND F.type= 'K'
+ORDER BY RP.create_datetime DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+// execute statement
+$stmt->execute();
+
+// รับผลลัพธ์
+$result = $stmt->get_result();
+$kitchenItems = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $kitchenItems[] = $row;
+    }
+}
+
+// Query ดึงข้อมูลสำหรับ แสดงภาพห้องอื่นๆ
+$sql = "SELECT RP.id, RP.name
+, A.name AS attach_name
+, F.name AS file_name
+FROM RENT_PLACE RP
+LEFT JOIN RENT_PLACE_ATTACH RPA ON (RP.id = RPA.rent_place_id)
+LEFT JOIN RENT_ATTACH A ON (RPA.attach_id = A.id)
+LEFT JOIN RENT_FILE F ON (A.id = F.attach_id)
+WHERE 1=1
+AND RP.id = ?
+AND F.type= 'O'
+ORDER BY RP.create_datetime DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+// execute statement
+$stmt->execute();
+
+// รับผลลัพธ์
+$result = $stmt->get_result();
+$otherRoomItems = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $otherRoomItems[] = $row;
+    }
+}
+
+// Query ดึงข้อมูลสำหรับ แสดงภาพแผนผัง
+$sql = "SELECT RP.id, RP.name
+, A.name AS attach_name
+, F.name AS file_name
+FROM RENT_PLACE RP
+LEFT JOIN RENT_PLACE_ATTACH RPA ON (RP.id = RPA.rent_place_id)
+LEFT JOIN RENT_ATTACH A ON (RPA.attach_id = A.id)
+LEFT JOIN RENT_FILE F ON (A.id = F.attach_id)
+WHERE 1=1
+AND RP.id = ?
+AND F.type= 'P'
+ORDER BY RP.create_datetime DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+// execute statement
+$stmt->execute();
+
+// รับผลลัพธ์
+$result = $stmt->get_result();
+$planRoomItems = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $planRoomItems[] = $row;
+    }
+}
+
+// Query ดึงข้อมูลสำหรับ แสดงวิดีโอ
+$sql = "SELECT RP.id, RP.name
+, A.name AS attach_name
+, F.name AS file_name
+FROM RENT_PLACE RP
+LEFT JOIN RENT_PLACE_ATTACH RPA ON (RP.id = RPA.rent_place_id)
+LEFT JOIN RENT_ATTACH A ON (RPA.attach_id = A.id)
+LEFT JOIN RENT_FILE F ON (A.id = F.attach_id)
+WHERE 1=1
+AND RP.id = ?
+AND F.type= 'V'
+ORDER BY RP.create_datetime DESC";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+// execute statement
+$stmt->execute();
+
+// รับผลลัพธ์
+$result = $stmt->get_result();
+$videoItems = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $videoItems[] = $row;
     }
 }
 
@@ -134,51 +326,117 @@ if ($result && $result->num_rows > 0) {
 }
 ?>
   <main class="main">
+    <!-- รายละเอียด Section -->
+    <section id="real-estate-2" class="real-estate-2 section">
 
-    <!-- Hero Section -->
-    <section id="hero" class="hero section dark-background">
-    <div id="hero-carousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
-        <?php if (!empty($heroItems)): ?>
-            <?php foreach ($heroItems as $index => $item): ?>
-            <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>">
-                <img src="assets/rent_place/<?php echo $item['attach_name']; ?>/<?php echo $item['file_name']; ?>" alt="<?php echo htmlspecialchars($item['file_name']); ?>">
-                <!-- Overlay ข้อความ -->
-                <div class="carousel-container">
+      <div class="container" data-aos="fade-up">
+
+        <div class="portfolio-details-slider swiper init-swiper">
+          <script type="application/json" class="swiper-config">
+            {
+              "loop": true,
+              "speed": 600,
+              "autoplay": {
+                "delay": 5000
+              },
+              "slidesPerView": "auto",
+              "navigation": {
+                "nextEl": ".swiper-button-next",
+                "prevEl": ".swiper-button-prev"
+              },
+              "pagination": {
+                "el": ".swiper-pagination",
+                "type": "bullets",
+                "clickable": true
+              }
+            }
+          </script>
+          <div class="swiper-wrapper align-items-center">
+			<?php if (!empty($heroItems)): ?>
+				<?php foreach ($heroItems as $index => $item): ?>
+				<div class="swiper-slide">
+				  <img src="assets/rent_place/<?php echo $item['attach_name']; ?>/<?php echo $item['file_name']; ?>" alt="<?php echo htmlspecialchars($item['file_name']); ?>">
+				</div>
+				<?php endforeach; ?>
+			<?php else: ?>
+			<p>ไม่พบข้อมูลสำหรับ Hero Section</p>
+			<?php endif; ?>
+
+          </div>
+          <div class="swiper-button-prev"></div>
+          <div class="swiper-button-next"></div>
+          <div class="swiper-pagination"></div>
+        </div>
+
+        <div class="row justify-content-between gy-4 mt-4">
+
+          <div class="col-lg-8" data-aos="fade-up">
+
+            <div class="portfolio-description">
+              <h2><?php echo $data['name']; ?></h2>
+              <p>
+                <?php echo $data['description']; ?>
+              </p>
+
+              <div class="testimonial-item">
+                <p>
+                  <span>Export tempor illum tamen malis malis eram quae irure esse labore quem cillum quid cillum eram malis quorum velit fore eram velit sunt aliqua noster fugiat irure amet legam anim culpa.</span>
+                </p>
                 <div>
-                  <h2><?php echo htmlspecialchars($item['name']); ?></h2>
-                  <a href="property-single.html" class="btn-get-started">ติดต่อขอเช่า | ฿ <?php echo $data['price']; ?></a>
+                  <img src="assets/img/testimonials/testimonials-2.jpg" class="testimonial-img" alt="">
+                  <h3>Sara Wilsson</h3>
+                  <h4>Agent</h4>
                 </div>
               </div>
+            </div><!-- End Portfolio Description -->
+
+            <!-- Tabs -->
+            <ul class="nav nav-pills mb-3">
+              <li><a class="nav-link active" data-bs-toggle="pill" href="#real-estate-2-tab1">Video</a></li>
+              <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab2">Floor Plans</a></li>
+              <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab3">Location</a></li>
+            </ul><!-- End Tabs -->
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+
+              <div class="tab-pane fade show active" id="real-estate-2-tab1">
+
+              </div><!-- End Tab 1 Content -->
+
+              <div class="tab-pane fade" id="real-estate-2-tab2">
+                <img src="assets/img/floor-plan.jpg" alt="" class="img-fluid">
+              </div><!-- End Tab 2 Content -->
+
+              <div class="tab-pane fade" id="real-estate-2-tab3">
+                <iframe style="border:0; width: 100%; height: 400px;" src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d48389.78314118045!2d-74.006138!3d40.710059!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a22a3bda30d%3A0xb89d1fe6bc499443!2sDowntown%20Conference%20Center!5e0!3m2!1sen!2sus!4v1676961268712!5m2!1sen!2sus" frameborder="0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+              </div><!-- End Tab 3 Content -->
+
+            </div><!-- End Tab Content -->
+
+          </div>
+
+          <div class="col-lg-3" data-aos="fade-up" data-aos-delay="100">
+            <div class="portfolio-info">
+              <h3>Quick Summary</h3>
+              <ul>
+                <li><strong>Property ID:</strong><?php echo $data['id']; ?></li>
+                <li><strong>Location:</strong><?php echo $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></li>
+                <li><strong>Property Type:</strong><?php echo $data['property_type']; ?></li>
+                <li><strong>Area:</strong> <span><?php echo $data['size']; ?> ม. <sup>2</sup></span></li>
+                <li><strong>Beds:</strong><?php echo $data['room_qty']; ?></li>
+                <li><strong>Baths:</strong><?php echo $data['toilet_qty']; ?></li>
+              </ul>
             </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-        <p>ไม่พบข้อมูลสำหรับ Hero Section</p>
-        <?php endif; ?>
-        
-        <a class="carousel-control-prev" href="#hero-carousel" role="button" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon bi bi-chevron-left" aria-hidden="true"></span>
-        </a>
-        <a class="carousel-control-next" href="#hero-carousel" role="button" data-bs-slide="next">
-        <span class="carousel-control-next-icon bi bi-chevron-right" aria-hidden="true"></span>
-        </a>
-        <ol class="carousel-indicators"></ol>
-    </div>
-    </section>
+          </div>
 
-    <section id="services" class="services section">
-      <div class="container">
-        <div class="row" style="row-gap: 0 !important;">
-            <div class="col-lg-12 col-md-12" data-aos="fade-up" data-aos-delay="100">
-                <div class="service-item  position-relative" style="text-align: left; display: flex; flex-direction: column; align-items: left; justify-content: left;">
-                <h2><?php echo $data['name']; ?></h2>
-                <h3><?php echo $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></h3>
-                <p><?php echo $data['description']; ?></p>
-            </div><!-- End Service Item -->
         </div>
-      </div>
-    </section><!-- /Services Section -->
 
-    <!-- Services Section -->
+      </div>
+
+    </section><!-- /Real Estate 2 Section -->
+
+    <!-- จุดเด่น และสถานที่สำคัฯ Section -->
     <?php if (!empty($points)){ ?> 
     <section id="services" class="services section">
       <!-- จุดเด่น -->
@@ -255,7 +513,6 @@ if ($result && $result->num_rows > 0) {
 
       </section><!-- /Services Section -->
     <?php } ?>
-
 
     <?php include 'footer.php'; ?>
 
