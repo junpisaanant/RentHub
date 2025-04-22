@@ -14,8 +14,8 @@ $name = $_REQUEST['name'];
 //Query ดึงข้อมูลของห้องเช่านี้
 $sql = "SELECT RP.id, RP.name
 , RP.price, RP.size, RP.room_qty, RP.toilet_qty, RP.description
-, P.name AS province_name , D.name AS district_name, SD.name AS sub_district_name
-, RU.firstname || RU.lastname AS fullname
+, RP.address,P.name AS province_name , D.name AS district_name, SD.name AS sub_district_name
+, CONCAT(RU.firstname, ' ', RU.lastname) AS fullname, RU.phone_no
 , CASE RP.type 
             WHEN 'H' THEN 'บ้านเดี่ยว'
             WHEN 'C' THEN 'คอนโด'
@@ -25,11 +25,14 @@ $sql = "SELECT RP.id, RP.name
             WHEN 'L' THEN 'ที่ดิน'
             ELSE RP.type
         END AS property_type
+, CONCAT(RU.id, '/',RUF.name) AS user_image 
 FROM RENT_PLACE RP
 INNER JOIN RENT_PROVINCE P ON (P.id = RP.province_id)
 INNER JOIN RENT_DISTRICT D ON (D.id = RP.district_id)
 INNER JOIN RENT_SUB_DISTRICT SD ON (SD.id = RP.sub_district_id)
 INNER JOIN RENT_USER RU ON (RU.id = RP.user_id)
+LEFT JOIN RENT_ATTACH RUA ON (RU.attach_id = RUA.id)
+LEFT JOIN RENT_FILE RUF ON (RUF.attach_id = RUA.id)
 WHERE 1=1
 AND RP.id = ?
 ORDER BY RP.create_datetime DESC";
@@ -379,13 +382,10 @@ if ($result && $result->num_rows > 0) {
               </p>
 
               <div class="testimonial-item">
-                <p>
-                  <span>Export tempor illum tamen malis malis eram quae irure esse labore quem cillum quid cillum eram malis quorum velit fore eram velit sunt aliqua noster fugiat irure amet legam anim culpa.</span>
-                </p>
                 <div>
-                  <img src="assets/img/testimonials/testimonials-2.jpg" class="testimonial-img" alt="">
-                  <h3>Sara Wilsson</h3>
-                  <h4>Agent</h4>
+                  <img src="assets/rent_user/<?php echo $data['user_image']; ?>" class="testimonial-img" alt="">
+                  <h3><?php echo $data['fullname']; ?></h3>
+                  <h4><?php echo $data['phone_no']; ?></h4>
                 </div>
               </div>
             </div><!-- End Portfolio Description -->
@@ -420,10 +420,11 @@ if ($result && $result->num_rows > 0) {
             <div class="portfolio-info">
               <h3>Quick Summary</h3>
               <ul>
+                <li><strong>Price:</strong><?php echo number_format($data['price']); ?> ฿</li>
                 <li><strong>Property ID:</strong><?php echo $data['id']; ?></li>
-                <li><strong>Location:</strong><?php echo $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></li>
+                <li><strong>Location:</strong><?php echo $data['address'] . '<br>' . $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></li>
                 <li><strong>Property Type:</strong><?php echo $data['property_type']; ?></li>
-                <li><strong>Area:</strong> <span><?php echo $data['size']; ?> ม. <sup>2</sup></span></li>
+                <li><strong>Area:</strong> <span><?php echo $data['size']; ?> m <sup>2</sup></span></li>
                 <li><strong>Beds:</strong><?php echo $data['room_qty']; ?></li>
                 <li><strong>Baths:</strong><?php echo $data['toilet_qty']; ?></li>
               </ul>
