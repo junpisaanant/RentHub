@@ -15,7 +15,7 @@ $name = $_REQUEST['name'];
 $sql = "SELECT RP.id, RP.name
 , RP.price, RP.size, RP.room_qty, RP.toilet_qty, RP.description
 , RP.address,P.name AS province_name , D.name AS district_name, SD.name AS sub_district_name
-, CONCAT(RU.firstname, ' ', RU.lastname) AS fullname, RU.phone_no
+, CONCAT(RU.firstname, ' ', RU.lastname) AS fullname, RU.phone_no, RP.map_url
 , CASE RP.type 
             WHEN 'H' THEN 'บ้านเดี่ยว'
             WHEN 'C' THEN 'คอนโด'
@@ -25,7 +25,8 @@ $sql = "SELECT RP.id, RP.name
             WHEN 'L' THEN 'ที่ดิน'
             ELSE RP.type
         END AS property_type
-, CONCAT(RU.id, '/',RUF.name) AS user_image 
+, CONCAT(RU.id, '/',RUF.name) AS user_image
+, CONCAT(RP.id, '/', RPA.name, '/',RPF.name) AS map_image
 FROM RENT_PLACE RP
 INNER JOIN RENT_PROVINCE P ON (P.id = RP.province_id)
 INNER JOIN RENT_DISTRICT D ON (D.id = RP.district_id)
@@ -33,6 +34,9 @@ INNER JOIN RENT_SUB_DISTRICT SD ON (SD.id = RP.sub_district_id)
 INNER JOIN RENT_USER RU ON (RU.id = RP.user_id)
 LEFT JOIN RENT_ATTACH RUA ON (RU.attach_id = RUA.id)
 LEFT JOIN RENT_FILE RUF ON (RUF.attach_id = RUA.id)
+
+LEFT JOIN RENT_ATTACH RPA ON (RP.attach_id = RPA.id)
+LEFT JOIN RENT_FILE RPF ON (RPF.attach_id = RPA.id)
 WHERE 1=1
 AND RP.id = ?
 ORDER BY RP.create_datetime DESC";
@@ -385,7 +389,6 @@ if ($result && $result->num_rows > 0) {
                 <div>
                   <img src="assets/rent_user/<?php echo $data['user_image']; ?>" class="testimonial-img" alt="">
                   <h3><?php echo $data['fullname']; ?></h3>
-                  <h4><?php echo $data['phone_no']; ?></h4>
                 </div>
               </div>
             </div><!-- End Portfolio Description -->
@@ -393,7 +396,6 @@ if ($result && $result->num_rows > 0) {
             <!-- Tabs -->
             <ul class="nav nav-pills mb-3">
               <li><a class="nav-link active" data-bs-toggle="pill" href="#real-estate-2-tab1">Video</a></li>
-              <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab2">Floor Plans</a></li>
               <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab3">Location</a></li>
             </ul><!-- End Tabs -->
 
@@ -404,12 +406,12 @@ if ($result && $result->num_rows > 0) {
 
               </div><!-- End Tab 1 Content -->
 
-              <div class="tab-pane fade" id="real-estate-2-tab2">
-                <img src="assets/img/floor-plan.jpg" alt="" class="img-fluid">
-              </div><!-- End Tab 2 Content -->
-
               <div class="tab-pane fade" id="real-estate-2-tab3">
-                <iframe style="border:0; width: 100%; height: 400px;" src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d48389.78314118045!2d-74.006138!3d40.710059!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a22a3bda30d%3A0xb89d1fe6bc499443!2sDowntown%20Conference%20Center!5e0!3m2!1sen!2sus!4v1676961268712!5m2!1sen!2sus" frameborder="0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <?php if($data['map_url']){ ?>
+                  <iframe style="border:0; width: 100%; height: 400px;" src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d48389.78314118045!2d-74.006138!3d40.710059!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a22a3bda30d%3A0xb89d1fe6bc499443!2sDowntown%20Conference%20Center!5e0!3m2!1sen!2sus!4v1676961268712!5m2!1sen!2sus" frameborder="0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <?php }else{ ?>
+                  <img src="assets/rent_place/<?php echo $data['map_image'];?>" alt="" class="img-fluid">
+                <?php } ?>
               </div><!-- End Tab 3 Content -->
 
             </div><!-- End Tab Content -->
