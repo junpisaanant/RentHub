@@ -406,7 +406,12 @@ if ($result && $result->num_rows > 0) {
             <!-- Tabs -->
             <ul class="nav nav-pills mb-3">
               <li><a class="nav-link active" data-bs-toggle="pill" href="#real-estate-2-tab1">Video</a></li>
-              <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab3">Location</a></li>
+              <?php if($data['map_image']){ ?>
+                <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab2">Map Image</a></li>
+              <?php } ?> 
+              <?php if($data['map_url']){ ?>
+                <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab3">Location</a></li>
+              <?php } ?> 
             </ul><!-- End Tabs -->
 
             <!-- Tab Content -->
@@ -416,12 +421,12 @@ if ($result && $result->num_rows > 0) {
 
               </div><!-- End Tab 1 Content -->
 
+              <div class="tab-pane fade" id="real-estate-2-tab2">
+                <img src="assets/rent_place/<?php echo $data['map_image'];?>" alt="" class="img-fluid">
+              </div><!-- End Tab 2 Content -->
+
               <div class="tab-pane fade" id="real-estate-2-tab3">
-                <?php if($data['map_url']){ ?>
-                  <iframe style="border:0; width: 100%; height: 400px;" src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d48389.78314118045!2d-74.006138!3d40.710059!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a22a3bda30d%3A0xb89d1fe6bc499443!2sDowntown%20Conference%20Center!5e0!3m2!1sen!2sus!4v1676961268712!5m2!1sen!2sus" frameborder="0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                <?php }else{ ?>
-                  <img src="assets/rent_place/<?php echo $data['map_image'];?>" alt="" class="img-fluid">
-                <?php } ?>
+              <iframe style="border:0; width: 100%; height: 400px;" src="<?php echo $data['map_url'];?>" frameborder="0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
               </div><!-- End Tab 3 Content -->
 
             </div><!-- End Tab Content -->
