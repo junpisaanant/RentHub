@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <link rel="stylesheet" type="text/css" href="assets/css/rent_place.css">
+<link rel="stylesheet" type="text/css" href="assets/css/search.css">
 <body class="index-page">
 <?php 
 $mode = 'home';
@@ -389,6 +390,13 @@ if ($result && $result->num_rows > 0) {
                 <div>
                   <img src="assets/rent_user/<?php echo $data['user_image']; ?>" class="testimonial-img" alt="">
                   <h3><?php echo $data['fullname']; ?></h3>
+                  <?php if (isset($_SESSION['user_id'])) { ?>
+                  <!-- ปุ่ม ติดต่อขอเช่า -->
+                  <a href="contact.php?place_id=<?php echo $data['id']; ?>"
+                    class="filter-button mt-2">
+                    ติดต่อขอเช่า
+                  </a>
+                  <?php } ?>
                 </div>
               </div>
             </div><!-- End Portfolio Description -->
