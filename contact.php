@@ -81,13 +81,13 @@ document.addEventListener('DOMContentLoaded', function () {
     dateFormat: "Y-m-d",
     minDate: "today"
   });
-});
-document.getElementById("contactForm").addEventListener("submit", function(e) {
-  const date = document.getElementById("appointment_date").value;
-  if (!date) {
-    alert("กรุณาระบุวันที่นัดหมายด้วยค่ะ");
-    e.preventDefault(); // ป้องกันการ submit
-  }
+  document.getElementById("contactForm").addEventListener("submit", function(e) {
+    const date = document.getElementById("appointment_date").value;
+    if (!date) {
+      alert("กรุณาระบุวันที่นัดหมายด้วยค่ะ");
+      e.preventDefault(); // ยกเลิกการส่ง
+    }
+  });
 });
 </script>
   <main class="main">
@@ -141,7 +141,7 @@ document.getElementById("contactForm").addEventListener("submit", function(e) {
           </div>
 
           <div class="col-lg-8">
-            <form action="forms/contact.php" method="post" class="php-form" data-aos="fade-up" data-aos-delay="200">
+            <form id="contactForm" action="forms/contact.php" method="post" class="php-form" data-aos="fade-up" data-aos-delay="200">
               <input type="hidden" name="rent_place_id" value="<?php echo $id; ?>">
               <input type="hidden" name="price" value="<?php echo $data['price']; ?>">
               <div class="row gy-4">
