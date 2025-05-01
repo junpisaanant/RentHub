@@ -134,7 +134,7 @@ $sql = "SELECT
         END AS property_type, 
         RP.create_datetime,
         (SELECT COUNT(*) FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id) AS place_cnt,
-        (SELECT A.name FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id AND F.cover_flag = 'Y') AS attach_name
+        (SELECT concat(RP.id, '/', A.name, '/', F.name) FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id AND F.cover_flag = 'Y') AS attach_name
         FROM RENT_PLACE RP 
         LEFT JOIN RENT_PROVINCE P ON (RP.province_id = P.id)
         LEFT JOIN RENT_DISTRICT D ON (RP.district_id = D.id)

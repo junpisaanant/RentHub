@@ -363,7 +363,7 @@ if ($result && $result->num_rows > 0) {
 			<?php if (!empty($heroItems)): ?>
 				<?php foreach ($heroItems as $index => $item): ?>
 				<div class="swiper-slide">
-				  <img src="assets/rent_place/<?php echo $item['attach_name']; ?>/<?php echo $item['file_name']; ?>" alt="<?php echo htmlspecialchars($item['file_name']); ?>">
+				  <img src="assets/rent_place/<?php echo $item['id']; ?>/<?php echo $item['attach_name']; ?>/<?php echo $item['file_name']; ?>" alt="<?php echo htmlspecialchars($item['file_name']); ?>">
 				</div>
 				<?php endforeach; ?>
 			<?php else: ?>
