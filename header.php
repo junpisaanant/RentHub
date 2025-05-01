@@ -45,6 +45,9 @@ if (isset($_REQUEST['rent_id'])) {
 }
 if (isset($_SESSION['user_id'])) {
   $user_id = $_SESSION['user_id'];
+  $firstname = $_SESSION['firstname'];
+  $lastname = $_SESSION['lastname'];
+  $fullname = $firstname.' ' .$lastname;
 }
 if(!$rent_name){
   $rent_name = "The Prestige Living";
@@ -65,11 +68,16 @@ if(!$rent_name){
           <!--<li><a href="about.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='about'){ echo "active"; } else{echo "";} ?>">About</a></li>
           <li><a href="services.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='service'){ echo "active"; } else{echo "";} ?>">Services</a></li>
           <li><a href="properties.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='properties'){ echo "active"; } else{echo "";} ?>">Properties</a></li>
-          <li><a href="agents.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='agents'){ echo "active"; } else{echo "";} ?>">Agents</a></li>
-          <li class="dropdown"><a href="#"><span>Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+          <li><a href="agents.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='agents'){ echo "active"; } else{echo "";} ?>">Agents</a></li>-->
+          <?php
+            if (!isset($user_id)) {
+          ?>
+          <li><a href="login.php" class="<?php if($mode=='login'){ echo "active"; } else{echo "";} ?>">Log In</a></li>
+          <?php }else{ ?>
+            <li class="dropdown"><a href="#"><span><i class="bi bi-person-circle me-1"></i><?php echo $fullname; ?></span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
             <ul>
-              <li><a href="#">Dropdown 1</a></li>
-              <li class="dropdown"><a href="#"><span>Deep Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+              <li><a href="transaction.php">ตรวจสอบและยืนยันการชำระเงิน</a></li>
+              <!--<li class="dropdown"><a href="#"><span>Deep Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
                 <ul>
                   <li><a href="#">Deep Dropdown 1</a></li>
                   <li><a href="#">Deep Dropdown 2</a></li>
@@ -77,20 +85,10 @@ if(!$rent_name){
                   <li><a href="#">Deep Dropdown 4</a></li>
                   <li><a href="#">Deep Dropdown 5</a></li>
                 </ul>
-              </li>
-              <li><a href="#">Dropdown 2</a></li>
-              <li><a href="#">Dropdown 3</a></li>
-              <li><a href="#">Dropdown 4</a></li>
+              </li>-->
+              <li><a href="logout.php" class="<?php if($mode=='logout'){ echo "active"; } else{echo "";} ?>">Log Out</a>
             </ul>
           </li>
-          <li><a href="contact.php?rent_name=<?php echo $rent_name; ?>" class="<?php if($mode=='contact'){ echo "active"; } else{echo "";} ?>">Contact</a></li>
--->
-          <?php
-            if (!isset($user_id)) {
-          ?>
-          <li><a href="login.php" class="<?php if($mode=='login'){ echo "active"; } else{echo "";} ?>">Log In</a></li>
-          <?php }else{ ?>
-          <li><a href="logout.php" class="<?php if($mode=='logout'){ echo "active"; } else{echo "";} ?>">Log Out</a>
           <?php } ?>
         
         </ul>
