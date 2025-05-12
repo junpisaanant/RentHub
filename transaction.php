@@ -161,8 +161,6 @@ foreach ($appointments as $row) {
                     echo "<p class='text-muted'>ไม่มีข้อมูล</p>";
                 } else {
                     foreach ($items as $item): ?>
-                      <a href="rent_place.php?id=<?= $item['rent_place_id'] ?>&name=<?=$item['place_name']?>"
-                      target="_blank">
                         <div class="property-card">
                           <div class="card-body">
                             <h5 class="card-title"><?= htmlspecialchars($item['place_name']) ?></h5>
@@ -182,15 +180,24 @@ foreach ($appointments as $row) {
                             <p class="card-text"><strong>วันที่ชำระเงิน:</strong>
                               <?= date('d/m/Y', strtotime($item['transfer_date'])) ?></p>
                             <?php endif; ?>
+                            <button
+                              type="button"
+                              class="btn btn-outline-primary mt-2"
+                              onclick="window.open('rent_place.php?id=<?= $item['rent_place_id'] ?>&name=<?=$item['place_name']?>','_blank')">
+                              รายละเอียด
+                            </button>
 
                             <?php if ($code === 'W'): // เฉพาะสถานะ รอชำระเงิน ?>
-                            <a href="payment.php?appt_id=<?= $item['id'] ?>" class="btn btn-warning">
-                              ชำระเงิน
-                            </a>
+                              <button 
+                                class="btn btn-warning btn-pay" 
+                                data-id="<?= $item['id'] ?>" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#paymentModal">
+                                ชำระเงิน
+                              </button>
                             <?php endif; ?>
                           </div>
                         </div>
-                      </a>
                     <?php endforeach;
                 } ?>
             </div>
@@ -198,6 +205,37 @@ foreach ($appointments as $row) {
     </div>
   </div>
 </main>
+
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="paymentForm" action="update_payment.php" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="appointment_id" id="paymentAppointmentId">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="paymentModalLabel">ชำระเงิน</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="transfer_date" class="form-label">วันที่ชำระเงิน <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" name="transfer_date" id="transfer_date" required>
+          </div>
+          <div class="mb-3">
+            <label for="payment_proof" class="form-label">แนบหลักฐาน (ภาพ) <span class="text-danger">*</span></label>
+            <input type="file" class="form-control" name="payment_proof" id="payment_proof" accept="image/*" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary">บันทึก</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
 
 <?php include 'footer.php'; ?>
 
@@ -209,6 +247,14 @@ foreach ($appointments as $row) {
 <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
 <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
 <script src="assets/js/main.js"></script>
+<script>
+  document.querySelectorAll('.btn-pay').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const apptId = this.getAttribute('data-id');
+      document.getElementById('paymentAppointmentId').value = apptId;
+    });
+  });
+</script>
 
 </body>
 </html>
