@@ -3,16 +3,37 @@
 
 <body class="about-page">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/search.css">
 <style>
 .nav-tabs .nav-link.active {
     background-color: #fff8e1;
     color: #c59d00;
     border-color: #c59d00;
 }
-.card {
-    border: 1px solid #e0e0e0;
-    border-radius: 0;
-    margin-bottom: 1rem;
+.property-card {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 1rem;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 1rem;
+  transition: all 0.3s ease-in-out;
+}
+.property-card:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+.property-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+.property-detail {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+.property-btn {
+  margin-top: 1rem;
 }
 </style>
 
@@ -21,12 +42,10 @@ $mode = 'about';
 include 'header.php'; 
 include 'db.php';
 
-// รับค่าฟิลเตอร์
 $keyword = $_GET['keyword'] ?? '';
 $from_date = $_GET['from_date'] ?? '';
 $to_date = $_GET['to_date'] ?? '';
 
-// สถานะ
 $status_labels = [
     'A' => 'นัดหมาย',
     'C' => 'ไม่ตกลงเข้าพัก',
@@ -36,7 +55,6 @@ $status_labels = [
     'O' => 'ยืนยันชำระเงินแล้ว'
 ];
 
-// ดึง count
 $status_counts = [];
 $sql = "SELECT status, COUNT(*) as total 
         FROM RENT_PLACE_APPOINTMENT a
@@ -71,7 +89,6 @@ while ($row = $result->fetch_assoc()) {
     $status_counts[$row['status']] = (int)$row['total'];
 }
 
-// ดึงข้อมูลนัดหมาย
 $sql = "SELECT a.*, p.name AS place_name 
         FROM RENT_PLACE_APPOINTMENT a
         JOIN RENT_PLACE p ON a.rent_place_id = p.id
@@ -102,17 +119,14 @@ $stmt->bind_param($types, ...$params);
 $stmt->execute();
 $appointments = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// แยกตามสถานะ
 $appointments_by_status = [];
 foreach ($appointments as $row) {
     $appointments_by_status[$row['status']][] = $row;
 }
 ?>
 
-  <main class="main">
-    
+<main class="main">
   <div class="container my-5">
-    <!-- ฟิลเตอร์ -->
     <form class="row g-3 mb-4" method="get">
         <div class="col-md-4">
             <input type="text" name="keyword" value="<?= htmlspecialchars($keyword) ?>" class="form-control" placeholder="ค้นหาชื่อสถานที่">
@@ -128,7 +142,6 @@ foreach ($appointments as $row) {
         </div>
     </form>
 
-    <!-- Tabs -->
     <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
         <?php $first = true; foreach ($status_labels as $code => $label): ?>
             <li class="nav-item" role="presentation">
@@ -148,48 +161,54 @@ foreach ($appointments as $row) {
                     echo "<p class='text-muted'>ไม่มีข้อมูล</p>";
                 } else {
                     foreach ($items as $item): ?>
-                        <div class="card p-3">
-                            <h5><?= htmlspecialchars($item['place_name']) ?></h5>
-                            <p class="mb-1"><strong>วันที่นัดหมาย:</strong> <?= date('d/m/Y', strtotime($item['date'])) ?></p>
-                            <p class="mb-1"><strong>วันที่ต้องการเข้าพัก:</strong> <?= date('d/m/Y', strtotime($item['in_date'])) ?></p>
-                            <p class="mb-1"><strong>ยอดเงินที่ต้องชำระ:</strong> <?= number_format($item['price'], 2) ?> บาท</p>
-                            <?php if (!empty($item['transfer_date'])){ ?>
-                                <p class="mb-0"><strong>วันที่ชำระเงิน:</strong> <?= date('d/m/Y', strtotime($item['transfer_date'])) ?></p>
-                            <?php } ?>
-                            <!-- เงื่อนไขเฉพาะสถานะ "W" -->
-                            <div class="mt-3">
-                              <button class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-1.5 px-4 rounded flex items-center gap-2">
-                                🐣 <span>ชำระเงิน</span>
-                              </button>
-                            </div>
+                      <a href="rent_place.php?id=<?= $item['rent_place_id'] ?>&name=<?=$item['place_name']?>"
+                      target="_blank">
+                        <div class="property-card">
+                          <div class="card-body">
+                            <h5 class="card-title"><?= htmlspecialchars($item['place_name']) ?></h5>
+
+                            <p class="card-text"><strong>วันที่นัดหมาย:</strong>
+                              <?= date('d/m/Y', strtotime($item['date'])) ?></p>
+
+                            <?php if (!empty($item['in_date'])): ?>
+                            <p class="card-text"><strong>วันที่ต้องการเข้าพัก:</strong>
+                              <?= date('d/m/Y', strtotime($item['in_date'])) ?></p>
+                            <?php endif; ?>
+
+                            <p class="card-text"><strong>ยอดเงินที่ต้องชำระ:</strong>
+                              <?= number_format($item['price'], 2) ?> บาท</p>
+
+                            <?php if (!empty($item['transfer_date'])): ?>
+                            <p class="card-text"><strong>วันที่ชำระเงิน:</strong>
+                              <?= date('d/m/Y', strtotime($item['transfer_date'])) ?></p>
+                            <?php endif; ?>
+
+                            <?php if ($code === 'W'): // เฉพาะสถานะ รอชำระเงิน ?>
+                            <a href="payment.php?appt_id=<?= $item['id'] ?>" class="btn btn-warning">
+                              ชำระเงิน
+                            </a>
+                            <?php endif; ?>
+                          </div>
                         </div>
+                      </a>
                     <?php endforeach;
                 } ?>
             </div>
         <?php $first = false; endforeach; ?>
     </div>
-</div>
+  </div>
+</main>
 
-  </main>
+<?php include 'footer.php'; ?>
 
-  <?php include 'footer.php'; ?>
-
-  <!-- Scroll Top -->
-  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-
-  <!-- Preloader -->
-  <div id="preloader"></div>
-
-  <!-- Vendor JS Files -->
-  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="assets/vendor/php-email-form/validate.js"></script>
-  <script src="assets/vendor/aos/aos.js"></script>
-  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
-  <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
-
-  <!-- Main JS File -->
-  <script src="assets/js/main.js"></script>
+<a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+<div id="preloader"></div>
+<script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="assets/vendor/php-email-form/validate.js"></script>
+<script src="assets/vendor/aos/aos.js"></script>
+<script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+<script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
+<script src="assets/js/main.js"></script>
 
 </body>
-
 </html>
