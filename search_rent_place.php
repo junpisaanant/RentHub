@@ -118,7 +118,7 @@ $sql = "SELECT
         RP.toilet_qty, 
         (
             SELECT CONCAT(RL.name, ' (', (RPL.distance*1000), ' เมตร)')
-            FROM rent_place_landmarks RPL
+            FROM RENT_PLACE_LANDMARKS RPL
             INNER JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
             WHERE RPL.rent_place_id = RP.id
             AND RL.type = 'M'

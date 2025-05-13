@@ -437,7 +437,15 @@ if ($result && $result->num_rows > 0) {
             <div class="portfolio-info">
               <h3>Quick Summary</h3>
               <ul>
-                <li><strong>Price:</strong><?php echo number_format($data['price']); ?> ฿</li>
+                <li><strong>Price:</strong><?php 
+                if($data['price']=='0.00'){
+                  echo "ราคาตามตกลง";
+                }else{
+                  echo number_format($data['price']).' ฿'; 
+                }
+                
+                
+                ?> </li>
                 <li><strong>Property ID:</strong><?php echo $data['id']; ?></li>
                 <li><strong>Location:</strong><?php echo $data['address'] . '<br>' . $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></li>
                 <li><strong>Property Type:</strong><?php echo $data['property_type']; ?></li>

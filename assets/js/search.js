@@ -175,9 +175,15 @@
                         // ราคา
                         let priceEl = document.createElement('div');
                         priceEl.className = 'property-price';
-                        let formattedPrice = Number(item.price).toLocaleString('en-US');
-                        priceEl.textContent = `฿${formattedPrice || 0}`;
-                        detailsDiv.appendChild(priceEl);
+                        if(item.price=="0.00"){
+                            priceEl.textContent = `ราคาตามตกลง`;
+                            detailsDiv.appendChild(priceEl);
+                        }else{
+                            let formattedPrice = Number(item.price).toLocaleString('en-US');
+                            priceEl.textContent = `฿${formattedPrice || 0}`;
+                            detailsDiv.appendChild(priceEl);
+                        }
+                        
 
                         // เมตา: เช่น ห้องนอน, ขนาด, ราคา/ตร.ม. ฯลฯ
                         let metaEl = document.createElement('div');
