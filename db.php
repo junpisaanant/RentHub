@@ -5,7 +5,7 @@
 $servername = "127.0.0.1";
 $db_username = "root";
 $db_password = "";
-$dbname = "rent_hub";
+$dbname = "prestig6_rent_hub";
 */
 //Prod
 $servername = "119.59.104.22";
