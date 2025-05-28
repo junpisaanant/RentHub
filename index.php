@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<body class="index-page">
-<link rel="stylesheet" type="text/css" href="assets/css/search.css">
+
+
 <?php 
 $mode = 'home';
 include 'header.php'; 
@@ -134,41 +134,19 @@ include 'header.php';
 </div>
 
     <!-- สำหรับแสดงผลลัพธ์ หรือข้อมูลใน rent_place ทั้งหมด -->
-    <section id="services" class="services section">
-
+    <section id="services" class="py-5">
       <div class="container">
-
-        <div class="row gy-4">
-          <div class="search-results-info col-lg-12 col-md-12"  data-aos="fade-up" data-aos-delay="100">
-          </div>
-
+        <div class="row gy-4 search-results-info" data-aos="fade-up" data-aos-delay="100">
+          <!-- JS จะ inject
+               <div class="col-12 col-md-6 col-lg-4">…card…</div>
+               ลงที่นี่อัตโนมัติ -->
         </div>
-
       </div>
-
-    </section><!-- /Services Section -->
+    </section>
 
   </main>
 
   <?php include 'footer.php'; ?>
 
-  <!-- Scroll Top -->
-  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-
-  <!-- Preloader -->
-  <div id="preloader"></div>
-
-  <!-- Vendor JS Files -->
-  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="assets/vendor/php-email-form/validate.js"></script>
-  <script src="assets/vendor/aos/aos.js"></script>
-  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
-  <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
-
-  <!-- Main JS File -->
-  <script src="assets/js/main.js"></script>
-  <script src="assets/js/search.js"></script>
-
-</body>
 
 </html>

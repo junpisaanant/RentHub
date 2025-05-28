@@ -5,7 +5,7 @@
     margin: 20px 0;           /* ระยะห่างด้านบน-ล่างตามต้องการ */
   }
 
-  .search-input {
+ .search-bar .search-input {
     width: 600px;
     margin: 0 auto;
     padding: 10px 15px;
@@ -163,16 +163,17 @@
 }
 
 .feature-button.selected {
-    background-color: #007bff; /* สีพื้นหลังเมื่อเลือก */
+    background-color: #007bff; /* สีพื้นหลังเมื่อเลือก ดอ*/
     color: #fff; /* สีตัวอักษรเมื่อเลือก */
 }
 
 /*ส่วนแสดงผลลัพธ์การค้นหา*/
 .search-results-info {
-    display: flex;
-    flex-direction: column; /* วางการ์ดเรียงลงมาในแนวตั้ง */
-    gap: 20px;             /* ระยะห่างระหว่างการ์ด */
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
   
   /* สไตล์ของการ์ด */
   .property-card {

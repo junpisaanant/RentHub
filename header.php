@@ -3,11 +3,9 @@ session_start();
 header('Content-Type: text/html; charset=utf-8');
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <title>The Prestige Living</title>
   <meta name="description" content="">
   <meta name="keywords" content="">
@@ -27,6 +25,7 @@ header('Content-Type: text/html; charset=utf-8');
   <link href="assets/vendor/aos/aos.css" rel="stylesheet">
   <link href="assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
   <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="assets/css/search.css">
 
   <!-- Main CSS File -->
   <link href="assets/css/main.css" rel="stylesheet">
@@ -54,6 +53,7 @@ if(!$rent_name){
   $rent_name = "The Prestige Living";
 }
 ?>
+<body class="index-page">
 <header id="header" class="header d-flex align-items-center fixed-top">
     <div class="container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
 
@@ -98,5 +98,3 @@ if(!$rent_name){
 
     </div>
   </header>
-
-</html>
