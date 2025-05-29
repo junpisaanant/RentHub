@@ -45,7 +45,6 @@
 	<link rel="stylesheet" type="text/css" href="login/css/main.css">
 <!--===============================================================================================-->
 </head>
-<body>
 <?php 
 $mode = 'login';
 include 'header.php'; 

@@ -18,26 +18,78 @@
 
     // ฟังก์ชันแสดงผลลัพธ์
     function displaySearchResults(results) {
-      const row = document.querySelector('.search-results-info');
-      row.innerHTML = '';
+      const container = document.querySelector('.search-results-info');
+      container.innerHTML = '';
 
-      if (!results.length) {
-        row.innerHTML = '<p class="text-center text-muted">ไม่พบผลลัพธ์</p>';
+      if (results.length === 0) {
+        container.innerHTML = '<p class="text-center text-muted">ไม่พบผลลัพธ์</p>';
         return;
       }
 
       results.forEach(item => {
+        // 1) สร้าง wrapper col
         const col = document.createElement('div');
-        col.className = 'col-12 col-md-6 col-lg-4';
+        col.className = 'col-12 col-sm-6 col-md-4';
 
+        // 2) สร้าง card
         const card = document.createElement('div');
         card.className = 'card h-100';
-        // … สร้างรูป, body, meta …
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => {
+          window.open(
+            `rent_place.php?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(item.rp_name)}`,
+            '_blank'
+          );
+        });
+
+        // รูปบนหัว card
+        const img = document.createElement('img');
+        img.src = 'assets/rent_place/' + item.attach_name;
+        img.className = 'card-img-top';
+        img.alt = item.rp_name;
+        card.appendChild(img);
+
+        // body
+        const body = document.createElement('div');
+        body.className = 'card-body d-flex flex-column';
+
+        // ชื่อ
+        const title = document.createElement('h5');
+        title.className = 'card-title';
+        title.textContent = item.rp_name;
+        body.appendChild(title);
+
+        // ที่อยู่
+        const loc = document.createElement('p');
+        loc.className = 'card-text text-muted mb-2';
+        loc.textContent = `${item.sub_district_name}, ${item.district_name}, ${item.province_name}`;
+        body.appendChild(loc);
+
+        // ราคา
+        const price = document.createElement('p');
+        price.className = 'card-text fw-bold mb-2';
+        price.textContent = item.price === "0.00"
+          ? 'ราคาตามตกลง'
+          : `฿${Number(item.price).toLocaleString()}`;
+        body.appendChild(price);
+
+        // meta
+        const meta = document.createElement('p');
+        meta.className = 'card-text text-secondary mt-auto';
+        meta.innerHTML = `
+          <i class="fa fa-bed"></i> ${item.room_qty}
+          &nbsp;|&nbsp;
+          <i class="fa fa-bath"></i> ${item.toilet_qty}
+          &nbsp;|&nbsp;
+          ${item.size} ตร.ม.
+        `;
+        body.appendChild(meta);
+
+        card.appendChild(body);
         col.appendChild(card);
-        row.appendChild(col);
+        container.appendChild(col);
       });
     }
-
 
     // ปุ่มค้นหา
     document.getElementById('searchButton').addEventListener('click', () => {

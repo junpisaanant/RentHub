@@ -80,11 +80,6 @@
     margin-left: 5px;
 }
 
-.search-results-info {
-    font-size: 14px;
-    color: #555;
-}
-
 /*ปุ่ม search*/
 .search-icon-button {
     background: none;
@@ -171,7 +166,13 @@
 .search-results-info {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+}
+@media(min-width: 768px) {
+  .search-results-info {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+  }
 }
 
   

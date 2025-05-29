@@ -2,7 +2,6 @@
 <html lang="en">
 <link rel="stylesheet" type="text/css" href="assets/css/rent_place.css">
 <link rel="stylesheet" type="text/css" href="assets/css/search.css">
-<body class="index-page">
 <?php 
 $mode = 'home';
 include 'header.php'; 
@@ -541,23 +540,5 @@ if ($result && $result->num_rows > 0) {
     <?php } ?>
 
     <?php include 'footer.php'; ?>
-
-  <!-- Scroll Top -->
-  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
-
-  <!-- Preloader -->
-  <div id="preloader"></div>
-
-  <!-- Vendor JS Files -->
-  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="assets/vendor/php-email-form/validate.js"></script>
-  <script src="assets/vendor/aos/aos.js"></script>
-  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
-  <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
-
-  <!-- Main JS File -->
-  <script src="assets/js/main.js"></script>
-
-</body>
 
 </html>
