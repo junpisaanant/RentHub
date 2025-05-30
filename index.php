@@ -7,32 +7,69 @@
 $mode = 'home';
 include 'header.php'; 
 ?>
+<style>
+    /* --- ปะทับ main.css ตามข้อด้านบน --- */
+    /* --- override main.css --- */
+#hero.section {
+  height: auto !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+}
+#hero.section img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- ปรับให้ search-input ยืดหยุ่น --- */
+.search-bar .search-input {
+  width: 100%;
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 10px 15px;
+  border: 2px solid #b08b5b;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  gap: 5px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: transform .3s;
+}
+@media (max-width: 576px) {
+  .search-bar .search-input {
+    margin: 20px 10px;
+  }
+}
+.search-bar .search-input:hover {
+  transform: translateY(-5px);
+}
+.search-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+} 
+</style>
   <main class="main">
     <!-- Hero Section -->
-    <section id="hero" class="hero section dark-background">
+    <section id="hero" class="hero section p-0">
+      <img src="assets/img/theprestige-2.png"
+           class="img-fluid w-100" alt="The Prestige Living">
+    </section>
 
-      <div id="hero-carousel" class="carousel slide" data-bs-ride="carousel" >
-
-        <div class="carousel-item active">
-          <img src="assets/img/theprestige-2.png" alt="">
-        </div><!-- End Carousel Item -->
-
+    <!-- Search -->
+    <section id="search" class="services section mb-5">
+      <div class="search-bar">
+        <div class="search-input">
+          <button id="searchButton" class="btn"><i class="bi bi-search"></i></button>
+          <input id="searchInput" type="text" placeholder="ค้นหา ชื่ออสังหา">
+          <button class="clear-button btn">x</button>
+          <button id="filterButton" class="btn filter-button"
+                  data-bs-toggle="modal" data-bs-target="#filterModal">
+            <i class="bi bi-funnel"></i> ตัวกรอง
+          </button>
+        </div>
       </div>
-
-    </section><!-- /Hero Section -->
-
-    <!--Search -->
-    <section id="search" class="services section">
-    <div class="search-bar">
-      <div class="search-input">
-        <button class="search-icon-button" id="searchButton"><i class="bi bi-search"></i></button>
-        <input type="text" placeholder="ค้นหา ชื่ออสังหา" id="searchInput">
-        <button class="clear-button">x</button>
-        <button class="filter-button" id="filterButton" data-bs-toggle="modal" data-bs-target="#filterModal">
-          <i class="bi bi-funnel"></i> ตัวกรอง
-        </button>
-      </div>
-    </div>
+    </section>
         <!-- เก็บไว้ใส่ทีหลัง 
         <div class="filter-buttons">
         <button class="filter-button" id="filterButton" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="bi bi-funnel"></i> ตัวกรอง </button>

@@ -25,10 +25,10 @@ header('Content-Type: text/html; charset=utf-8');
   <link href="assets/vendor/aos/aos.css" rel="stylesheet">
   <link href="assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
   <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
-  <link rel="stylesheet" type="text/css" href="assets/css/search.css">
 
   <!-- Main CSS File -->
   <link href="assets/css/main.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="assets/css/search.css">
 
   <!-- =======================================================
   * Template Name: EstateAgency
