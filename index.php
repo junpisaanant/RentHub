@@ -51,7 +51,7 @@ include 'header.php';
 </style>
   <main class="main">
     <!-- Hero Section -->
-    <section id="hero" class="hero section p-0">
+    <section id="hero">
       <img src="assets/img/theprestige-2.png"
            class="img-fluid w-100" alt="The Prestige Living">
     </section>
