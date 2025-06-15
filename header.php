@@ -42,6 +42,9 @@ header('Content-Type: text/html; charset=utf-8');
 if (isset($_REQUEST['rent_id'])) {
   $rent_id = $_REQUEST['rent_id'];
   $rent_name = $_REQUEST['rent_name'];
+}else{
+  $rent_id = '';
+  $rent_name = '';
 }
 if (isset($_SESSION['user_id'])) {
   $user_id = $_SESSION['user_id'];
@@ -77,7 +80,8 @@ if(!$rent_name){
           <?php }else{ ?>
             <li class="dropdown"><a href="#"><span><i class="bi bi-person-circle me-1"></i><?php echo $fullname; ?></span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
             <ul>
-              <li><a href="transaction.php">ตรวจสอบและยืนยันการชำระเงิน</a></li>
+              <li><a href="profile.php?rent_name=<?php echo $rent_name; ?>">ข้อมูลส่วนตัว</a></li>
+              <li><a href="transaction.php?rent_name=<?php echo $rent_name; ?>">ตรวจสอบและยืนยันการชำระเงิน</a></li>
               <!--<li class="dropdown"><a href="#"><span>Deep Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
                 <ul>
                   <li><a href="#">Deep Dropdown 1</a></li>
