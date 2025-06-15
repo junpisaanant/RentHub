@@ -1,5 +1,5 @@
 <?php
-session_start();
+include 'header.php';
 include 'db.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -124,9 +124,8 @@ if ($user) {
 }
 $conn->close();
 
-include 'header.php';
 ?>
-
+<main id="main">
 <section class="profile-dashboard section">
     <div class="container">
         <div class="row">
@@ -255,4 +254,5 @@ include 'header.php';
         </div>
     </div>
 </section>
+</main>
 <?php include 'footer.php'; ?>

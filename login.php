@@ -23,7 +23,7 @@
 	<script src="https://apis.google.com/js/platform.js" async defer></script>
 	<script src="login/js/login.js"></script>
 <!--===============================================================================================-->	
-	<link rel="icon" type="image/png" href="login/images/icons/favicon.ico"/>
+	<link rel="icon" type="image/png" href="assets/img/favicon.png"/>
 <!--===============================================================================================-->
 	<link rel="stylesheet" type="text/css" href="login/vendor/bootstrap/css/bootstrap.min.css">
 <!--===============================================================================================-->

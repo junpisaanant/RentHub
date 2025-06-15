@@ -1,3 +1,4 @@
+<?php include 'header.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -39,7 +40,6 @@
 
 <?php 
 $mode = 'about';
-include 'header.php'; 
 include 'db.php';
 
 $keyword = $_GET['keyword'] ?? '';
@@ -125,7 +125,7 @@ foreach ($appointments as $row) {
 }
 ?>
 
-<main class="main">
+<main class="main" id="mainTran">
   <div class="container my-5">
     <form class="row g-3 mb-4" method="get">
         <div class="col-md-4">

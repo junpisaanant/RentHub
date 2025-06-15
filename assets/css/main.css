@@ -1773,3 +1773,11 @@ section,
 .starter-section {
   /* Add your styles here */
 }
+#main {
+  /* เพิ่มระยะห่างด้านบน 80px (ปรับค่าได้) เพื่อให้เนื้อหาไม่โดน Header บัง */
+  margin-top: 80px;
+}
+#mainTran {
+  /* เพิ่มระยะห่างด้านบน 80px (ปรับค่าได้) เพื่อให้เนื้อหาไม่โดน Header บัง */
+  margin-top: 100px;
+}
