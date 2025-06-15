@@ -135,6 +135,9 @@ $conn->close();
                     <div class="card-body">
                         <div class="profile-summary text-center">
                             <img src="<?php echo htmlspecialchars($profile_picture_path); ?>" alt="Profile Picture" class="profile-picture rounded-circle mb-3">
+                            <a href="#" class="edit-button" data-bs-toggle="modal" data-bs-target="#editProfilePicModal" title="เปลี่ยนรูปโปรไฟล์">
+                                <i class="fas fa-pencil-alt"></i>
+                            </a>
                         </div>
                         
                         <nav class="profile-nav mt-4">
@@ -254,5 +257,25 @@ $conn->close();
         </div>
     </div>
 </section>
+<div class="modal fade" id="editProfilePicModal" tabindex="-1" aria-labelledby="editProfilePicModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editProfilePicModalLabel">เปลี่ยนรูปโปรไฟล์</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="update_profile_picture.php" method="post" enctype="multipart/form-data">
+        <div class="modal-body">
+            <p>เลือกรูปภาพใหม่ที่ต้องการ (แนะนำขนาด 1:1 เช่น 500x500 pixels):</p>
+            <input type="file" name="profile_picture" class="form-control" accept="image/png, image/jpeg, image/gif" required>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" class="btn btn-primary">บันทึกรูปใหม่</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 </main>
 <?php include 'footer.php'; ?>
