@@ -1,0 +1,13 @@
+/* เพิ่มต่อท้ายไฟล์ assets/css/profile-dashboard.css */
+
+.profile-content .form-control-static {
+    padding-top: 7px;
+    padding-bottom: 7px;
+    margin-bottom: 0;
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+.profile-content hr {
+    margin: 2rem 0;
+}
