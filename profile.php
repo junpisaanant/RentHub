@@ -177,7 +177,7 @@ include 'header.php';
                                 </div>
                                 <div class="mb-3">
                                     <label for="username" class="form-label">Username</label>
-                                    <input type="text" class="form-control" id="username" name="username" value="@<?php echo htmlspecialchars($user['username']); ?>" readonly>
+                                    <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" readonly disabled>
                                 </div>
                                 <div class="mb-3">
                                     <label for="identification_no" class="form-label">เลขบัตรประชาชน</label>
