@@ -1,241 +1,274 @@
-<?php include 'header.php'; ?>
-<!DOCTYPE html>
-<html lang="en">
+<?php
+// เปิดการแสดงผล Error เพื่อการดีบัก (สามารถลบออกได้เมื่อใช้งานจริง)
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
-<body class="about-page">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/search.css">
-<style>
-.nav-tabs .nav-link.active {
-    background-color: #fff8e1;
-    color: #c59d00;
-    border-color: #c59d00;
-}
-.property-card {
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 1rem;
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  margin-bottom: 1rem;
-  transition: all 0.3s ease-in-out;
-}
-.property-card:hover {
-  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-}
-.property-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #333;
-}
-.property-detail {
-  font-size: 0.95rem;
-  color: #666;
-  margin-bottom: 0.25rem;
-}
-.property-btn {
-  margin-top: 1rem;
-}
-</style>
+ob_start();
+session_start();
+include 'db.php'; // ไฟล์เชื่อมต่อฐานข้อมูล
 
-<?php 
-$mode = 'about';
-include 'db.php';
+// --- จัดการการส่งฟอร์มชำระเงิน ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_payment'])) {
+    if (!isset($_SESSION['user_id'])) {
+        header("Location: login.php");
+        exit();
+    }
 
-$keyword = $_GET['keyword'] ?? '';
-$from_date = $_GET['from_date'] ?? '';
-$to_date = $_GET['to_date'] ?? '';
+    $user_id = $_SESSION['user_id'];
+    $appointment_id = $_POST['appointment_id'];
+    $current_user_name = $_SESSION['user_id']; // หรือ $_SESSION['username']
 
-$status_labels = [
-    'A' => 'นัดหมาย',
-    'C' => 'ไม่ตกลงเข้าพัก',
-    'D' => 'ไม่มาตามนัดหมาย',
-    'W' => 'รอชำระเงิน',
-    'T' => 'ชำระเงินแล้วรอยืนยัน',
-    'O' => 'ยืนยันชำระเงินแล้ว'
-];
+    // --- จัดการการอัปโหลดไฟล์ ---
+    if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] == 0) {
+        $target_dir = "assets/payment_proofs/";
+        if (!is_dir($target_dir)) {
+            mkdir($target_dir, 0755, true);
+        }
+        
+        $original_filename = basename($_FILES["payment_proof"]["name"]);
+        $file_size = $_FILES["payment_proof"]["size"];
+        $file_extension = strtolower(pathinfo($original_filename, PATHINFO_EXTENSION));
+        $new_filename_on_server = "proof_" . $appointment_id . "_" . time() . "." . $file_extension;
+        $target_file_path = $target_dir . $new_filename_on_server;
+        
+        $check = getimagesize($_FILES["payment_proof"]["tmp_name"]);
+        if ($check !== false) {
+            if (move_uploaded_file($_FILES["payment_proof"]["tmp_name"], $target_file_path)) {
+                
+                // --- Step 1: สร้าง "กลุ่มไฟล์แนบ" ใน RENT_ATTACH ---
+                $attach_group_name = "Payment for #" . $appointment_id;
+                $attach_sql = "INSERT INTO RENT_ATTACH (NAME, SIZE, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
+                $stmt_attach = $conn->prepare($attach_sql);
+                $stmt_attach->bind_param("siss", $attach_group_name, $file_size, $current_user_name, $current_user_name);
+                $stmt_attach->execute();
+                $attach_id = $conn->insert_id; // ID ของกลุ่มไฟล์แนบ
 
-$status_counts = [];
-$sql = "SELECT status, COUNT(*) as total 
-        FROM RENT_PLACE_APPOINTMENT a
-        JOIN RENT_PLACE p ON a.rent_place_id = p.id
-        WHERE a.rent_user_id = ?";
+                if ($attach_id > 0) {
+                    // --- Step 2: บันทึกข้อมูล "ไฟล์จริง" ลงใน RENT_FILE ---
+                    $file_sql = "INSERT INTO RENT_FILE (attach_id, type, name, size, create_user, create_datetime, update_user, update_datetime) VALUES (?, 'O', ?, ?, ?, NOW(), ?, NOW())";
+                    $stmt_file = $conn->prepare($file_sql);
+                    $stmt_file->bind_param("isiss", $attach_id, $target_file_path, $file_size, $current_user_name, $current_user_name);
+                    $stmt_file->execute();
 
-$params = [$user_id];
-$types = "i";
+                    // --- Step 3: อัปเดตรายการนัดหมายด้วย ID ของกลุ่มไฟล์แนบ ---
+                    $update_sql = "UPDATE RENT_PLACE_APPOINTMENT SET status = 'T', transfer_date = CURDATE(), attach_id = ?, update_user = ?, update_datetime = NOW() WHERE id = ? AND rent_user_id = ?";
+                    $stmt_update = $conn->prepare($update_sql);
+                    $stmt_update->bind_param("isii", $attach_id, $current_user_name, $appointment_id, $user_id);
+                    
+                    if ($stmt_update->execute()) {
+                        $_SESSION['message'] = "ส่งหลักฐานการชำระเงินสำหรับรายการ #$appointment_id สำเร็จแล้ว กรุณารอการยืนยัน";
+                    } else {
+                        $_SESSION['error'] = "เกิดข้อผิดพลาดในการอัปเดตข้อมูลการนัดหมาย";
+                    }
+                } else {
+                     $_SESSION['error'] = "เกิดข้อผิดพลาดในการสร้างกลุ่มไฟล์แนบ";
+                }
 
-if ($keyword !== '') {
-    $sql .= " AND p.name LIKE ?";
-    $params[] = "%$keyword%";
-    $types .= "s";
-}
-if ($from_date !== '') {
-    $sql .= " AND a.date >= ?";
-    $params[] = $from_date;
-    $types .= "s";
-}
-if ($to_date !== '') {
-    $sql .= " AND a.date <= ?";
-    $params[] = $to_date;
-    $types .= "s";
-}
-$sql .= " GROUP BY status";
+            } else {
+                $_SESSION['error'] = "ขออภัย, เกิดข้อผิดพลาดในการอัปโหลดไฟล์";
+            }
+        } else {
+            $_SESSION['error'] = "ไฟล์ที่อัปโหลดไม่ใช่ไฟล์รูปภาพ";
+        }
+    } else {
+        $_SESSION['error'] = "กรุณาแนบไฟล์หลักฐานการชำระเงิน";
+    }
 
-$stmt = $conn->prepare($sql);
-$stmt->bind_param($types, ...$params);
-$stmt->execute();
-$result = $stmt->get_result();
-while ($row = $result->fetch_assoc()) {
-    $status_counts[$row['status']] = (int)$row['total'];
+    header("Location: transaction.php");
+    exit();
 }
 
-$sql = "SELECT a.*, p.name AS place_name 
-        FROM RENT_PLACE_APPOINTMENT a
-        JOIN RENT_PLACE p ON a.rent_place_id = p.id
-        WHERE a.rent_user_id = ? ";
 
-$params = [$user_id];
-$types = "i";
+include 'header.php'; // ส่วนหัวของเว็บ
 
-if ($keyword !== '') {
-    $sql .= " AND p.name LIKE ?";
-    $params[] = "%$keyword%";
-    $types .= "s";
+// ตรวจสอบว่าผู้ใช้ล็อกอินหรือยัง
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
 }
-if ($from_date !== '') {
-    $sql .= " AND a.date >= ?";
-    $params[] = $from_date;
-    $types .= "s";
-}
-if ($to_date !== '') {
-    $sql .= " AND a.date <= ?";
-    $params[] = $to_date;
-    $types .= "s";
-}
-$sql .= " ORDER BY a.date DESC";
+
+$user_id = $_SESSION['user_id'];
+
+// --- ดึงข้อมูลประวัติการทำรายการของผู้ใช้ ---
+$sql = "
+    SELECT 
+        t.id,
+        t.date AS appointment_date,
+        t.in_date,
+        t.transfer_date,
+        t.price,
+        t.status,
+        rp.name AS place_name
+    FROM RENT_PLACE_APPOINTMENT t
+    JOIN RENT_PLACE rp ON t.rent_place_id = rp.id
+    WHERE t.rent_user_id = ?
+    ORDER BY t.date DESC, t.id DESC
+";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param($types, ...$params);
-$stmt->execute();
-$appointments = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$transactions_result = null;
+if ($stmt) {
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $transactions_result = $stmt->get_result();
+}
 
-$appointments_by_status = [];
-foreach ($appointments as $row) {
-    $appointments_by_status[$row['status']][] = $row;
+// ฟังก์ชันสำหรับแปลงรหัสสถานะเป็นข้อความที่อ่านง่าย
+function getStatusText($status) {
+    $statusMap = [
+        'A' => ['text' => 'นัดหมาย', 'class' => 'primary'],
+        'C' => ['text' => 'ไม่ตกลง', 'class' => 'secondary'],
+        'D' => ['text' => 'ไม่มาตามนัด', 'class' => 'dark'],
+        'W' => ['text' => 'รอชำระเงิน', 'class' => 'warning'],
+        'T' => ['text' => 'รอยืนยัน', 'class' => 'info'],
+        'O' => ['text' => 'ชำระเงินแล้ว', 'class' => 'success']
+    ];
+    return $statusMap[$status] ?? ['text' => 'ไม่ระบุ', 'class' => 'light'];
 }
 ?>
 
-<main class="main" id="mainTran">
-  <div class="container my-5">
-    <form class="row g-3 mb-4" method="get">
-        <div class="col-md-4">
-            <input type="text" name="keyword" value="<?= htmlspecialchars($keyword) ?>" class="form-control" placeholder="ค้นหาชื่อสถานที่">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        main { background-color: #f4f7f6; }
+        .table-card { background-color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .table thead th { background-color: #f8f9fa; white-space: nowrap; }
+        .badge { font-size: 0.8rem; padding: 0.4em 0.7em; }
+    </style>
+</head>
+
+<main id="main">
+    <section class="container py-5">
+        <div class="section-title mb-4">
+            <h2>ประวัติการทำรายการ</h2>
+            <p>รายการนัดหมายและชำระเงินทั้งหมดของคุณ</p>
         </div>
-        <div class="col-md-3">
-            <input type="date" name="from_date" value="<?= htmlspecialchars($from_date) ?>" class="form-control">
-        </div>
-        <div class="col-md-3">
-            <input type="date" name="to_date" value="<?= htmlspecialchars($to_date) ?>" class="form-control">
-        </div>
-        <div class="col-md-2 d-grid">
-            <button type="submit" class="btn btn-dark">ค้นหา</button>
-        </div>
-    </form>
-
-    <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
-        <?php $first = true; foreach ($status_labels as $code => $label): ?>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link <?= $first ? 'active' : '' ?>" id="tab-<?= $code ?>" data-bs-toggle="tab" data-bs-target="#content-<?= $code ?>" type="button" role="tab">
-                    <?= $label ?> (<?= $status_counts[$code] ?? 0 ?>)
-                </button>
-            </li>
-        <?php $first = false; endforeach; ?>
-    </ul>
-
-    <div class="tab-content border border-top-0 p-3" id="appointmentTabsContent">
-        <?php $first = true; foreach ($status_labels as $code => $label): ?>
-            <div class="tab-pane fade <?= $first ? 'show active' : '' ?>" id="content-<?= $code ?>" role="tabpanel">
-                <?php
-                $items = $appointments_by_status[$code] ?? [];
-                if (empty($items)) {
-                    echo "<p class='text-muted'>ไม่มีข้อมูล</p>";
-                } else {
-                    foreach ($items as $item): ?>
-                        <div class="property-card">
-                          <div class="card-body">
-                            <h5 class="card-title"><?= htmlspecialchars($item['place_name']) ?></h5>
-
-                            <p class="card-text"><strong>วันที่นัดหมาย:</strong>
-                              <?= date('d/m/Y', strtotime($item['date'])) ?></p>
-
-                            <?php if (!empty($item['in_date'])): ?>
-                            <p class="card-text"><strong>วันที่ต้องการเข้าพัก:</strong>
-                              <?= date('d/m/Y', strtotime($item['in_date'])) ?></p>
-                            <?php endif; ?>
-
-                            <p class="card-text"><strong>ยอดเงินที่ต้องชำระ:</strong>
-                              <?= number_format($item['price'], 2) ?> บาท</p>
-
-                            <?php if (!empty($item['transfer_date'])): ?>
-                            <p class="card-text"><strong>วันที่ชำระเงิน:</strong>
-                              <?= date('d/m/Y', strtotime($item['transfer_date'])) ?></p>
-                            <?php endif; ?>
-                            <button
-                              type="button"
-                              class="btn btn-outline-primary mt-2"
-                              onclick="window.open('rent_place.php?id=<?= $item['rent_place_id'] ?>&name=<?=$item['place_name']?>','_blank')">
-                              รายละเอียด
-                            </button>
-
-                            <?php if ($code === 'W'): // เฉพาะสถานะ รอชำระเงิน ?>
-                              <button 
-                                class="btn btn-warning btn-pay" 
-                                data-id="<?= $item['id'] ?>" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#paymentModal">
-                                ชำระเงิน
-                              </button>
-                            <?php endif; ?>
-                          </div>
-                        </div>
-                    <?php endforeach;
-                } ?>
+        
+        <!-- แสดงข้อความแจ้งเตือน (ถ้ามี) -->
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php echo $_SESSION['message']; unset($_SESSION['message']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-        <?php $first = false; endforeach; ?>
-    </div>
-  </div>
-</main>
+        <?php endif; ?>
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
 
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>รหัสรายการ</th>
+                            <th>ชื่อสินทรัพย์</th>
+                            <th>วันที่นัดหมาย</th>
+                            <th>วันที่ต้องการเข้าพัก</th>
+                            <th>วันที่ชำระเงิน</th>
+                            <th class="text-end">ราคา (บาท)</th>
+                            <th class="text-center">สถานะ</th>
+                            <th class="text-center">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if ($transactions_result && $transactions_result->num_rows > 0): ?>
+                            <?php while ($row = $transactions_result->fetch_assoc()): ?>
+                                <?php $statusInfo = getStatusText($row['status']); ?>
+                                <tr>
+                                    <td>#<?php echo $row['id']; ?></td>
+                                    <td><?php echo htmlspecialchars($row['place_name']); ?></td>
+                                    <td><?php echo date("d/m/Y", strtotime($row['appointment_date'])); ?></td>
+                                    <td><?php echo $row['in_date'] ? date("d/m/Y", strtotime($row['in_date'])) : '-'; ?></td>
+                                    <td><?php echo $row['transfer_date'] ? date("d/m/Y", strtotime($row['transfer_date'])) : '-'; ?></td>
+                                    <td class="text-end"><?php echo number_format($row['price'], 2); ?></td>
+                                    <td class="text-center">
+                                        <span class="badge bg-<?php echo $statusInfo['class']; ?>">
+                                            <?php echo $statusInfo['text']; ?>
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <?php if ($row['status'] == 'W'): ?>
+                                            <button class="btn btn-primary btn-sm payment-btn" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#paymentModal"
+                                                    data-id="<?php echo $row['id']; ?>"
+                                                    data-price="<?php echo number_format($row['price'], 2); ?>">
+                                                ชำระเงิน
+                                            </button>
+                                        <?php else: ?>
+                                            -
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">ไม่พบประวัติการทำรายการ</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</main>
 
 <!-- Payment Modal -->
 <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form id="paymentForm" action="update_payment.php" method="post" enctype="multipart/form-data">
-      <input type="hidden" name="appointment_id" id="paymentAppointmentId">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="paymentModalLabel">ชำระเงิน</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="transfer_date" class="form-label">วันที่ชำระเงิน <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" name="transfer_date" id="transfer_date" required>
-          </div>
-          <div class="mb-3">
-            <label for="payment_proof" class="form-label">แนบหลักฐาน (ภาพ) <span class="text-danger">*</span></label>
-            <input type="file" class="form-control" name="payment_proof" id="payment_proof" accept="image/*" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-          <button type="submit" class="btn btn-primary">บันทึก</button>
-        </div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="paymentModalLabel">ยืนยันการชำระเงิน</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-    </form>
+      <form action="transaction.php" method="POST" enctype="multipart/form-data">
+          <div class="modal-body">
+            <input type="hidden" id="appointment_id" name="appointment_id" value="">
+            <div class="mb-3">
+                <label class="form-label">รหัสรายการ</label>
+                <input type="text" id="display_appointment_id" class="form-control" disabled>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">ยอดที่ต้องชำระ (บาท)</label>
+                <input type="text" id="display_price" class="form-control" disabled>
+            </div>
+            <div class="mb-3">
+                <label for="payment_proof" class="form-label">แนบหลักฐานการชำระเงิน</label>
+                <input class="form-control" type="file" id="payment_proof" name="payment_proof" required accept="image/*">
+                <div class="form-text">กรุณาแนบไฟล์รูปภาพ .jpg, .jpeg, .png</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="submit" name="submit_payment" class="btn btn-primary">ยืนยันการชำระเงิน</button>
+          </div>
+      </form>
+    </div>
   </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // เมื่อ Modal การชำระเงินกำลังจะแสดง
+    $('#paymentModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget); // ปุ่มที่ถูกคลิก
+        var appointmentId = button.data('id'); // ดึงข้อมูลจาก data-id
+        var price = button.data('price'); // ดึงข้อมูลจาก data-price
 
-<?php include 'footer.php'; ?>
-</html>
+        var modal = $(this);
+        modal.find('#appointment_id').val(appointmentId);
+        modal.find('#display_appointment_id').val('#' + appointmentId);
+        modal.find('#display_price').val(price);
+    });
+});
+</script>
+
+<?php 
+include 'footer.php'; 
+ob_end_flush();
+?>
