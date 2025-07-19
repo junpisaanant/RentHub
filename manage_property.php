@@ -13,12 +13,12 @@ if (!isset($_SESSION['user_id'])) {
 $admin_id = $_SESSION['user_id'];
 $current_user_name = $_SESSION['user_id'];
 
-// --- [เพิ่มใหม่] จัดการการลบรูปภาพ ---
+// --- จัดการการลบรูปภาพ ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
     $place_attach_id = $_POST['place_attach_id'];
     
-    // ดึงข้อมูล attach_id และ file_path เพื่อลบไฟล์จริงและข้อมูลในตารางอื่น
-    $q = "SELECT rpa.attach_id, rf.name as file_path FROM RENT_PLACE_ATTACH rpa JOIN RENT_FILE rf ON rpa.attach_id = rf.attach_id WHERE rpa.id = ? AND rpa.rent_place_id IN (SELECT id FROM RENT_PLACE WHERE user_id = ?)";
+    // [แก้ไขแล้ว] ดึงข้อมูลที่จำเป็นทั้งหมดเพื่อสร้าง path และลบไฟล์
+    $q = "SELECT rpa.attach_id, rpa.rent_place_id, rpa.type, rf.name as filename FROM RENT_PLACE_ATTACH rpa JOIN RENT_FILE rf ON rpa.attach_id = rf.attach_id WHERE rpa.id = ? AND rpa.rent_place_id IN (SELECT id FROM RENT_PLACE WHERE user_id = ?)";
     $stmt = $conn->prepare($q);
     $stmt->bind_param("ii", $place_attach_id, $admin_id);
     $stmt->execute();
@@ -26,7 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
     if($res->num_rows > 0) {
         $data = $res->fetch_assoc();
         $attach_id_to_delete = $data['attach_id'];
-        $file_to_delete = $data['file_path'];
+        
+        // สร้าง path ของไฟล์ที่จะลบ
+        $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan', 'V' => 'video'];
+        $folder_name = $folder_name_map[$data['type']] ?? 'misc';
+        $file_to_delete = "assets/rent_place/" . $data['rent_place_id'] . "/" . $folder_name . "/" . $data['filename'];
 
         $conn->begin_transaction();
         try {
@@ -48,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
     exit();
 }
 
-// --- [เพิ่มใหม่] จัดการการตั้งค่าภาพปก ---
+// --- จัดการการตั้งค่าภาพปก ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_cover'])) {
     $place_attach_id = $_POST['place_attach_id'];
     $property_id_for_cover = $_POST['property_id'];
@@ -119,8 +123,8 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         $property_landmarks[] = $row;
     }
 
-    // [เพิ่มใหม่] ดึงข้อมูลรูปภาพที่เคยอัปโหลดไว้
-    $stmt_img = $conn->prepare("SELECT rpa.id, rpa.type, rpa.cover_flag, rf.name as file_path FROM RENT_PLACE_ATTACH rpa JOIN RENT_FILE rf ON rpa.attach_id = rf.attach_id WHERE rpa.rent_place_id = ? ORDER BY rpa.cover_flag DESC, rpa.id ASC");
+    // [แก้ไขแล้ว] ดึงข้อมูลรูปภาพที่เคยอัปโหลดไว้
+    $stmt_img = $conn->prepare("SELECT rpa.id, rpa.type, rpa.cover_flag, rf.name as filename FROM RENT_PLACE_ATTACH rpa JOIN RENT_FILE rf ON rpa.attach_id = rf.attach_id WHERE rpa.rent_place_id = ? ORDER BY rpa.cover_flag DESC, rpa.id ASC");
     $stmt_img->bind_param("i", $property_id);
     $stmt_img->execute();
     $result_img = $stmt_img->get_result();
@@ -188,16 +192,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
 
                         if (move_uploaded_file($images['tmp_name'][$type][$key], $target_file_path)) {
                             
-                            // [แก้ไขแล้ว] ใช้ $folder_name สำหรับคอลัมน์ NAME ใน RENT_ATTACH
                             $attach_sql = "INSERT INTO RENT_ATTACH (NAME, SIZE, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
                             $stmt_attach = $conn->prepare($attach_sql);
                             $stmt_attach->bind_param("siss", $folder_name, $file_size, $current_user_name, $current_user_name);
                             $stmt_attach->execute();
                             $attach_id = $conn->insert_id;
 
+                            // [แก้ไขแล้ว] บันทึกเฉพาะชื่อไฟล์ลงใน RENT_FILE.NAME
                             $file_sql = "INSERT INTO RENT_FILE (attach_id, type, name, size, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, ?, ?, NOW(), ?, NOW())";
                             $stmt_file = $conn->prepare($file_sql);
-                            $stmt_file->bind_param("ississ", $attach_id, $type, $target_file_path, $file_size, $current_user_name, $current_user_name);
+                            $stmt_file->bind_param("ississ", $attach_id, $type, $new_filename_on_server, $file_size, $current_user_name, $current_user_name);
                             $stmt_file->execute();
 
                             $place_attach_sql = "INSERT INTO RENT_PLACE_ATTACH (rent_place_id, type, attach_id, name, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, ?, ?, NOW(), ?, NOW())";
@@ -338,8 +342,13 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
             <?php if($mode === 'Edit'): ?>
             <div class="image-gallery my-3">
                 <?php foreach($property_images as $img): ?>
+                <?php
+                    $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan', 'V' => 'video'];
+                    $folder_name = $folder_name_map[$img['type']] ?? 'misc';
+                    $full_path = "assets/rent_place/" . $property_id . "/" . $folder_name . "/" . $img['filename'];
+                ?>
                 <div class="img-thumbnail-wrapper">
-                    <img src="<?php echo htmlspecialchars($img['file_path']); ?>" class="img-thumbnail">
+                    <img src="<?php echo htmlspecialchars($full_path); ?>" class="img-thumbnail">
                     <?php if($img['cover_flag'] == 'Y'): ?>
                         <span class="badge bg-success cover-badge">ภาพปก</span>
                     <?php endif; ?>
