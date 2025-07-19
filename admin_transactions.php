@@ -1,22 +1,22 @@
 <?php
+ob_start(); // Start output buffering
 session_start();
 include 'db.php'; // ไฟล์เชื่อมต่อฐานข้อมูล
-include 'header.php'; // ส่วนหัวของเว็บ
 
-// ตรวจสอบสิทธิ์การเข้าถึงของผู้ใช้
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-
-$admin_id = $_SESSION['user_id'];
-$current_user_name = $_SESSION['user_id']; // หรือ $_SESSION['username'] หากมี
-
-// --- จัดการการอัปเดตสถานะ (เมื่อมีการส่งฟอร์ม) ---
+// --- [ย้ายมาไว้บนสุด] จัดการการอัปเดตสถานะ (เมื่อมีการส่งฟอร์ม) ---
+// ส่วนนี้ต้องทำงานก่อนที่จะมีการแสดงผล HTML ใดๆ ออกไป
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
+    if (!isset($_SESSION['user_id'])) {
+        header("Location: login.php");
+        exit();
+    }
+    
+    $admin_id = $_SESSION['user_id'];
+    $current_user_name = $_SESSION['user_id'];
     $appointment_id = $_POST['appointment_id'];
     $new_status = $_POST['new_status'];
 
+    // Security check: ตรวจสอบว่า admin เป็นเจ้าของสินทรัพย์ของรายการนี้จริง
     $check_sql = "SELECT rp.user_id FROM RENT_PLACE_APPOINTMENT t JOIN RENT_PLACE rp ON t.rent_place_id = rp.id WHERE t.id = ? AND rp.user_id = ?";
     $stmt_check = $conn->prepare($check_sql);
     $stmt_check->bind_param("ii", $appointment_id, $admin_id);
@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     $result_check = $stmt_check->get_result();
 
     if ($result_check->num_rows > 0) {
+        // ถ้ามีสิทธิ์ ให้ทำการอัปเดต
         $update_sql = "UPDATE RENT_PLACE_APPOINTMENT SET status = ?, update_user = ?, update_datetime = NOW() WHERE id = ?";
         $stmt_update = $conn->prepare($update_sql);
         $stmt_update->bind_param("ssi", $new_status, $current_user_name, $appointment_id);
@@ -36,11 +37,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         $_SESSION['error'] = "คุณไม่มีสิทธิ์ในการดำเนินการนี้";
     }
 
+    // Redirect กลับไปหน้าเดิมเพื่อป้องกันการส่งฟอร์มซ้ำ และส่งค่า filter เดิมไปด้วย
     $query_string = http_build_query($_GET);
     header("Location: admin_transactions.php?" . $query_string);
     exit();
 }
 
+// --- ส่วนที่เหลือของโค้ดจะทำงานหลังจากนี้ ---
+include 'header.php'; // ส่วนหัวของเว็บ
+
+// ตรวจสอบสิทธิ์การเข้าถึงของผู้ใช้ (สำหรับแสดงผลหน้าเว็บ)
+if (!isset($_SESSION['user_id'])) {
+    // ถ้ามาถึงตรงนี้โดยไม่ login และไม่ใช่ POST request, ให้ redirect
+    header("Location: login.php");
+    exit();
+}
+
+$admin_id = $_SESSION['user_id'];
 
 // --- จัดการตัวกรอง ---
 $start_date = $_GET['start_date'] ?? '';
@@ -206,7 +219,6 @@ $all_statuses = ['A', 'C', 'D', 'W', 'T', 'O'];
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body" id="userDetailModalBody">
-        <!-- Content will be loaded here by JavaScript -->
         <div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>
       </div>
       <div class="modal-footer">
@@ -238,17 +250,11 @@ $all_statuses = ['A', 'C', 'D', 'W', 'T', 'O'];
 $(document).ready(function() {
     $('#rent_place_id').select2({ theme: 'bootstrap-5' });
 
-    // Handle click on renter link
     $('#userDetailModal').on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var userId = button.data('userid');
-        var modal = $(this);
-        var modalBody = modal.find('.modal-body');
-
-        // Show loading spinner
+        var modalBody = $(this).find('.modal-body');
         modalBody.html('<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
-
-        // Fetch user details via AJAX
         fetch('get_renter_details.php?user_id=' + userId)
             .then(response => response.json())
             .then(data => {
@@ -257,22 +263,7 @@ $(document).ready(function() {
                 } else {
                     let id_info = data.identification_no ? `<strong>เลขบัตรประชาชน:</strong> ${data.identification_no}` : (data.passport_no ? `<strong>พาสปอร์ต:</strong> ${data.passport_no}` : '<strong>เลขบัตร/พาสปอร์ต:</strong> -');
                     let line_link = data.line_id ? `<a href="#" class="line-qr-link" data-bs-toggle="modal" data-bs-target="#lineQrModal" data-lineid="${data.line_id}">${data.line_id}</a>` : '-';
-                    
-                    let content = `
-                        <dl class="row">
-                            <dt class="col-sm-5">ชื่อ - นามสกุล</dt>
-                            <dd class="col-sm-7">${data.firstname} ${data.lastname}</dd>
-                            
-                            <dt class="col-sm-5">เบอร์โทร</dt>
-                            <dd class="col-sm-7"><a href="tel:${data.phone_no}">${data.phone_no}</a></dd>
-
-                            <dt class="col-sm-5">Line ID</dt>
-                            <dd class="col-sm-7">${line_link}</dd>
-
-                            <dt class="col-sm-5">เลขบัตร/พาสปอร์ต</dt>
-                            <dd class="col-sm-7">${id_info}</dd>
-                        </dl>
-                    `;
+                    let content = `<dl class="row"><dt class="col-sm-5">ชื่อ - นามสกุล</dt><dd class="col-sm-7">${data.firstname} ${data.lastname}</dd><dt class="col-sm-5">เบอร์โทร</dt><dd class="col-sm-7"><a href="tel:${data.phone_no}">${data.phone_no}</a></dd><dt class="col-sm-5">Line ID</dt><dd class="col-sm-7">${line_link}</dd><dt class="col-sm-5">เลขบัตร/พาสปอร์ต</dt><dd class="col-sm-7">${id_info}</dd></dl>`;
                     modalBody.html(content);
                 }
             })
@@ -282,14 +273,11 @@ $(document).ready(function() {
             });
     });
 
-    // Handle click on Line QR link
     $('#lineQrModal').on('show.bs.modal', function (event) {
         var link = $(event.relatedTarget);
         var lineId = link.data('lineid');
         var qrImg = $('#lineQrCode');
-        
         if (lineId) {
-            // Generate QR code for adding a friend on Line
             var lineUrl = 'https://line.me/ti/p/~' + encodeURIComponent(lineId);
             var qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(lineUrl);
             qrImg.attr('src', qrApiUrl);
@@ -298,4 +286,7 @@ $(document).ready(function() {
 });
 </script>
 
-<?php include 'footer.php'; ?>
+<?php 
+include 'footer.php'; 
+ob_end_flush(); // End output buffering and flush all output
+?>
