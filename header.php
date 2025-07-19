@@ -83,17 +83,13 @@ if(!$rent_name){
             <ul>
               <li><a href="profile.php?rent_name=<?php echo $rent_name; ?>">ข้อมูลส่วนตัว</a></li>
               <li><a href="transaction.php?rent_name=<?php echo $rent_name; ?>">ตรวจสอบและยืนยันการชำระเงิน</a></li>
-              <li><a href="admin_transactions.php?rent_name=<?php echo $rent_name; ?>">จัดการการนัดหมาย</a></li>
-              <li><a href="dashboard.php?rent_name=<?php echo $rent_name; ?>">สรุปข้อมูลรายได้และห้องเช่า</a></li>
-              <!--<li class="dropdown"><a href="#"><span>Deep Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+              <li class="dropdown"><a href="#"><span>จัดการสินทรัพย์ของฉัน</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
                 <ul>
-                  <li><a href="#">Deep Dropdown 1</a></li>
-                  <li><a href="#">Deep Dropdown 2</a></li>
-                  <li><a href="#">Deep Dropdown 3</a></li>
-                  <li><a href="#">Deep Dropdown 4</a></li>
-                  <li><a href="#">Deep Dropdown 5</a></li>
+                  <li><a href="admin_transactions.php?rent_name=<?php echo $rent_name; ?>">จัดการการนัดหมาย</a></li>
+                  <li><a href="dashboard.php?rent_name=<?php echo $rent_name; ?>">สรุปข้อมูลรายได้และห้องเช่า</a></li>
+                  <li><a href="admin_properties.php?rent_name=<?php echo $rent_name; ?>">จัดการสินทรัพย์</a></li>
                 </ul>
-              </li>-->
+              </li>
               <li><a href="logout.php" class="<?php if($mode=='logout'){ echo "active"; } else{echo "";} ?>">Log Out</a>
             </ul>
           </li>
