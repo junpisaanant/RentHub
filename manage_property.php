@@ -168,17 +168,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
             $_SESSION['message'] = "อัปเดตข้อมูลสินทรัพย์สำเร็จแล้ว";
         }
 
-        // --- [แก้ไขแล้ว] จัดการการอัปโหลดไฟล์ ---
+        // --- จัดการการอัปโหลดไฟล์ ---
         if (isset($_FILES['images'])) {
             $images = $_FILES['images'];
             foreach ($images['name'] as $type => $files) {
                 foreach ($files as $key => $filename) {
                     if ($images['error'][$type][$key] == 0) {
                         
-                        // 1. กำหนดชื่อโฟลเดอร์และสร้าง Path ที่ถูกต้อง
                         $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan', 'V' => 'video'];
                         $folder_name = $folder_name_map[$type] ?? 'misc';
-                        // [แก้ไขแล้ว] เพิ่ม assets/ เข้าไปใน Path
                         $target_dir = "assets/rent_place/$property_id/$folder_name/"; 
 
                         if (!is_dir($target_dir)) mkdir($target_dir, 0755, true);
@@ -189,11 +187,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
                         $target_file_path = $target_dir . $new_filename_on_server;
 
                         if (move_uploaded_file($images['tmp_name'][$type][$key], $target_file_path)) {
-                            // 2. บันทึกข้อมูลลง Database ตามลำดับ
-                            $attach_group_name = "Image for property #$property_id";
+                            
+                            // [แก้ไขแล้ว] ใช้ $folder_name สำหรับคอลัมน์ NAME ใน RENT_ATTACH
                             $attach_sql = "INSERT INTO RENT_ATTACH (NAME, SIZE, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
                             $stmt_attach = $conn->prepare($attach_sql);
-                            $stmt_attach->bind_param("siss", $attach_group_name, $file_size, $current_user_name, $current_user_name);
+                            $stmt_attach->bind_param("siss", $folder_name, $file_size, $current_user_name, $current_user_name);
                             $stmt_attach->execute();
                             $attach_id = $conn->insert_id;
 
@@ -204,7 +202,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
 
                             $place_attach_sql = "INSERT INTO RENT_PLACE_ATTACH (rent_place_id, type, attach_id, name, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, ?, ?, NOW(), ?, NOW())";
                             $stmt_pa = $conn->prepare($place_attach_sql);
-                            // RENT_PLACE_ATTACH.name คือชื่อโฟลเดอร์
                             $stmt_pa->bind_param("isssss", $property_id, $type, $attach_id, $folder_name, $current_user_name, $current_user_name);
                             $stmt_pa->execute();
                         }
