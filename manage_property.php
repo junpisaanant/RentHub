@@ -13,12 +13,76 @@ if (!isset($_SESSION['user_id'])) {
 $admin_id = $_SESSION['user_id'];
 $current_user_name = $_SESSION['user_id'];
 
+// --- [เพิ่มใหม่] จัดการการลบรูปภาพ ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
+    $place_attach_id = $_POST['place_attach_id'];
+    
+    // ดึงข้อมูล attach_id และ file_path เพื่อลบไฟล์จริงและข้อมูลในตารางอื่น
+    $q = "SELECT rpa.attach_id, rf.name as file_path FROM RENT_PLACE_ATTACH rpa JOIN RENT_FILE rf ON rpa.attach_id = rf.attach_id WHERE rpa.id = ? AND rpa.rent_place_id IN (SELECT id FROM RENT_PLACE WHERE user_id = ?)";
+    $stmt = $conn->prepare($q);
+    $stmt->bind_param("ii", $place_attach_id, $admin_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if($res->num_rows > 0) {
+        $data = $res->fetch_assoc();
+        $attach_id_to_delete = $data['attach_id'];
+        $file_to_delete = $data['file_path'];
+
+        $conn->begin_transaction();
+        try {
+            // ลบจาก RENT_PLACE_ATTACH -> RENT_FILE -> RENT_ATTACH และไฟล์จริง
+            $conn->query("DELETE FROM RENT_PLACE_ATTACH WHERE id = $place_attach_id");
+            $conn->query("DELETE FROM RENT_FILE WHERE attach_id = $attach_id_to_delete");
+            $conn->query("DELETE FROM RENT_ATTACH WHERE id = $attach_id_to_delete");
+            if (file_exists($file_to_delete)) {
+                unlink($file_to_delete);
+            }
+            $conn->commit();
+            $_SESSION['message'] = "ลบรูปภาพสำเร็จ";
+        } catch (Exception $e) {
+            $conn->rollback();
+            $_SESSION['error'] = "เกิดข้อผิดพลาดในการลบรูปภาพ";
+        }
+    }
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit();
+}
+
+// --- [เพิ่มใหม่] จัดการการตั้งค่าภาพปก ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_cover'])) {
+    $place_attach_id = $_POST['place_attach_id'];
+    $property_id_for_cover = $_POST['property_id'];
+
+    $conn->begin_transaction();
+    try {
+        // ทำให้รูปอื่นไม่ใช่ภาพปกทั้งหมดสำหรับสินทรัพย์นี้
+        $stmt_reset = $conn->prepare("UPDATE RENT_PLACE_ATTACH SET cover_flag = 'N' WHERE rent_place_id = ?");
+        $stmt_reset->bind_param("i", $property_id_for_cover);
+        $stmt_reset->execute();
+
+        // ตั้งค่ารูปที่เลือกให้เป็นภาพปก
+        $stmt_set = $conn->prepare("UPDATE RENT_PLACE_ATTACH SET cover_flag = 'Y' WHERE id = ?");
+        $stmt_set->bind_param("i", $place_attach_id);
+        $stmt_set->execute();
+
+        $conn->commit();
+        $_SESSION['message'] = "ตั้งค่าภาพปกสำเร็จ";
+    } catch (Exception $e) {
+        $conn->rollback();
+        $_SESSION['error'] = "เกิดข้อผิดพลาดในการตั้งค่าภาพปก";
+    }
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit();
+}
+
+
 // --- กำหนดโหมด: 'Add' หรือ 'Edit' ---
 $mode = 'Add';
 $property_id = null;
 $property_data = [];
 $property_facilities = [];
 $property_landmarks = [];
+$property_images = [];
 
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     $mode = 'Edit';
@@ -32,7 +96,6 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     if ($result->num_rows === 1) {
         $property_data = $result->fetch_assoc();
     } else {
-        // ไม่พบข้อมูล หรือไม่มีสิทธิ์แก้ไข
         $_SESSION['error'] = "ไม่พบสินทรัพย์ที่ต้องการแก้ไข หรือคุณไม่มีสิทธิ์";
         header("Location: admin_properties.php");
         exit();
@@ -55,10 +118,19 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     while($row = $result_land->fetch_assoc()) {
         $property_landmarks[] = $row;
     }
+
+    // [เพิ่มใหม่] ดึงข้อมูลรูปภาพที่เคยอัปโหลดไว้
+    $stmt_img = $conn->prepare("SELECT rpa.id, rpa.type, rpa.cover_flag, rf.name as file_path FROM RENT_PLACE_ATTACH rpa JOIN RENT_FILE rf ON rpa.attach_id = rf.attach_id WHERE rpa.rent_place_id = ? ORDER BY rpa.cover_flag DESC, rpa.id ASC");
+    $stmt_img->bind_param("i", $property_id);
+    $stmt_img->execute();
+    $result_img = $stmt_img->get_result();
+    while($row = $result_img->fetch_assoc()) {
+        $property_images[] = $row;
+    }
 }
 
 // --- จัดการการส่งฟอร์ม (เพิ่ม/แก้ไข) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
     // รับข้อมูลจากฟอร์ม
     $name = $_POST['name'] ?? '';
     $price = $_POST['price'] ?? 0;
@@ -85,9 +157,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("sddiisssiiisssss", $name, $price, $size, $room_qty, $toilet_qty, $description, $type, $admin_id, $address, $province_id, $district_id, $sub_district_id, $map_url, $status, $current_user_name, $current_user_name);
             $stmt->execute();
-            $property_id = $conn->insert_id; // เอา ID ของสินทรัพย์ที่เพิ่งสร้าง
+            $property_id = $conn->insert_id;
             $_SESSION['message'] = "เพิ่มสินทรัพย์ใหม่สำเร็จแล้ว";
-
         } else {
             // --- UPDATE ---
             $sql = "UPDATE RENT_PLACE SET name=?, price=?, size=?, room_qty=?, toilet_qty=?, description=?, type=?, address=?, province_id=?, district_id=?, sub_district_id=?, map_url=?, status=?, update_user=?, update_datetime=NOW() WHERE id=? AND user_id=?";
@@ -95,6 +166,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("sddiisssiiisssii", $name, $price, $size, $room_qty, $toilet_qty, $description, $type, $address, $province_id, $district_id, $sub_district_id, $map_url, $status, $current_user_name, $property_id, $admin_id);
             $stmt->execute();
             $_SESSION['message'] = "อัปเดตข้อมูลสินทรัพย์สำเร็จแล้ว";
+        }
+
+        // --- [แก้ไขแล้ว] จัดการการอัปโหลดไฟล์ ---
+        if (isset($_FILES['images'])) {
+            $images = $_FILES['images'];
+            foreach ($images['name'] as $type => $files) {
+                foreach ($files as $key => $filename) {
+                    if ($images['error'][$type][$key] == 0) {
+                        
+                        // 1. กำหนดชื่อโฟลเดอร์และสร้าง Path ที่ถูกต้อง
+                        $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan', 'V' => 'video'];
+                        $folder_name = $folder_name_map[$type] ?? 'misc';
+                        // [แก้ไขแล้ว] เพิ่ม assets/ เข้าไปใน Path
+                        $target_dir = "assets/rent_place/$property_id/$folder_name/"; 
+
+                        if (!is_dir($target_dir)) mkdir($target_dir, 0755, true);
+                        
+                        $file_size = $images['size'][$type][$key];
+                        $file_extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                        $new_filename_on_server = time() . '_' . uniqid() . "." . $file_extension;
+                        $target_file_path = $target_dir . $new_filename_on_server;
+
+                        if (move_uploaded_file($images['tmp_name'][$type][$key], $target_file_path)) {
+                            // 2. บันทึกข้อมูลลง Database ตามลำดับ
+                            $attach_group_name = "Image for property #$property_id";
+                            $attach_sql = "INSERT INTO RENT_ATTACH (NAME, SIZE, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
+                            $stmt_attach = $conn->prepare($attach_sql);
+                            $stmt_attach->bind_param("siss", $attach_group_name, $file_size, $current_user_name, $current_user_name);
+                            $stmt_attach->execute();
+                            $attach_id = $conn->insert_id;
+
+                            $file_sql = "INSERT INTO RENT_FILE (attach_id, type, name, size, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, ?, ?, NOW(), ?, NOW())";
+                            $stmt_file = $conn->prepare($file_sql);
+                            $stmt_file->bind_param("ississ", $attach_id, $type, $target_file_path, $file_size, $current_user_name, $current_user_name);
+                            $stmt_file->execute();
+
+                            $place_attach_sql = "INSERT INTO RENT_PLACE_ATTACH (rent_place_id, type, attach_id, name, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, ?, ?, NOW(), ?, NOW())";
+                            $stmt_pa = $conn->prepare($place_attach_sql);
+                            // RENT_PLACE_ATTACH.name คือชื่อโฟลเดอร์
+                            $stmt_pa->bind_param("isssss", $property_id, $type, $attach_id, $folder_name, $current_user_name, $current_user_name);
+                            $stmt_pa->execute();
+                        }
+                    }
+                }
+            }
         }
 
         // --- จัดการสิ่งอำนวยความสะดวก (ลบของเก่าทั้งหมด แล้วเพิ่มใหม่) ---
@@ -106,7 +222,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sql_fac = "INSERT INTO RENT_PLACE_FACILITIES (rent_place_id, rent_facilities_id, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
             $stmt_fac = $conn->prepare($sql_fac);
             foreach ($selected_facilities as $facility_id) {
-                // [แก้ไขแล้ว] แก้ไข type string จาก "iisss" เป็น "iiss"
                 $stmt_fac->bind_param("iiss", $property_id, $facility_id, $current_user_name, $current_user_name);
                 $stmt_fac->execute();
             }
@@ -129,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-
+        
         $conn->commit();
         header("Location: admin_properties.php");
         exit();
@@ -159,6 +274,12 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
         main { background-color: #f4f7f6; }
         .form-card { background-color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .card-header { font-size: 1.2rem; font-weight: 600; border-bottom: 1px solid #eee; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .image-gallery { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .img-thumbnail-wrapper { position: relative; width: 150px; height: 150px; }
+        .img-thumbnail-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .img-actions { position: absolute; top: 5px; right: 5px; display: flex; flex-direction: column; gap: 5px; }
+        .img-actions .btn { padding: 0.2rem 0.4rem; font-size: 0.75rem; }
+        .cover-badge { position: absolute; top: 5px; left: 5px; }
     </style>
 </head>
 
@@ -173,7 +294,7 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
             <div class="alert alert-danger" role="alert"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
-        <form class="form-card" method="POST" action="manage_property.php<?php if ($property_id) echo "?id=$property_id"; ?>">
+        <form class="form-card" method="POST" action="manage_property.php<?php if ($property_id) echo "?id=$property_id"; ?>" enctype="multipart/form-data">
             <!-- ข้อมูลหลัก -->
             <div class="card-header">ข้อมูลหลัก</div>
             <div class="row g-3 mb-4">
@@ -214,6 +335,42 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                 <?php endif; ?>
             </div>
             <button type="button" id="add-landmark-btn" class="btn btn-outline-primary mt-2"><i class="bi bi-plus"></i> เพิ่มสถานที่</button>
+            
+            <!-- รูปภาพประกอบ -->
+            <div class="card-header mt-4">รูปภาพประกอบ</div>
+            <?php if($mode === 'Edit'): ?>
+            <div class="image-gallery my-3">
+                <?php foreach($property_images as $img): ?>
+                <div class="img-thumbnail-wrapper">
+                    <img src="<?php echo htmlspecialchars($img['file_path']); ?>" class="img-thumbnail">
+                    <?php if($img['cover_flag'] == 'Y'): ?>
+                        <span class="badge bg-success cover-badge">ภาพปก</span>
+                    <?php endif; ?>
+                    <div class="img-actions">
+                        <form method="POST" class="d-inline" onsubmit="return confirm('ต้องการตั้งเป็นภาพปก?');">
+                            <input type="hidden" name="property_id" value="<?php echo $property_id; ?>">
+                            <input type="hidden" name="place_attach_id" value="<?php echo $img['id']; ?>">
+                            <button type="submit" name="set_cover" class="btn btn-sm btn-info" <?php if($img['cover_flag'] == 'Y') echo 'disabled'; ?>>
+                                <i class="bi bi-star-fill"></i>
+                            </button>
+                        </form>
+                        <form method="POST" class="d-inline" onsubmit="return confirm('ต้องการลบรูปภาพนี้?');">
+                            <input type="hidden" name="place_attach_id" value="<?php echo $img['id']; ?>">
+                            <button type="submit" name="delete_image" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+            
+            <div class="row g-3">
+                <div class="col-md-6"><label for="img_bedroom" class="form-label">รูปห้องนอน</label><input type="file" name="images[B][]" class="form-control" multiple accept="image/*"></div>
+                <div class="col-md-6"><label for="img_toilet" class="form-label">รูปห้องน้ำ</label><input type="file" name="images[T][]" class="form-control" multiple accept="image/*"></div>
+                <div class="col-md-6"><label for="img_other" class="form-label">รูปอื่นๆ</label><input type="file" name="images[O][]" class="form-control" multiple accept="image/*"></div>
+                <div class="col-md-6"><label for="img_plan" class="form-label">รูปผัง</label><input type="file" name="images[P][]" class="form-control" multiple accept="image/*"></div>
+            </div>
+
 
             <hr class="my-4">
             <div class="row">
@@ -221,7 +378,7 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
             </div>
             <div class="d-flex justify-content-end">
                 <a href="admin_properties.php" class="btn btn-secondary me-2">ยกเลิก</a>
-                <button type="submit" class="btn btn-primary"><?php echo $mode === 'Add' ? 'บันทึก' : 'อัปเดต'; ?></button>
+                <button type="submit" name="save_property" class="btn btn-primary"><?php echo $mode === 'Add' ? 'บันทึก' : 'อัปเดต'; ?></button>
             </div>
         </form>
     </section>
