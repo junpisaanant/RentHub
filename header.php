@@ -83,6 +83,7 @@ if(!$rent_name){
             <ul>
               <li><a href="profile.php?rent_name=<?php echo $rent_name; ?>">ข้อมูลส่วนตัว</a></li>
               <li><a href="transaction.php?rent_name=<?php echo $rent_name; ?>">ตรวจสอบและยืนยันการชำระเงิน</a></li>
+              <li><a href="dashboard.php?rent_name=<?php echo $rent_name; ?>">สรุปข้อมูลรายได้และห้องเช่า</a></li>
               <!--<li class="dropdown"><a href="#"><span>Deep Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
                 <ul>
                   <li><a href="#">Deep Dropdown 1</a></li>
