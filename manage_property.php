@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
         $data = $res->fetch_assoc();
         $attach_id_to_delete = $data['attach_id'];
         
-        $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan', 'V' => 'video', 'M' => 'map'];
+        $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan', 'V' => 'video'];
         $folder_name = $folder_name_map[$data['type']] ?? 'misc';
         $file_to_delete = "assets/rent_place/" . $data['rent_place_id'] . "/" . $folder_name . "/" . $data['filename'];
 
@@ -139,13 +139,14 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
             SELECT rf.name as filename, ra.NAME as foldername 
             FROM RENT_FILE rf 
             JOIN RENT_ATTACH ra ON rf.attach_id = ra.id 
-            WHERE rf.attach_id = ? AND rf.type = 'M'
+            WHERE rf.attach_id = ?
         ");
         $stmt_map->bind_param("i", $property_data['attach_id']);
         $stmt_map->execute();
         $result_map = $stmt_map->get_result();
         if ($result_map->num_rows > 0) {
             $map_data = $result_map->fetch_assoc();
+            // สร้าง path เต็มของไฟล์แผนที่
             $map_image_path = "assets/rent_place/" . $property_id . "/" . $map_data['foldername'] . "/" . $map_data['filename'];
         }
     }
@@ -181,37 +182,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
         } else {
             $sql = "UPDATE RENT_PLACE SET name=?, price=?, size=?, room_qty=?, toilet_qty=?, description=?, type=?, address=?, province_id=?, district_id=?, sub_district_id=?, map_url=?, status=?, update_user=?, update_datetime=NOW() WHERE id=? AND user_id=?";
             $stmt = $conn->prepare($sql);
-            // ✨✨✨ [แก้ไขแล้ว] ปรับปรุง type string ให้ถูกต้องสมบูรณ์ ✨✨✨
+            // ✨✨✨ [แก้ไขแล้ว] ปรับปรุง type string ให้ถูกต้อง ✨✨✨
             $stmt->bind_param("sddiisssiiisssii", $name, $price, $size, $room_qty, $toilet_qty, $description, $type, $address, $province_id, $district_id, $sub_district_id, $map_url, $status, $current_user_name, $property_id, $admin_id);
             $stmt->execute();
         }
 
-        // Logic การบันทึกไฟล์แผนที่
+        // ปรับปรุง Logic การบันทึกไฟล์แผนที่
         if (isset($_FILES['map_image']) && $_FILES['map_image']['error'] == 0) {
             $file = $_FILES['map_image'];
-            $folder_name = 'map';
+            $folder_name = 'map'; // กำหนดชื่อโฟลเดอร์สำหรับแผนที่
             $target_dir = "assets/rent_place/$property_id/$folder_name/";
             if (!is_dir($target_dir)) mkdir($target_dir, 0755, true);
 
             $file_size = $file['size'];
             $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $new_filename = "map_" . time() . "_" . uniqid() . "." . $file_extension;
-            
-            if (move_uploaded_file($file['tmp_name'], $target_dir . $new_filename)) {
+            $target_file_path = $target_dir . $new_filename;
+
+            if (move_uploaded_file($file['tmp_name'], $target_file_path)) {
                 // TODO: ควรมี Logic ลบไฟล์และข้อมูล attach_id เก่าในโหมด Edit
                 
+                // 1. บันทึกลง RENT_ATTACH
                 $attach_sql = "INSERT INTO RENT_ATTACH (NAME, SIZE, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
                 $stmt_attach = $conn->prepare($attach_sql);
                 $stmt_attach->bind_param("siss", $folder_name, $file_size, $current_user_name, $current_user_name);
                 $stmt_attach->execute();
                 $map_attach_id = $conn->insert_id;
 
+                // 2. บันทึกลง RENT_FILE
                 $file_sql = "INSERT INTO RENT_FILE (attach_id, type, cover_flag, name, size, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, 'N', ?, ?, ?, NOW(), ?, NOW())";
                 $stmt_file = $conn->prepare($file_sql);
                 $map_file_type = 'M'; // 'M' for Map
                 $stmt_file->bind_param("ississ", $map_attach_id, $map_file_type, $new_filename, $file_size, $current_user_name, $current_user_name);
                 $stmt_file->execute();
 
+                // 3. อัปเดต attach_id ใน RENT_PLACE
                 $update_place_sql = "UPDATE RENT_PLACE SET attach_id = ? WHERE id = ?";
                 $stmt_update_place = $conn->prepare($update_place_sql);
                 $stmt_update_place->bind_param("ii", $map_attach_id, $property_id);
@@ -219,7 +224,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
             }
         }
 
-        // Logic การบันทึกไฟล์รูปภาพอื่นๆ
         $first_rent_file_id = null;
         if (isset($_FILES['images'])) {
             $images = $_FILES['images'];
@@ -236,8 +240,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
                         $file_size = $images['size'][$type][$key];
                         $file_extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
                         $new_filename_on_server = time() . '_' . uniqid() . "." . $file_extension;
+                        $target_file_path = $target_dir . $new_filename_on_server;
 
-                        if (move_uploaded_file($images['tmp_name'][$type][$key], $target_dir . $new_filename_on_server)) {
+                        if (move_uploaded_file($images['tmp_name'][$type][$key], $target_file_path)) {
                             
                             $attach_sql = "INSERT INTO RENT_ATTACH (NAME, SIZE, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
                             $stmt_attach = $conn->prepare($attach_sql);
@@ -251,9 +256,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
                             $stmt_file->execute();
                             $rent_file_id = $conn->insert_id;
 
-                            $place_attach_sql = "INSERT INTO RENT_PLACE_ATTACH (rent_place_id, type, attach_id, name, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, ?, ?, NOW(), ?, NOW())";
+                            $place_attach_sql = "INSERT INTO RENT_PLACE_ATTACH (rent_place_id, type, cover_flag, attach_id, name, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, 'N', ?, ?, ?, NOW(), ?, NOW())";
                             $stmt_pa = $conn->prepare($place_attach_sql);
-                            $stmt_pa->bind_param("sissss", $property_id, $type, $attach_id, $folder_name, $current_user_name, $current_user_name);
+                            $stmt_pa->bind_param("isisss", $property_id, $type, $attach_id, $folder_name, $current_user_name, $current_user_name);
                             $stmt_pa->execute();
                             
                             if ($first_rent_file_id === null) {
@@ -277,7 +282,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
             }
         }
 
-        // Logic การบันทึก Facilities และ Landmarks (คงเดิม)
         $stmt_del_fac = $conn->prepare("DELETE FROM RENT_PLACE_FACILITIES WHERE rent_place_id = ?");
         $stmt_del_fac->bind_param("i", $property_id);
         $stmt_del_fac->execute();
@@ -319,7 +323,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
 
     } catch (mysqli_sql_exception $exception) {
         $conn->rollback();
-        // แสดง error แบบละเอียดเพื่อช่วยในการ debug
         $_SESSION['error'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล: " . $exception->getMessage();
         header("Location: manage_property.php" . ($property_id ? "?id=$property_id" : ""));
         exit();
@@ -362,10 +365,6 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
         <?php if (isset($_SESSION['error'])): ?>
             <div class="alert alert-danger" role="alert"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
         <?php endif; ?>
-        
-        <?php if (isset($_SESSION['message'])): ?>
-            <div class="alert alert-success" role="alert"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
-        <?php endif; ?>
 
         <form class="form-card" method="POST" action="manage_property.php<?php if ($property_id) echo "?id=$property_id"; ?>" enctype="multipart/form-data">
             <div class="card-header">ข้อมูลหลัก</div>
@@ -385,7 +384,7 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                 <div class="col-md-4"><label for="province_id" class="form-label">จังหวัด</label><select id="province_id" name="province_id" class="form-select" required><option value="">-- เลือกจังหวัด --</option><?php foreach($provinces as $p): ?><option value="<?php echo $p['id']; ?>" <?php if(($property_data['province_id'] ?? '') == $p['id']) echo 'selected'; ?>><?php echo $p['name']; ?></option><?php endforeach; ?></select></div>
                 <div class="col-md-4"><label for="district_id" class="form-label">อำเภอ/เขต</label><select id="district_id" name="district_id" class="form-select" required><option value="">-- เลือกอำเภอ --</option><?php foreach($districts as $d): ?><option value="<?php echo $d['id']; ?>" data-province="<?php echo $d['province_id']; ?>" <?php if(($property_data['district_id'] ?? '') == $d['id']) echo 'selected'; ?>><?php echo $d['name']; ?></option><?php endforeach; ?></select></div>
                 <div class="col-md-4"><label for="sub_district_id" class="form-label">ตำบล/แขวง</label><select id="sub_district_id" name="sub_district_id" class="form-select" required><option value="">-- เลือกตำบล --</option><?php foreach($sub_districts as $sd): ?><option value="<?php echo $sd['id']; ?>" data-district="<?php echo $sd['district_id']; ?>" <?php if(($property_data['sub_district_id'] ?? '') == $sd['id']) echo 'selected'; ?>><?php echo $sd['name']; ?></option><?php endforeach; ?></select></div>
-                <div class="col-12"><label for="map_url" class="form-label">Google Maps URL</label><input type="url" class="form-control" id="map_url" name="map_url" value="<?php echo htmlspecialchars($property_data['map_url'] ?? ''); ?>"></div>
+                <div class="col-12"><label for="map_url" class="form-label">Google Maps URL</label><input type="text" class="form-control" id="map_url" name="map_url" value="<?php echo htmlspecialchars($property_data['map_url'] ?? ''); ?>"></div>
                 
                 <div class="col-12">
                     <label for="map_image" class="form-label">อัปโหลดภาพแผนที่</label>
@@ -480,48 +479,35 @@ $(document).ready(function() {
     const allDistricts = <?php echo json_encode($districts); ?>;
     const allSubDistricts = <?php echo json_encode($sub_districts); ?>;
 
-    function filterDistricts() {
-        const provinceId = $('#province_id').val();
+    $('#province_id').on('change', function() {
+        const provinceId = $(this).val();
         const $districtSelect = $('#district_id');
-        const currentDistrictId = '<?php echo $property_data['district_id'] ?? ''; ?>';
+        const $subDistrictSelect = $('#sub_district_id');
         
         $districtSelect.html('<option value="">-- เลือกอำเภอ --</option>');
-        $('#sub_district_id').html('<option value="">-- เลือกตำบล --</option>');
+        $subDistrictSelect.html('<option value="">-- เลือกตำบล --</option>');
 
         if (provinceId) {
             const filteredDistricts = allDistricts.filter(d => d.province_id == provinceId);
             filteredDistricts.forEach(d => {
-                const selected = d.id == currentDistrictId ? 'selected' : '';
-                $districtSelect.append(`<option value="${d.id}" ${selected}>${d.name}</option>`);
+                $districtSelect.append(`<option value="${d.id}">${d.name}</option>`);
             });
         }
-        $districtSelect.trigger('change');
-    }
+    });
 
-    function filterSubDistricts() {
-        const districtId = $('#district_id').val();
+    $('#district_id').on('change', function() {
+        const districtId = $(this).val();
         const $subDistrictSelect = $('#sub_district_id');
-        const currentSubDistrictId = '<?php echo $property_data['sub_district_id'] ?? ''; ?>';
 
         $subDistrictSelect.html('<option value="">-- เลือกตำบล --</option>');
 
         if (districtId) {
             const filteredSubDistricts = allSubDistricts.filter(sd => sd.district_id == districtId);
             filteredSubDistricts.forEach(sd => {
-                const selected = sd.id == currentSubDistrictId ? 'selected' : '';
-                $subDistrictSelect.append(`<option value="${sd.id}" ${selected}>${sd.name}</option>`);
+                $subDistrictSelect.append(`<option value="${sd.id}">${sd.name}</option>`);
             });
         }
-    }
-
-    $('#province_id').on('change', filterDistricts);
-    $('#district_id').on('change', filterSubDistricts);
-    
-    // Initial load
-    if('<?php echo $mode; ?>' === 'Edit') {
-        filterDistricts();
-    }
-
+    });
 
     // --- Dynamic Landmarks ---
     let landmarkIndex = <?php echo count($property_landmarks); ?>;
@@ -530,7 +516,7 @@ $(document).ready(function() {
         const landmarkRow = `
             <div class="row g-3 mb-2 landmark-row">
                 <div class="col-md-6">
-                    <select name="landmarks[${landmarkIndex}][id]" class="form-select landmark-select-new">
+                    <select name="landmarks[${landmarkIndex}][id]" class="form-select landmark-select">
                         <option value="">-- เลือกสถานที่ --</option>
                         <?php foreach($landmarks as $l): ?>
                         <option value="<?php echo $l['id']; ?>"><?php echo $l['name']; ?></option>
@@ -546,9 +532,11 @@ $(document).ready(function() {
             </div>
         `;
         $('#landmarks-container').append(landmarkRow);
-        $('.landmark-select-new').select2({ theme: 'bootstrap-5' }).removeClass('landmark-select-new');
+        // Initialize select2 for the new row
+        $(`select[name="landmarks[${landmarkIndex}][id]"]`).select2({ theme: 'bootstrap-5' });
     });
 
+    // Remove landmark row
     $('#landmarks-container').on('click', '.remove-landmark-btn', function() {
         $(this).closest('.landmark-row').remove();
     });
