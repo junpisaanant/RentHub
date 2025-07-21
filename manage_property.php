@@ -133,14 +133,21 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         $property_images[] = $row;
     }
 
+    // [แก้ไขแล้ว] ดึงข้อมูลภาพแผนที่จาก RENT_FILE และ RENT_ATTACH
     if (!empty($property_data['attach_id'])) {
-        $stmt_map = $conn->prepare("SELECT NAME FROM RENT_ATTACH WHERE id = ?");
+        $stmt_map = $conn->prepare("
+            SELECT rf.name as filename, ra.NAME as foldername 
+            FROM RENT_FILE rf 
+            JOIN RENT_ATTACH ra ON rf.attach_id = ra.id 
+            WHERE rf.attach_id = ?
+        ");
         $stmt_map->bind_param("i", $property_data['attach_id']);
         $stmt_map->execute();
         $result_map = $stmt_map->get_result();
         if ($result_map->num_rows > 0) {
             $map_data = $result_map->fetch_assoc();
-            $map_image_path = $map_data['NAME'];
+            // สร้าง path เต็มของไฟล์แผนที่
+            $map_image_path = "assets/rent_place/" . $property_id . "/" . $map_data['foldername'] . "/" . $map_data['filename'];
         }
     }
 }
@@ -175,32 +182,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
         } else {
             $sql = "UPDATE RENT_PLACE SET name=?, price=?, size=?, room_qty=?, toilet_qty=?, description=?, type=?, address=?, province_id=?, district_id=?, sub_district_id=?, map_url=?, status=?, update_user=?, update_datetime=NOW() WHERE id=? AND user_id=?";
             $stmt = $conn->prepare($sql);
-            // [แก้ไขแล้ว] ปรับปรุง type string ให้ถูกต้อง
             $stmt->bind_param("sddiissisiisssii", $name, $price, $size, $room_qty, $toilet_qty, $description, $type, $address, $province_id, $district_id, $sub_district_id, $map_url, $status, $current_user_name, $property_id, $admin_id);
             $stmt->execute();
         }
 
+        // [แก้ไขแล้ว] ปรับปรุง Logic การบันทึกไฟล์แผนที่
         if (isset($_FILES['map_image']) && $_FILES['map_image']['error'] == 0) {
             $file = $_FILES['map_image'];
-            $target_dir = "assets/rent_place/$property_id/map/";
+            $folder_name = 'map'; // กำหนดชื่อโฟลเดอร์สำหรับแผนที่
+            $target_dir = "assets/rent_place/$property_id/$folder_name/";
             if (!is_dir($target_dir)) mkdir($target_dir, 0755, true);
 
             $file_size = $file['size'];
             $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $new_filename = "map_" . time() . "." . $file_extension;
+            $new_filename = "map_" . time() . "_" . uniqid() . "." . $file_extension;
             $target_file_path = $target_dir . $new_filename;
 
             if (move_uploaded_file($file['tmp_name'], $target_file_path)) {
+                // TODO: ควรมี Logic ลบไฟล์และข้อมูล attach_id เก่าในโหมด Edit
+                
+                // 1. บันทึกลง RENT_ATTACH
                 $attach_sql = "INSERT INTO RENT_ATTACH (NAME, SIZE, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
                 $stmt_attach = $conn->prepare($attach_sql);
-                $stmt_attach->bind_param("siss", $target_file_path, $file_size, $current_user_name, $current_user_name);
+                $stmt_attach->bind_param("siss", $folder_name, $file_size, $current_user_name, $current_user_name);
                 $stmt_attach->execute();
                 $map_attach_id = $conn->insert_id;
 
-                $update_attach_sql = "UPDATE RENT_PLACE SET attach_id = ? WHERE id = ?";
-                $stmt_update_attach = $conn->prepare($update_attach_sql);
-                $stmt_update_attach->bind_param("ii", $map_attach_id, $property_id);
-                $stmt_update_attach->execute();
+                // 2. บันทึกลง RENT_FILE
+                $file_sql = "INSERT INTO RENT_FILE (attach_id, type, cover_flag, name, size, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, 'N', ?, ?, ?, NOW(), ?, NOW())";
+                $stmt_file = $conn->prepare($file_sql);
+                $map_file_type = 'M'; // 'M' for Map
+                $stmt_file->bind_param("ississ", $map_attach_id, $map_file_type, $new_filename, $file_size, $current_user_name, $current_user_name);
+                $stmt_file->execute();
+
+                // 3. อัปเดต attach_id ใน RENT_PLACE
+                $update_place_sql = "UPDATE RENT_PLACE SET attach_id = ? WHERE id = ?";
+                $stmt_update_place = $conn->prepare($update_place_sql);
+                $stmt_update_place->bind_param("ii", $map_attach_id, $property_id);
+                $stmt_update_place->execute();
             }
         }
 
@@ -347,7 +366,6 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
         <?php endif; ?>
 
         <form class="form-card" method="POST" action="manage_property.php<?php if ($property_id) echo "?id=$property_id"; ?>" enctype="multipart/form-data">
-            <!-- ข้อมูลหลัก -->
             <div class="card-header">ข้อมูลหลัก</div>
             <div class="row g-3 mb-4">
                 <div class="col-md-8"><label for="name" class="form-label">ชื่อสินทรัพย์</label><input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($property_data['name'] ?? ''); ?>" required></div>
@@ -359,7 +377,6 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                 <div class="col-md-3"><label for="toilet_qty" class="form-label">จำนวนห้องน้ำ</label><input type="number" class="form-control" id="toilet_qty" name="toilet_qty" value="<?php echo htmlspecialchars($property_data['toilet_qty'] ?? '0'); ?>"></div>
             </div>
 
-            <!-- ที่อยู่ -->
             <div class="card-header">ที่อยู่และแผนที่</div>
             <div class="row g-3 mb-4">
                 <div class="col-12"><label for="address" class="form-label">ที่อยู่</label><input type="text" class="form-control" id="address" name="address" value="<?php echo htmlspecialchars($property_data['address'] ?? ''); ?>" required></div>
@@ -370,7 +387,7 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                 
                 <div class="col-12">
                     <label for="map_image" class="form-label">อัปโหลดภาพแผนที่</label>
-                    <?php if ($mode === 'Edit' && $map_image_path): ?>
+                    <?php if ($mode === 'Edit' && $map_image_path && file_exists($map_image_path)): ?>
                         <div class="mb-2">
                             <img src="<?php echo htmlspecialchars($map_image_path); ?>" alt="Map" class="img-thumbnail" style="max-width: 200px;">
                             <p class="form-text">อัปโหลดไฟล์ใหม่เพื่อแทนที่ภาพปัจจุบัน</p>
@@ -380,13 +397,11 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                 </div>
             </div>
 
-            <!-- สิ่งอำนวยความสะดวก -->
             <div class="card-header">สิ่งอำนวยความสะดวก</div>
             <div class="row g-3 mb-4">
                 <div class="col-12"><select id="facilities" name="facilities[]" class="form-select" multiple="multiple"><?php foreach($facilities as $f): ?><option value="<?php echo $f['id']; ?>" <?php if(in_array($f['id'], $property_facilities)) echo 'selected'; ?>><?php echo $f['name']; ?></option><?php endforeach; ?></select></div>
             </div>
 
-            <!-- สถานที่สำคัญใกล้เคียง -->
             <div class="card-header">สถานที่สำคัญใกล้เคียง</div>
             <div id="landmarks-container">
                 <?php if(empty($property_landmarks)): ?>
@@ -399,7 +414,6 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
             </div>
             <button type="button" id="add-landmark-btn" class="btn btn-outline-primary mt-2"><i class="bi bi-plus"></i> เพิ่มสถานที่</button>
             
-            <!-- รูปภาพประกอบ -->
             <div class="card-header mt-4">รูปภาพประกอบ</div>
             <?php if($mode === 'Edit'): ?>
             <div class="image-gallery my-3">
