@@ -184,6 +184,6 @@ include 'header.php';
   </main>
 
   <?php include 'footer.php'; ?>
-
+  <script src="assets/js/search.js"></script>
 
 </html>
