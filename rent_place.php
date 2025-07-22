@@ -239,12 +239,10 @@ $sql = "SELECT RP.id, RP.name
 , A.name AS attach_name
 , F.name AS file_name
 FROM RENT_PLACE RP
-LEFT JOIN RENT_PLACE_ATTACH RPA ON (RP.id = RPA.rent_place_id)
-LEFT JOIN RENT_ATTACH A ON (RPA.attach_id = A.id)
+LEFT JOIN RENT_ATTACH A ON (RP.video_attach_id = A.id)
 LEFT JOIN RENT_FILE F ON (A.id = F.attach_id)
 WHERE 1=1
 AND RP.id = ?
-AND F.type= 'V'
 ORDER BY RP.create_datetime DESC";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $id);
@@ -255,9 +253,9 @@ $stmt->execute();
 $result = $stmt->get_result();
 $videoItems = [];
 if ($result && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $videoItems[] = $row;
-    }
+  $video_data = $result->fetch_assoc();
+  // สร้าง Path เต็มของไฟล์วิดีโอ
+  $video_file_path = "assets/rent_place/" . $video_data['id'] . "/video/" . $video_data['file_name'];
 }
 
 //Query ดึงข้อมูลจุดเด่นของห้องเช่านี้
@@ -417,7 +415,10 @@ if ($result && $result->num_rows > 0) {
             <div class="tab-content">
 
               <div class="tab-pane fade show active" id="real-estate-2-tab1">
-
+                <video width="100%" controls style="max-width: 800px; border-radius: 8px;">
+                    <source src="<?php echo htmlspecialchars($video_file_path); ?>" type="video/mp4">
+                    เบราว์เซอร์ของคุณไม่รองรับการแสดงวิดีโอ
+                </video>
               </div><!-- End Tab 1 Content -->
 
               <div class="tab-pane fade" id="real-estate-2-tab2">
