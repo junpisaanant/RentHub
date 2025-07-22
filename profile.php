@@ -103,10 +103,9 @@ $result = $stmt_select->get_result();
 $user = $result->fetch_assoc();
 
 // ดึงรูปโปรไฟล์
-$profile_picture_path = 'https://via.placeholder.com/120'; // รูปเริ่มต้น
+$profile_picture_path = 'https://placehold.co/120x120/EFEFEF/AAAAAA&text=Profile'; // รูปเริ่มต้น
 if ($user && !empty($user['attach_id'])) {
     $attach_id = $user['attach_id'];
-    // **หมายเหตุ:** SQL นี้เป็นการคาดเดาโครงสร้างตาราง RENT_ATTACH และ RENT_FILE
     $stmt_file = $conn->prepare(
         "SELECT CONCAT('assets/rent_user/', ra.name, '/', rf.name) as file_path FROM RENT_FILE rf JOIN RENT_ATTACH ra ON rf.attach_id = ra.id WHERE ra.id = ?"
     );
@@ -114,7 +113,9 @@ if ($user && !empty($user['attach_id'])) {
     $stmt_file->execute();
     $file_result = $stmt_file->get_result();
     if ($file_data = $file_result->fetch_assoc()) {
-        $profile_picture_path = $file_data['file_path']; // อาจต้องปรับ path ให้ถูกต้อง
+        if (file_exists($file_data['file_path'])) {
+            $profile_picture_path = $file_data['file_path'];
+        }
     }
     $stmt_file->close();
 }
@@ -266,8 +267,13 @@ $conn->close();
       </div>
       <form action="update_profile_picture.php" method="post" enctype="multipart/form-data">
         <div class="modal-body">
+            <!-- [เพิ่มใหม่] เพิ่ม img tag สำหรับแสดงภาพตัวอย่าง -->
+            <div class="text-center mb-3">
+                <img id="image-preview" src="<?php echo htmlspecialchars($profile_picture_path); ?>" alt="Image Preview" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+            </div>
             <p>เลือกรูปภาพใหม่ที่ต้องการ (แนะนำขนาด 1:1 เช่น 500x500 pixels):</p>
-            <input type="file" name="profile_picture" class="form-control" accept="image/png, image/jpeg, image/gif" required>
+            <!-- [เพิ่มใหม่] เพิ่ม id ให้ input -->
+            <input type="file" id="profile-picture-input" name="profile_picture" class="form-control" accept="image/png, image/jpeg, image/gif" required>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
@@ -278,4 +284,27 @@ $conn->close();
   </div>
 </div>
 </main>
+
+<!-- [เพิ่มใหม่] JavaScript สำหรับแสดงภาพตัวอย่าง -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('profile-picture-input');
+    const imagePreview = document.getElementById('image-preview');
+
+    if (fileInput && imagePreview) {
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // สร้าง URL ชั่วคราวสำหรับไฟล์ที่เลือก
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
+
 <?php include 'footer.php'; ?>
