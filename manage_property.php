@@ -13,6 +13,66 @@ if (!isset($_SESSION['user_id'])) {
 $admin_id = $_SESSION['user_id'];
 $current_user_name = $_SESSION['user_id'];
 
+// --- [เพิ่มใหม่] จัดการการลบรูปภาพหลายรูป ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_selected_images'])) {
+    if (!empty($_POST['selected_images']) && is_array($_POST['selected_images'])) {
+        $place_attach_ids = $_POST['selected_images'];
+        
+        $conn->begin_transaction();
+        try {
+            $stmt_get_details = $conn->prepare("SELECT rpa.attach_id, rpa.rent_place_id, rpa.type, rf.name as filename FROM RENT_PLACE_ATTACH rpa JOIN RENT_FILE rf ON rpa.attach_id = rf.attach_id WHERE rpa.id = ? AND rpa.rent_place_id IN (SELECT id FROM RENT_PLACE WHERE user_id = ?)");
+            $stmt_delete_rpa = $conn->prepare("DELETE FROM RENT_PLACE_ATTACH WHERE id = ?");
+            $stmt_delete_rf = $conn->prepare("DELETE FROM RENT_FILE WHERE attach_id = ?");
+            $stmt_delete_ra = $conn->prepare("DELETE FROM RENT_ATTACH WHERE id = ?");
+
+            $deleted_count = 0;
+            foreach ($place_attach_ids as $place_attach_id) {
+                $place_attach_id = (int)$place_attach_id;
+
+                $stmt_get_details->bind_param("ii", $place_attach_id, $admin_id);
+                $stmt_get_details->execute();
+                $res = $stmt_get_details->get_result();
+
+                if($res->num_rows > 0) {
+                    $data = $res->fetch_assoc();
+                    $attach_id_to_delete = $data['attach_id'];
+                    
+                    $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan', 'V' => 'video', 'M' => 'map'];
+                    $folder_name = $folder_name_map[$data['type']] ?? 'misc';
+                    $file_to_delete = "assets/rent_place/" . $data['rent_place_id'] . "/" . $folder_name . "/" . $data['filename'];
+
+                    $stmt_delete_rpa->bind_param("i", $place_attach_id);
+                    $stmt_delete_rpa->execute();
+
+                    $stmt_delete_rf->bind_param("i", $attach_id_to_delete);
+                    $stmt_delete_rf->execute();
+
+                    $stmt_delete_ra->bind_param("i", $attach_id_to_delete);
+                    $stmt_delete_ra->execute();
+
+                    if (file_exists($file_to_delete)) {
+                        unlink($file_to_delete);
+                    }
+                    $deleted_count++;
+                }
+            }
+
+            $conn->commit();
+            if ($deleted_count > 0) {
+                $_SESSION['message'] = "ลบรูปภาพจำนวน " . $deleted_count . " รูปสำเร็จ";
+            }
+        } catch (Exception $e) {
+            $conn->rollback();
+            $_SESSION['error'] = "เกิดข้อผิดพลาดในการลบรูปภาพ: " . $e->getMessage();
+        }
+    } else {
+        $_SESSION['error'] = "กรุณาเลือกรูปภาพที่ต้องการลบ";
+    }
+    header("Location: " . $_SERVER['HTTP_REFERER']);
+    exit();
+}
+
+
 // --- จัดการการลบรูปภาพ ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
     $place_attach_id = $_POST['place_attach_id'];
@@ -208,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
             // ... (โค้ดส่วนนี้คงเดิม) ...
         }
 
-        // [เพิ่มใหม่] Logic การบันทึกไฟล์วิดีโอ
+        // Logic การบันทึกไฟล์วิดีโอ
         if (isset($_FILES['property_video']) && $_FILES['property_video']['error'] == 0) {
             $old_video_attach_id = null;
             if ($mode === 'Edit' && !empty($property_data['video_attach_id'])) {
@@ -291,9 +351,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
                             $stmt_file->execute();
                             $rent_file_id = $conn->insert_id;
 
-                            $place_attach_sql = "INSERT INTO RENT_PLACE_ATTACH (rent_place_id, type, attach_id, name, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, ?, ?, NOW(), ?, NOW())";
+                            $place_attach_sql = "INSERT INTO RENT_PLACE_ATTACH (rent_place_id, type, cover_flag, attach_id, name, create_user, update_user, create_datetime, update_datetime) VALUES (?, ?, 'N', ?, ?, ?, ?, NOW(), NOW())";
                             $stmt_pa = $conn->prepare($place_attach_sql);
-                            $stmt_pa->bind_param("sissss", $property_id, $type, $attach_id, $folder_name, $current_user_name, $current_user_name);
+                            $stmt_pa->bind_param("isissi", $property_id, $type, $attach_id, $folder_name, $current_user_name, $current_user_name);
                             $stmt_pa->execute();
                             
                             if ($first_rent_file_id === null) {
@@ -386,7 +446,9 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
         .img-thumbnail-wrapper img, .img-thumbnail-wrapper video { width: 100%; height: 100%; object-fit: cover; }
         .img-actions { position: absolute; top: 5px; right: 5px; display: flex; flex-direction: column; gap: 5px; }
         .img-actions .btn { padding: 0.2rem 0.4rem; font-size: 0.75rem; }
-        .cover-badge { position: absolute; top: 5px; left: 5px; }
+        .cover-badge { position: absolute; top: 5px; left: 5px; z-index: 10; }
+        .img-thumbnail-wrapper .form-check-input { position: absolute; top: 5px; left: 5px; z-index: 11; }
+        .cover-badge.with-checkbox { left: 30px; }
     </style>
 </head>
 
@@ -460,35 +522,42 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
             
             <!-- รูปภาพและวิดีโอประกอบ -->
             <div class="card-header mt-4">รูปภาพและวิดีโอประกอบ</div>
+            
+            <!-- [เพิ่มใหม่] Form สำหรับลบรูปภาพหลายรูป -->
             <?php if($mode === 'Edit' && !empty($property_images)): ?>
-            <div class="image-gallery my-3">
-                <?php foreach($property_images as $img): ?>
-                <?php
-                    $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan'];
-                    $folder_name = $folder_name_map[$img['type']] ?? 'misc';
-                    $full_path = "assets/rent_place/" . $property_id . "/" . $folder_name . "/" . $img['filename'];
-                ?>
-                <div class="img-thumbnail-wrapper">
-                    <img src="<?php echo htmlspecialchars($full_path); ?>" class="img-thumbnail">
-                    <?php if($img['cover_flag'] == 'Y'): ?>
-                        <span class="badge bg-success cover-badge">ภาพปก</span>
-                    <?php endif; ?>
-                    <div class="img-actions">
-                        <form method="POST" class="d-inline" onsubmit="return confirm('ต้องการตั้งเป็นภาพปก?');">
-                            <input type="hidden" name="property_id" value="<?php echo $property_id; ?>">
-                            <input type="hidden" name="place_attach_id" value="<?php echo $img['id']; ?>">
-                            <button type="submit" name="set_cover" class="btn btn-sm btn-info" <?php if($img['cover_flag'] == 'Y') echo 'disabled'; ?>>
+            <form method="POST" action="manage_property.php?id=<?php echo $property_id; ?>" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพที่เลือกทั้งหมด?');" id="delete-images-form">
+                <div class="image-gallery my-3">
+                    <?php foreach($property_images as $img): ?>
+                    <?php
+                        $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan'];
+                        $folder_name = $folder_name_map[$img['type']] ?? 'misc';
+                        $full_path = "assets/rent_place/" . $property_id . "/" . $folder_name . "/" . $img['filename'];
+                    ?>
+                    <div class="img-thumbnail-wrapper">
+                        <input type="checkbox" name="selected_images[]" value="<?php echo $img['id']; ?>" class="form-check-input">
+                        
+                        <img src="<?php echo htmlspecialchars($full_path); ?>" class="img-thumbnail">
+                        
+                        <?php if($img['cover_flag'] == 'Y'): ?>
+                            <span class="badge bg-success cover-badge with-checkbox">ภาพปก</span>
+                        <?php endif; ?>
+
+                        <!-- ปุ่มเดิมจะอยู่นอกฟอร์มนี้ แต่ใช้ JavaScript จัดการแทน -->
+                        <div class="img-actions">
+                            <button type="button" onclick="setCoverImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-info" title="ตั้งเป็นภาพปก" <?php if($img['cover_flag'] == 'Y') echo 'disabled'; ?>>
                                 <i class="bi bi-star-fill"></i>
                             </button>
-                        </form>
-                        <form method="POST" class="d-inline" onsubmit="return confirm('ต้องการลบรูปภาพนี้?');">
-                            <input type="hidden" name="place_attach_id" value="<?php echo $img['id']; ?>">
-                            <button type="submit" name="delete_image" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
-                        </form>
+                            <button type="button" onclick="deleteSingleImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-danger" title="ลบรูปภาพนี้">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php endforeach; ?>
-            </div>
+                <button type="submit" name="delete_selected_images" class="btn btn-danger mb-3">
+                    <i class="bi bi-trash"></i> ลบรูปภาพที่เลือก
+                </button>
+            </form>
             <?php endif; ?>
             
             <div class="row g-3">
@@ -497,7 +566,6 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                 <div class="col-md-6"><label for="img_other" class="form-label">รูปอื่นๆ</label><input type="file" name="images[O][]" class="form-control" multiple accept="image/*"></div>
                 <div class="col-md-6"><label for="img_plan" class="form-label">รูปผัง</label><input type="file" name="images[P][]" class="form-control" multiple accept="image/*"></div>
                 
-                <!-- [เพิ่มใหม่] ช่องอัปโหลดวิดีโอ -->
                 <div class="col-12 mt-3">
                     <label for="property_video" class="form-label">วิดีโอแนะนำ (ไฟล์ MP4, AVI, MOV)</label>
                     <?php if ($mode === 'Edit' && $video_file_path && file_exists($video_file_path)): ?>
@@ -523,12 +591,39 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                 <button type="submit" name="save_property" class="btn btn-primary"><?php echo $mode === 'Add' ? 'บันทึก' : 'อัปเดต'; ?></button>
             </div>
         </form>
+        
+        <!-- [เพิ่มใหม่] Hidden forms for single image actions -->
+        <form method="POST" id="delete-single-image-form" style="display: none;">
+            <input type="hidden" name="place_attach_id" id="single-delete-id">
+            <input type="hidden" name="delete_image" value="1">
+        </form>
+        <form method="POST" id="set-cover-image-form" style="display: none;">
+            <input type="hidden" name="property_id" value="<?php echo $property_id; ?>">
+            <input type="hidden" name="place_attach_id" id="set-cover-id">
+            <input type="hidden" name="set_cover" value="1">
+        </form>
+
     </section>
 </main>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+// [เพิ่มใหม่] JavaScript functions for single image actions
+function deleteSingleImage(id) {
+    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพนี้?')) {
+        document.getElementById('single-delete-id').value = id;
+        document.getElementById('delete-single-image-form').submit();
+    }
+}
+
+function setCoverImage(id) {
+    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการตั้งค่ารูปภาพนี้เป็นภาพปก?')) {
+        document.getElementById('set-cover-id').value = id;
+        document.getElementById('set-cover-image-form').submit();
+    }
+}
+
 $(document).ready(function() {
     // --- Initialize Select2 ---
     $('#facilities').select2({ theme: 'bootstrap-5', placeholder: 'เลือกสิ่งอำนวยความสะดวก' });
