@@ -28,7 +28,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_selected_image
             $deleted_count = 0;
             foreach ($place_attach_ids as $place_attach_id) {
                 $place_attach_id = (int)$place_attach_id;
-
                 $stmt_get_details->bind_param("ii", $place_attach_id, $admin_id);
                 $stmt_get_details->execute();
                 $res = $stmt_get_details->get_result();
@@ -36,17 +35,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_selected_image
                 if($res->num_rows > 0) {
                     $data = $res->fetch_assoc();
                     $attach_id_to_delete = $data['attach_id'];
-                    
                     $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan', 'V' => 'video', 'M' => 'map'];
                     $folder_name = $folder_name_map[$data['type']] ?? 'misc';
                     $file_to_delete = "assets/rent_place/" . $data['rent_place_id'] . "/" . $folder_name . "/" . $data['filename'];
 
                     $stmt_delete_rpa->bind_param("i", $place_attach_id);
                     $stmt_delete_rpa->execute();
-
                     $stmt_delete_rf->bind_param("i", $attach_id_to_delete);
                     $stmt_delete_rf->execute();
-
                     $stmt_delete_ra->bind_param("i", $attach_id_to_delete);
                     $stmt_delete_ra->execute();
 
@@ -85,7 +81,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
     if($res->num_rows > 0) {
         $data = $res->fetch_assoc();
         $attach_id_to_delete = $data['attach_id'];
-        
         $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan', 'V' => 'video'];
         $folder_name = $folder_name_map[$data['type']] ?? 'misc';
         $file_to_delete = "assets/rent_place/" . $data['rent_place_id'] . "/" . $folder_name . "/" . $data['filename'];
@@ -95,15 +90,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
             $stmt_delete_rpa = $conn->prepare("DELETE FROM RENT_PLACE_ATTACH WHERE id = ?");
             $stmt_delete_rpa->bind_param("i", $place_attach_id);
             $stmt_delete_rpa->execute();
-
             $stmt_delete_rf = $conn->prepare("DELETE FROM RENT_FILE WHERE attach_id = ?");
             $stmt_delete_rf->bind_param("i", $attach_id_to_delete);
             $stmt_delete_rf->execute();
-
             $stmt_delete_ra = $conn->prepare("DELETE FROM RENT_ATTACH WHERE id = ?");
             $stmt_delete_ra->bind_param("i", $attach_id_to_delete);
             $stmt_delete_ra->execute();
-
             if (file_exists($file_to_delete)) {
                 unlink($file_to_delete);
             }
@@ -125,22 +117,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_cover'])) {
 
     $conn->begin_transaction();
     try {
-        $stmt_reset = $conn->prepare("
-            UPDATE RENT_FILE rf
-            JOIN RENT_PLACE_ATTACH rpa ON rf.attach_id = rpa.attach_id
-            SET rf.cover_flag = 'N'
-            WHERE rpa.rent_place_id = ?
-        ");
+        $stmt_reset = $conn->prepare("UPDATE RENT_FILE rf JOIN RENT_PLACE_ATTACH rpa ON rf.attach_id = rpa.attach_id SET rf.cover_flag = 'N' WHERE rpa.rent_place_id = ?");
         $stmt_reset->bind_param("i", $property_id_for_cover);
         $stmt_reset->execute();
-
-        $stmt_set = $conn->prepare("
-            UPDATE RENT_FILE SET cover_flag = 'Y' 
-            WHERE attach_id = (SELECT attach_id FROM RENT_PLACE_ATTACH WHERE id = ?)
-        ");
+        $stmt_set = $conn->prepare("UPDATE RENT_FILE SET cover_flag = 'Y' WHERE attach_id = (SELECT attach_id FROM RENT_PLACE_ATTACH WHERE id = ?)");
         $stmt_set->bind_param("i", $place_attach_id);
         $stmt_set->execute();
-
         $conn->commit();
         $_SESSION['message'] = "ตั้งค่าภาพปกสำเร็จ";
     } catch (Exception $e) {
@@ -151,8 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_cover'])) {
     exit();
 }
 
-
-// --- กำหนดโหมด: 'Add' หรือ 'Edit' ---
+// --- กำหนดโหมดและดึงข้อมูล ---
 $mode = 'Add';
 $property_id = null;
 $property_data = [];
@@ -203,12 +184,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     }
 
     if (!empty($property_data['attach_id'])) {
-        $stmt_map = $conn->prepare("
-            SELECT rf.name as filename, ra.NAME as foldername 
-            FROM RENT_FILE rf 
-            JOIN RENT_ATTACH ra ON rf.attach_id = ra.id 
-            WHERE rf.attach_id = ? AND rf.type = 'M'
-        ");
+        $stmt_map = $conn->prepare("SELECT rf.name as filename, ra.NAME as foldername FROM RENT_FILE rf JOIN RENT_ATTACH ra ON rf.attach_id = ra.id WHERE rf.attach_id = ? AND rf.type = 'M'");
         $stmt_map->bind_param("i", $property_data['attach_id']);
         $stmt_map->execute();
         $result_map = $stmt_map->get_result();
@@ -219,12 +195,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     }
     
     if (!empty($property_data['video_attach_id'])) {
-        $stmt_video = $conn->prepare("
-            SELECT rf.name as filename, ra.NAME as foldername 
-            FROM RENT_FILE rf 
-            JOIN RENT_ATTACH ra ON rf.attach_id = ra.id 
-            WHERE rf.attach_id = ? AND rf.type = 'V'
-        ");
+        $stmt_video = $conn->prepare("SELECT rf.name as filename, ra.NAME as foldername FROM RENT_FILE rf JOIN RENT_ATTACH ra ON rf.attach_id = ra.id WHERE rf.attach_id = ? AND rf.type = 'V'");
         $stmt_video->bind_param("i", $property_data['video_attach_id']);
         $stmt_video->execute();
         $result_video = $stmt_video->get_result();
@@ -250,7 +221,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
     $sub_district_id = !empty($_POST['sub_district_id']) ? $_POST['sub_district_id'] : null;
     $map_url = $_POST['map_url'] ?? '';
     $status = $_POST['status'] ?? 'E';
-    
     $selected_facilities = $_POST['facilities'] ?? [];
     $selected_landmarks = $_POST['landmarks'] ?? [];
 
@@ -269,11 +239,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
             $stmt->execute();
         }
 
-        // --- [START] โค้ดส่วนจัดการไฟล์ที่นำกลับมาครบถ้วน ---
-
         // Logic การบันทึกไฟล์แผนที่
         if (isset($_FILES['map_image']) && $_FILES['map_image']['error'] == 0) {
-            // (โค้ดส่วนนี้ควรมีอยู่แล้ว หรือเพิ่มตาม logic เดิม)
+            $old_map_attach_id = null;
+            if ($mode === 'Edit' && !empty($property_data['attach_id'])) {
+                $old_map_attach_id = $property_data['attach_id'];
+                $stmt_old_map = $conn->prepare("SELECT rf.name as filename, ra.NAME as foldername FROM RENT_FILE rf JOIN RENT_ATTACH ra ON rf.attach_id = ra.id WHERE rf.attach_id = ? AND rf.type = 'M'");
+                $stmt_old_map->bind_param("i", $old_map_attach_id);
+                $stmt_old_map->execute();
+                $result_old_map = $stmt_old_map->get_result();
+                if ($result_old_map->num_rows > 0) {
+                    $old_map_data = $result_old_map->fetch_assoc();
+                    $old_map_file_to_delete = "assets/rent_place/" . $property_id . "/" . $old_map_data['foldername'] . "/" . $old_map_data['filename'];
+                }
+            }
+            $file = $_FILES['map_image'];
+            $map_folder_name = 'map';
+            $target_dir = "assets/rent_place/$property_id/$map_folder_name/";
+            if (!is_dir($target_dir)) mkdir($target_dir, 0755, true);
+            $file_size = $file['size'];
+            $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $new_filename = "map_" . time() . "_" . uniqid() . "." . $file_extension;
+            if (move_uploaded_file($file['tmp_name'], $target_dir . $new_filename)) {
+                $attach_sql = "INSERT INTO RENT_ATTACH (NAME, SIZE, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
+                $stmt_attach = $conn->prepare($attach_sql);
+                $stmt_attach->bind_param("siss", $map_folder_name, $file_size, $current_user_name, $current_user_name);
+                $stmt_attach->execute();
+                $new_map_attach_id = $conn->insert_id;
+                $file_sql = "INSERT INTO RENT_FILE (attach_id, type, name, size, create_user, create_datetime, update_user, update_datetime) VALUES (?, 'M', ?, ?, ?, NOW(), ?, NOW())";
+                $stmt_file = $conn->prepare($file_sql);
+                $stmt_file->bind_param("isiss", $new_map_attach_id, $new_filename, $file_size, $current_user_name, $current_user_name);
+                $stmt_file->execute();
+                $update_place_sql = "UPDATE RENT_PLACE SET attach_id = ? WHERE id = ?";
+                $stmt_update_place = $conn->prepare($update_place_sql);
+                $stmt_update_place->bind_param("ii", $new_map_attach_id, $property_id);
+                $stmt_update_place->execute();
+                if ($old_map_attach_id) {
+                    if (isset($old_map_file_to_delete) && file_exists($old_map_file_to_delete)) {
+                        unlink($old_map_file_to_delete);
+                    }
+                    $conn->query("DELETE FROM RENT_FILE WHERE attach_id = $old_map_attach_id");
+                    $conn->query("DELETE FROM RENT_ATTACH WHERE id = $old_map_attach_id");
+                }
+            }
         }
 
         // Logic การบันทึกไฟล์วิดีโอ
@@ -290,33 +298,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
                     $old_video_file_to_delete = "assets/rent_place/" . $property_id . "/" . $old_video_data['foldername'] . "/" . $old_video_data['filename'];
                 }
             }
-
             $video_file = $_FILES['property_video'];
             $video_folder_name = 'video';
             $video_target_dir = "assets/rent_place/$property_id/$video_folder_name/";
             if (!is_dir($video_target_dir)) mkdir($video_target_dir, 0755, true);
-
             $video_file_size = $video_file['size'];
             $video_file_extension = strtolower(pathinfo($video_file['name'], PATHINFO_EXTENSION));
             $video_new_filename = "video_" . time() . "_" . uniqid() . "." . $video_file_extension;
-            
             if (move_uploaded_file($video_file['tmp_name'], $video_target_dir . $video_new_filename)) {
                 $video_attach_sql = "INSERT INTO RENT_ATTACH (NAME, SIZE, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
                 $stmt_video_attach = $conn->prepare($video_attach_sql);
                 $stmt_video_attach->bind_param("siss", $video_folder_name, $video_file_size, $current_user_name, $current_user_name);
                 $stmt_video_attach->execute();
                 $new_video_attach_id = $conn->insert_id;
-
                 $video_file_sql = "INSERT INTO RENT_FILE (attach_id, type, name, size, create_user, create_datetime, update_user, update_datetime) VALUES (?, 'V', ?, ?, ?, NOW(), ?, NOW())";
                 $stmt_video_file = $conn->prepare($video_file_sql);
                 $stmt_video_file->bind_param("isiss", $new_video_attach_id, $video_new_filename, $video_file_size, $current_user_name, $current_user_name);
                 $stmt_video_file->execute();
-
                 $update_video_id_sql = "UPDATE RENT_PLACE SET video_attach_id = ? WHERE id = ?";
                 $stmt_update_video_id = $conn->prepare($update_video_id_sql);
                 $stmt_update_video_id->bind_param("ii", $new_video_attach_id, $property_id);
                 $stmt_update_video_id->execute();
-
                 if ($old_video_attach_id) {
                     if (isset($old_video_file_to_delete) && file_exists($old_video_file_to_delete)) {
                         unlink($old_video_file_to_delete);
@@ -334,36 +336,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
             foreach ($images['name'] as $type => $files) {
                 foreach ($files as $key => $filename) {
                     if (isset($images['error'][$type][$key]) && $images['error'][$type][$key] == 0) {
-                        
                         $folder_name_map = ['B' => 'bedroom', 'T' => 'toilet', 'O' => 'other', 'P' => 'plan'];
                         $folder_name = $folder_name_map[$type] ?? 'misc';
-                        $target_dir = "assets/rent_place/$property_id/$folder_name/"; 
-
+                        $target_dir = "assets/rent_place/$property_id/$folder_name/";
                         if (!is_dir($target_dir)) mkdir($target_dir, 0755, true);
-                        
                         $file_size = $images['size'][$type][$key];
                         $file_extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
                         $new_filename_on_server = time() . '_' . uniqid() . "." . $file_extension;
-
                         if (move_uploaded_file($images['tmp_name'][$type][$key], $target_dir . $new_filename_on_server)) {
-                            
                             $attach_sql = "INSERT INTO RENT_ATTACH (NAME, SIZE, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
                             $stmt_attach = $conn->prepare($attach_sql);
                             $stmt_attach->bind_param("siss", $folder_name, $file_size, $current_user_name, $current_user_name);
                             $stmt_attach->execute();
                             $attach_id = $conn->insert_id;
-
                             $file_sql = "INSERT INTO RENT_FILE (attach_id, type, cover_flag, name, size, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, 'N', ?, ?, ?, NOW(), ?, NOW())";
                             $stmt_file = $conn->prepare($file_sql);
                             $stmt_file->bind_param("ississ", $attach_id, $type, $new_filename_on_server, $file_size, $current_user_name, $current_user_name);
                             $stmt_file->execute();
                             $rent_file_id = $conn->insert_id;
-
                             $place_attach_sql = "INSERT INTO RENT_PLACE_ATTACH (rent_place_id, type, cover_flag, attach_id, name, create_user, update_user, create_datetime, update_datetime) VALUES (?, ?, 'N', ?, ?, ?, ?, NOW(), NOW())";
                             $stmt_pa = $conn->prepare($place_attach_sql);
                             $stmt_pa->bind_param("isissi", $property_id, $type, $attach_id, $folder_name, $current_user_name, $current_user_name);
                             $stmt_pa->execute();
-                            
                             if ($first_rent_file_id === null) {
                                 $first_rent_file_id = $rent_file_id;
                             }
@@ -385,13 +379,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
             }
         }
         
-        // --- [END] โค้ดส่วนจัดการไฟล์ ---
-
-        // Logic การบันทึก Facilities และ Landmarks
         $stmt_del_fac = $conn->prepare("DELETE FROM RENT_PLACE_FACILITIES WHERE rent_place_id = ?");
         $stmt_del_fac->bind_param("i", $property_id);
         $stmt_del_fac->execute();
-
         if (!empty($selected_facilities)) {
             $sql_fac = "INSERT INTO RENT_PLACE_FACILITIES (rent_place_id, rent_facilities_id, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, NOW(), ?, NOW())";
             $stmt_fac = $conn->prepare($sql_fac);
@@ -400,11 +390,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
                 $stmt_fac->execute();
             }
         }
-
         $stmt_del_land = $conn->prepare("DELETE FROM RENT_PLACE_LANDMARKS WHERE rent_place_id = ?");
         $stmt_del_land->bind_param("i", $property_id);
         $stmt_del_land->execute();
-
         if (!empty($selected_landmarks)) {
             $sql_land = "INSERT INTO RENT_PLACE_LANDMARKS (rent_place_id, rent_landmark_id, distance, create_user, create_datetime, update_user, update_datetime) VALUES (?, ?, ?, ?, NOW(), ?, NOW())";
             $stmt_land = $conn->prepare($sql_land);
@@ -417,11 +405,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
         }
         
         $conn->commit();
-        if ($mode === 'Add') {
-            $_SESSION['message'] = "เพิ่มสินทรัพย์ใหม่สำเร็จแล้ว";
-        } else {
-            $_SESSION['message'] = "อัปเดตข้อมูลสินทรัพย์สำเร็จแล้ว";
-        }
+        $_SESSION['message'] = ($mode === 'Add') ? "เพิ่มสินทรัพย์ใหม่สำเร็จแล้ว" : "อัปเดตข้อมูลสินทรัพย์สำเร็จแล้ว";
         header("Location: admin_properties.php");
         exit();
 
@@ -532,15 +516,11 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                     <div class="col-md-6"><label for="img_toilet" class="form-label">รูปห้องน้ำ</label><input type="file" name="images[T][]" class="form-control" multiple accept="image/*"></div>
                     <div class="col-md-6"><label for="img_other" class="form-label">รูปอื่นๆ</label><input type="file" name="images[O][]" class="form-control" multiple accept="image/*"></div>
                     <div class="col-md-6"><label for="img_plan" class="form-label">รูปผัง</label><input type="file" name="images[P][]" class="form-control" multiple accept="image/*"></div>
-                    
                     <div class="col-12 mt-3">
-                        <label for="property_video" class="form-label">วิดีโอแนะนำ (ไฟล์ MP4, AVI, MOV)</label>
+                        <label for="property_video" class="form-label">วิดีโอแนะนำ</label>
                         <?php if ($mode === 'Edit' && $video_file_path && file_exists($video_file_path)): ?>
                             <div class="my-2">
-                                <video width="320" height="240" controls>
-                                    <source src="<?php echo htmlspecialchars($video_file_path); ?>" type="video/mp4">
-                                    Your browser does not support the video tag.
-                                </video>
+                                <video width="320" height="240" controls><source src="<?php echo htmlspecialchars($video_file_path); ?>" type="video/mp4"></video>
                                 <p class="form-text">วิดีโอปัจจุบัน (อัปโหลดไฟล์ใหม่เพื่อแทนที่)</p>
                             </div>
                         <?php endif; ?>
@@ -570,79 +550,53 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                     ?>
                     <div class="img-thumbnail-wrapper">
                         <input type="checkbox" name="selected_images[]" value="<?php echo $img['id']; ?>" class="form-check-input">
-                        
                         <img src="<?php echo htmlspecialchars($full_path); ?>" class="img-thumbnail">
-                        
                         <?php if($img['cover_flag'] == 'Y'): ?>
                             <span class="badge bg-success cover-badge with-checkbox">ภาพปก</span>
                         <?php endif; ?>
-
                         <div class="img-actions">
-                            <button type="button" onclick="setCoverImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-info" title="ตั้งเป็นภาพปก" <?php if($img['cover_flag'] == 'Y') echo 'disabled'; ?>>
-                                <i class="bi bi-star-fill"></i>
-                            </button>
-                            <button type="button" onclick="deleteSingleImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-danger" title="ลบรูปภาพนี้">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <button type="button" onclick="setCoverImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-info" title="ตั้งเป็นภาพปก" <?php if($img['cover_flag'] == 'Y') echo 'disabled'; ?>><i class="bi bi-star-fill"></i></button>
+                            <button type="button" onclick="deleteSingleImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-danger" title="ลบรูปภาพนี้"><i class="bi bi-trash"></i></button>
                         </div>
                     </div>
                     <?php endforeach; ?>
                 </div>
-                <button type="submit" name="delete_selected_images" class="btn btn-danger mb-3">
-                    <i class="bi bi-trash"></i> ลบรูปภาพที่เลือก
-                </button>
+                <button type="submit" name="delete_selected_images" class="btn btn-danger mb-3"><i class="bi bi-trash"></i> ลบรูปภาพที่เลือก</button>
             </form>
             <?php endif; ?>
         </div>
         
-        <form method="POST" id="delete-single-image-form" style="display: none;">
-            <input type="hidden" name="place_attach_id" id="single-delete-id">
-            <input type="hidden" name="delete_image" value="1">
-        </form>
-        <form method="POST" id="set-cover-image-form" style="display: none;">
-            <input type="hidden" name="property_id" value="<?php echo $property_id; ?>">
-            <input type="hidden" name="place_attach_id" id="set-cover-id">
-            <input type="hidden" name="set_cover" value="1">
-        </form>
-
+        <form method="POST" id="delete-single-image-form" style="display: none;"><input type="hidden" name="place_attach_id" id="single-delete-id"><input type="hidden" name="delete_image" value="1"></form>
+        <form method="POST" id="set-cover-image-form" style="display: none;"><input type="hidden" name="property_id" value="<?php echo $property_id; ?>"><input type="hidden" name="place_attach_id" id="set-cover-id"><input type="hidden" name="set_cover" value="1"></form>
     </section>
 </main>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-// JavaScript functions for single image actions
 function deleteSingleImage(id) {
     if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพนี้?')) {
         document.getElementById('single-delete-id').value = id;
         document.getElementById('delete-single-image-form').submit();
     }
 }
-
 function setCoverImage(id) {
     if (confirm('คุณแน่ใจหรือไม่ว่าต้องการตั้งค่ารูปภาพนี้เป็นภาพปก?')) {
         document.getElementById('set-cover-id').value = id;
         document.getElementById('set-cover-image-form').submit();
     }
 }
-
 $(document).ready(function() {
-    // --- Initialize Select2 ---
     $('#facilities').select2({ theme: 'bootstrap-5', placeholder: 'เลือกสิ่งอำนวยความสะดวก' });
     $('.landmark-select').select2({ theme: 'bootstrap-5' });
-
-    // --- Cascading Dropdowns for Location ---
     const allDistricts = <?php echo json_encode($districts); ?>;
     const allSubDistricts = <?php echo json_encode($sub_districts); ?>;
-
     function filterDistricts() {
         const provinceId = $('#province_id').val();
         const $districtSelect = $('#district_id');
         const currentDistrictId = '<?php echo $property_data['district_id'] ?? ''; ?>';
-        
         $districtSelect.html('<option value="">-- เลือกอำเภอ --</option>');
         $('#sub_district_id').html('<option value="">-- เลือกตำบล --</option>');
-
         if (provinceId) {
             const filteredDistricts = allDistricts.filter(d => d.province_id == provinceId);
             filteredDistricts.forEach(d => {
@@ -652,14 +606,11 @@ $(document).ready(function() {
         }
         $districtSelect.trigger('change');
     }
-
     function filterSubDistricts() {
         const districtId = $('#district_id').val();
         const $subDistrictSelect = $('#sub_district_id');
         const currentSubDistrictId = '<?php echo $property_data['sub_district_id'] ?? ''; ?>';
-
         $subDistrictSelect.html('<option value="">-- เลือกตำบล --</option>');
-
         if (districtId) {
             const filteredSubDistricts = allSubDistricts.filter(sd => sd.district_id == districtId);
             filteredSubDistricts.forEach(sd => {
@@ -668,16 +619,11 @@ $(document).ready(function() {
             });
         }
     }
-
     $('#province_id').on('change', filterDistricts);
     $('#district_id').on('change', filterSubDistricts);
-    
     if('<?php echo $mode; ?>' === 'Edit') {
         filterDistricts();
     }
-
-
-    // --- Dynamic Landmarks ---
     let landmarkIndex = <?php echo count($property_landmarks); ?>;
     $('#add-landmark-btn').on('click', function() {
         landmarkIndex++;
@@ -691,18 +637,12 @@ $(document).ready(function() {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <input type="number" step="0.1" name="landmarks[${landmarkIndex}][distance]" class="form-control" placeholder="ระยะทาง (กม.)">
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger w-100 remove-landmark-btn">ลบ</button>
-                </div>
-            </div>
-        `;
+                <div class="col-md-4"><input type="number" step="0.1" name="landmarks[${landmarkIndex}][distance]" class="form-control" placeholder="ระยะทาง (กม.)"></div>
+                <div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn">ลบ</button></div>
+            </div>`;
         $('#landmarks-container').append(landmarkRow);
         $('.landmark-select-new').select2({ theme: 'bootstrap-5' }).removeClass('landmark-select-new');
     });
-
     $('#landmarks-container').on('click', '.remove-landmark-btn', function() {
         $(this).closest('.landmark-row').remove();
     });
