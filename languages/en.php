@@ -1,0 +1,48 @@
+<?php
+$lang = [
+    // Header
+    'home' => 'Home',
+    'properties' => 'Properties',
+    'contact' => 'Contact',
+    'login' => 'Login',
+    'register' => 'Register',
+    'logout' => 'Logout',
+    'profile' => 'Profile',
+
+    // Manage Property Page
+    'manage_properties' => 'Manage Properties',
+    'add_property' => 'Add New Property',
+    'property_name' => 'Property Name',
+    'price' => 'Price',
+    'status' => 'Status',
+    'actions' => 'Actions',
+    'edit' => 'Edit',
+    'delete' => 'Delete',
+    'available' => 'Available',
+    'rented' => 'Rented',
+    'add_edit_property' => 'Add/Edit Property',
+    'property_details' => 'Property Details',
+    'address' => 'Address',
+    'province' => 'Province',
+    'district' => 'District',
+    'sub_district' => 'Sub-district',
+    'zip_code' => 'Zip Code',
+    'description' => 'Description',
+    'property_type' => 'Property Type',
+    'bedrooms' => 'Bedrooms',
+    'bathrooms' => 'Bathrooms',
+    'area' => 'Area (sq.m.)',
+    'facilities' => 'Facilities',
+    'landmarks' => 'Landmarks',
+    'add_landmark' => 'Add Landmark',
+    'distance_km' => 'Distance (km)',
+    'images' => 'Images',
+    'add_images' => 'Add Images',
+    'save_changes' => 'Save Changes',
+    'select_province' => 'Select Province',
+    'select_district' => 'Select District',
+    'select_sub_district' => 'Select Sub-district',
+    'select_property_type' => 'Select Property Type',
+    'select_place' => '-- Select Place --'
+];
+?>

@@ -1,0 +1,48 @@
+<?php
+$lang = [
+    // Header
+    'home' => 'หน้าแรก',
+    'properties' => 'รายการห้องเช่า',
+    'contact' => 'ติดต่อเรา',
+    'login' => 'เข้าสู่ระบบ',
+    'register' => 'สมัครสมาชิก',
+    'logout' => 'ออกจากระบบ',
+    'profile' => 'โปรไฟล์',
+
+    // Manage Property Page
+    'manage_properties' => 'จัดการสินทรัพย์ที่ปล่อยเช่า',
+    'add_property' => 'เพิ่มสินทรัพย์ใหม่',
+    'property_name' => 'ชื่อสินทรัพย์',
+    'price' => 'ราคา',
+    'status' => 'สถานะ',
+    'actions' => 'การดำเนินการ',
+    'edit' => 'แก้ไข',
+    'delete' => 'ลบ',
+    'available' => 'ว่าง',
+    'rented' => 'ไม่ว่าง',
+    'add_edit_property' => 'เพิ่ม/แก้ไข สินทรัพย์ที่ปล่อยเช่า',
+    'property_details' => 'รายละเอียดสินทรัพย์',
+    'address' => 'ที่อยู่',
+    'province' => 'จังหวัด',
+    'district' => 'อำเภอ',
+    'sub_district' => 'ตำบล',
+    'zip_code' => 'รหัสไปรษณีย์',
+    'description' => 'รายละเอียด',
+    'property_type' => 'ประเภทสินทรัพย์',
+    'bedrooms' => 'จำนวนห้องนอน',
+    'bathrooms' => 'จำนวนห้องน้ำ',
+    'area' => 'ขนาดพื้นที่ (ตร.ม.)',
+    'facilities' => 'สิ่งอำนวยความสะดวก',
+    'landmarks' => 'สถานที่ใกล้เคียง',
+    'add_landmark' => 'เพิ่มสถานที่ใกล้เคียง',
+    'distance_km' => 'ระยะทาง (กม.)',
+    'images' => 'รูปภาพ',
+    'add_images' => 'เพิ่มรูปภาพ',
+    'save_changes' => 'บันทึกการเปลี่ยนแปลง',
+    'select_province' => 'เลือกจังหวัด',
+    'select_district' => 'เลือกอำเภอ/เขต',
+    'select_sub_district' => 'เลือกตำบล/แขวง',
+    'select_property_type' => 'เลือกประเภทสินทรัพย์',
+    'select_place' => '-- เลือกสถานที่ --'
+];
+?>

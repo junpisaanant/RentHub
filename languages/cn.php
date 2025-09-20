@@ -1,0 +1,48 @@
+<?php
+$lang = [
+    // Header
+    'home' => '首页',
+    'properties' => '出租房间列表',
+    'contact' => '联系我们',
+    'login' => '登录',
+    'register' => '注册',
+    'logout' => '登出',
+    'profile' => '个人资料',
+
+    // Manage Property Page
+    'manage_properties' => '管理出租资产',
+    'add_property' => '添加新资产',
+    'property_name' => '资产名称',
+    'price' => '价格',
+    'status' => '状态',
+    'actions' => '操作',
+    'edit' => '编辑',
+    'delete' => '删除',
+    'available' => '可租',
+    'rented' => '已租',
+    'add_edit_property' => '添加/编辑出租资产',
+    'property_details' => '资产详情',
+    'address' => '地址',
+    'province' => '府',
+    'district' => '区/县',
+    'sub_district' => '街道/乡',
+    'zip_code' => '邮政编码',
+    'description' => '描述',
+    'property_type' => '资产类型',
+    'bedrooms' => '卧室数量',
+    'bathrooms' => '浴室数量',
+    'area' => '面积（平方米）',
+    'facilities' => '便利设施',
+    'landmarks' => '附近地标',
+    'add_landmark' => '添加附近地标',
+    'distance_km' => '距离（公里）',
+    'images' => '图片',
+    'add_images' => '添加图片',
+    'save_changes' => '保存更改',
+    'select_province' => '选择府',
+    'select_district' => '选择区/县',
+    'select_sub_district' => '选择街道/乡',
+    'select_property_type' => '选择资产类型',
+    'select_place' => '-- 选择地点 --'
+];
+?>

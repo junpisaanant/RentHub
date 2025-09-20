@@ -42,6 +42,7 @@
             <a href="https://www.instagram.com/the_prestigeliving_sathorn?igsh=MTlvZDRvYnR2dHkycg==" class="instagram" target="_blank"><i class="bi bi-instagram"></i></a>
             <a href="#" class="line" data-bs-toggle="modal" data-bs-target="#lineModal"><i class="bi bi-line"></i></a>
             <a href="#" class="whatsapp" data-bs-toggle="modal" data-bs-target="#whatsappModal"><i class="bi bi-whatsapp"></i></a>
+            <a href="#" class="wechat" data-bs-toggle="modal" data-bs-target="#wechatModal"><i class="bi bi-wechat"></i></a>
           </div>
         </div>
 
@@ -83,6 +84,22 @@
       </div>
     </div>
   </div>
+
+<!-- Modal สำหรับแสดง QR Code ของ Wechat -->
+<div class="modal fade" id="wechatModal" tabindex="-1" aria-labelledby="wechatModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="wechatModalLabel">ติดต่อเราใน Wechat</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img src="assets/img/wechat.jpg" alt="QR Code Wechat" class="img-fluid" style="max-width: 200px;">
+        <p>สแกน QR Code นี้ด้วย Wechat ของคุณ</p>
+      </div>
+    </div>
+  </div>
+</div>
 
   </footer>
   <!-- Scroll Top -->
