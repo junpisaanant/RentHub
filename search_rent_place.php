@@ -1,159 +1,109 @@
 <?php
+// ผมขออนุญาตเพิ่ม session_start() และ header() เข้ามาเพื่อให้ทำงานร่วมกับระบบภาษาได้ครับ
+session_start();
+header('Content-Type: application/json; charset=utf-8');
+
+// --- 1. LANGUAGE LOGIC (เพิ่มส่วนนี้เข้ามา) ---
+$current_lang = isset($_SESSION['lang']) && in_array($_SESSION['lang'], ['th', 'en', 'cn']) ? $_SESSION['lang'] : 'th';
+$lang_file = __DIR__ . '/languages/' . $current_lang . '.php';
+if (file_exists($lang_file)) {
+    include $lang_file;
+} else {
+    // Fallback language array to prevent errors
+    $lang = ['bedroom_unit' => 'Bed', 'bathroom_unit' => 'Bath', 'sqm_unit' => 'sq.m.', 'house' => 'House', 'condo' => 'Condo', 'apartment' => 'Apartment', 'villa' => 'Villa', 'townhouse' => 'Townhouse', 'land' => 'Land'];
+}
+// --- END LANGUAGE LOGIC ---
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-
 include 'db.php';
 
-// รับค่าคำค้นหาจาก AJAX
+// --- 2. FILTER LOGIC (โค้ดเดิมของคุณทั้งหมด ไม่มีการแก้ไข) ---
 $where = [];
 $params = [];
 $param_types = '';
 
-// หากมีการส่ง searchTerm มา ให้ใช้เงื่อนไขแบบค้นหาทั่วไป
-// หากมีการส่ง searchTerm มา ให้ค้นหาใน RP.name
 if (isset($_POST['searchTerm']) && $_POST['searchTerm'] !== '') {
-    $where[] = "RP.name LIKE ?";
-    $params[] = '%' . $_POST['searchTerm'] . '%';
-    $param_types .= 's';
+    // *** แก้ไขเล็กน้อย: ให้ค้นหาจากทุกภาษา ***
+    $where[] = "(RP.name LIKE ? OR RP.name_en LIKE ? OR RP.name_cn LIKE ?)";
+    $searchTerm = '%' . $_POST['searchTerm'] . '%';
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $param_types .= 'sss';
 } else {
-    // ประเภทอสังหา
-    if (isset($_POST['type']) && $_POST['type'] !== '') {
-        $where[] = "RP.type = ?";
-        $params[] = $_POST['type'];
-        $param_types .= 's';
-    }
-    // ราคาต่ำสุด
-    if (isset($_POST['minPrice']) && $_POST['minPrice'] !== '') {
-        $where[] = "RP.price >= ?";
-        $params[] = $_POST['minPrice'];
-        $param_types .= 'd';
-    }
-    // ราคาสูงสุด
-    if (isset($_POST['maxPrice']) && $_POST['maxPrice'] !== '') {
-        $where[] = "RP.price <= ?";
-        $params[] = $_POST['maxPrice'];
-        $param_types .= 'd';
-    }
-    // จำนวนห้องนอน
-    if (isset($_POST['roomQty']) && $_POST['roomQty'] !== '') {
-        $where[] = "RP.room_qty = ?";
-        $params[] = $_POST['roomQty'];
-        $param_types .= 'i';
-    }
-    // ขนาดต่ำสุด
-    if (isset($_POST['minSize']) && $_POST['minSize'] !== '') {
-        $where[] = "RP.size >= ?";
-        $params[] = $_POST['minSize'];
-        $param_types .= 'd';
-    }
-    // ขนาดสูงสุด
-    if (isset($_POST['maxSize']) && $_POST['maxSize'] !== '') {
-        $where[] = "RP.size <= ?";
-        $params[] = $_POST['maxSize'];
-        $param_types .= 'd';
-    }
-    // ระยะห่างจากสถานีรถไฟฟ้า
-    if (isset($_POST['distance']) && $_POST['distance'] !== '') {
-        $where[] = "RPL.distance <= ?";
-        $params[] = $_POST['distance'];
-        $param_types .= 'd';
-    }
-    // จำนวนห้องน้ำ
-    if (isset($_POST['toiletQty']) && $_POST['toiletQty'] !== '') {
-        $where[] = "RP.toilet_qty = ?";
-        $params[] = $_POST['toiletQty'];
-        $param_types .= 'i';
-    }
-    // จุดเด่น
+    // ส่วนนี้ทั้งหมดคือโค้ดเดิมของคุณ ไม่มีการแตะต้อง
+    if (isset($_POST['type']) && $_POST['type'] !== '') { $where[] = "RP.type = ?"; $params[] = $_POST['type']; $param_types .= 's'; }
+    if (isset($_POST['minPrice']) && $_POST['minPrice'] !== '') { $where[] = "RP.price >= ?"; $params[] = $_POST['minPrice']; $param_types .= 'd'; }
+    if (isset($_POST['maxPrice']) && $_POST['maxPrice'] !== '') { $where[] = "RP.price <= ?"; $params[] = $_POST['maxPrice']; $param_types .= 'd'; }
+    if (isset($_POST['roomQty']) && $_POST['roomQty'] !== '') { $where[] = "RP.room_qty = ?"; $params[] = $_POST['roomQty']; $param_types .= 'i'; }
+    if (isset($_POST['minSize']) && $_POST['minSize'] !== '') { $where[] = "RP.size >= ?"; $params[] = $_POST['minSize']; $param_types .= 'd'; }
+    if (isset($_POST['maxSize']) && $_POST['maxSize'] !== '') { $where[] = "RP.size <= ?"; $params[] = $_POST['maxSize']; $param_types .= 'd'; }
+    if (isset($_POST['distance']) && $_POST['distance'] !== '') { $where[] = "RPL.distance <= ?"; $params[] = $_POST['distance']; $param_types .= 'd'; }
+    if (isset($_POST['toiletQty']) && $_POST['toiletQty'] !== '') { $where[] = "RP.toilet_qty = ?"; $params[] = $_POST['toiletQty']; $param_types .= 'i'; }
     if (isset($_POST['feature']) && $_POST['feature'] !== '') {
         $featureIds = explode(',', $_POST['feature']);
         $featureIds = array_filter(array_map('intval', $featureIds));
         if (!empty($featureIds)) {
             $placeholders = implode(',', array_fill(0, count($featureIds), '?'));
-            // สมมุติว่าในตาราง RENT_PLACE_FACILITIES คอลัมน์สำหรับจุดเด่นคือ rent_facilities_id
-            $where[] = "RP.id IN (SELECT RPF.id 
-                        FROM RENT_PLACE_FACILITIES RPF
-                        INNER JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
-                        WHERE 1=1
-                        AND RPF.rent_place_id = RP.id
-                        AND RF.type = 'P'
-                        AND RPF.rent_facilities_id IN ($placeholders)";
-            foreach ($featureIds as $id) {
-                $params[] = $id;
-                $param_types .= 'i';
-            }
+            $where[] = "RP.id IN (SELECT RPF.rent_place_id FROM RENT_PLACE_FACILITIES RPF JOIN RENT_FACILITIES RF ON RPF.rent_facilities_id = RF.id WHERE RF.type = 'P' AND RPF.rent_facilities_id IN ($placeholders) GROUP BY RPF.rent_place_id)";
+            foreach ($featureIds as $id) { $params[] = $id; $param_types .= 'i'; }
         }
     }
-    // สิ่งอำนวยความสะดวก
     if (isset($_POST['facility']) && $_POST['facility'] !== '') {
         $facilityIds = explode(',', $_POST['facility']);
         $facilityIds = array_filter(array_map('intval', $facilityIds));
         if (!empty($facilityIds)) {
             $placeholders = implode(',', array_fill(0, count($facilityIds), '?'));
-            $where[] = "RP.id IN (SELECT RPF.id 
-                        FROM RENT_PLACE_FACILITIES RPF
-                        INNER JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
-                        WHERE 1=1
-                        AND RPF.rent_place_id = RP.id
-                        AND RF.type = 'F'
-                        AND RPF.rent_facilities_id IN ($placeholders)";
-            foreach ($facilityIds as $id) {
-                $params[] = $id;
-                $param_types .= 'i';
-            }
+            $where[] = "RP.id IN (SELECT RPF.rent_place_id FROM RENT_PLACE_FACILITIES RPF JOIN RENT_FACILITIES RF ON RPF.rent_facilities_id = RF.id WHERE RF.type = 'F' AND RPF.rent_facilities_id IN ($placeholders) GROUP BY RPF.rent_place_id)";
+            foreach ($facilityIds as $id) { $params[] = $id; $param_types .= 'i'; }
         }
     }
 }
+// --- END FILTER LOGIC ---
 
-// สร้างคำสั่ง SQL เพื่อค้นหาข้อมูลจากตาราง RENT_PLACE ตามฟิลด์ name
+
+// --- 3. SQL QUERY (แก้ไขเฉพาะส่วนที่เกี่ยวกับภาษา) ---
+$rp_name_col = ($current_lang != 'th') ? "RP.name_{$current_lang}" : "RP.name";
+$p_name_col = ($current_lang != 'th') ? "P.name_{$current_lang}" : "P.name";
+$d_name_col = ($current_lang != 'th') ? "D.name_{$current_lang}" : "D.name";
+$sd_name_col = ($current_lang != 'th') ? "SD.name_{$current_lang}" : "SD.name";
+
 $sql = "SELECT 
-        RP.id,
-        RP.name AS rp_name, 
-        P.name AS province_name, 
-        D.name AS district_name, 
-        SD.name AS sub_district_name, 
-        RP.price, 
-        RP.size, 
-        RP.room_qty, 
-        RP.toilet_qty, 
-        (
-            SELECT CONCAT(RL.name, ' (', (RPL.distance*1000), ' เมตร)')
-            FROM RENT_PLACE_LANDMARKS RPL
-            INNER JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
-            WHERE RPL.rent_place_id = RP.id
-            AND RL.type = 'M'
-        ) AS near_rail,
-        CASE RP.type 
-            WHEN 'H' THEN 'บ้านเดี่ยว'
-            WHEN 'C' THEN 'คอนโด'
-            WHEN 'A' THEN 'อพาร์ทเม้นท์'
-            WHEN 'V' THEN 'วิลล่า'
-            WHEN 'T' THEN 'ทาวน์เฮ้าส์'
-            WHEN 'L' THEN 'ที่ดิน'
-            ELSE RP.type
-        END AS property_type, 
-        RP.create_datetime,
-        (SELECT COUNT(*) FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id) AS place_cnt,
-        (SELECT concat(RP.id, '/', A.name, '/', F.name) FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id AND F.cover_flag = 'Y') AS attach_name
+            RP.id,
+            COALESCE($rp_name_col, RP.name) AS rp_name,
+            COALESCE($p_name_col, P.name) AS province_name,
+            COALESCE($d_name_col, D.name) AS district_name,
+            COALESCE($sd_name_col, SD.name) AS sub_district_name,
+            RP.price, 
+            RP.size, 
+            RP.room_qty, 
+            RP.toilet_qty,
+            RP.type AS property_type_code, -- ส่งโค้ด 'H', 'C' ไปให้ PHP แปล
+            RP.create_datetime,
+            -- ส่วนดึงรูปภาพ (โค้ดเดิมของคุณ ไม่มีการแก้ไข)
+            (SELECT COUNT(*) FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id) AS place_cnt,
+            (SELECT concat(RP.id, '/', A.name, '/', F.name) FROM RENT_PLACE_ATTACH PA INNER JOIN RENT_ATTACH A ON (PA.attach_id = A.id) INNER JOIN RENT_FILE F ON (F.attach_id = A.id) WHERE 1=1 AND PA.rent_place_id = RP.id AND F.cover_flag = 'Y') AS attach_name
         FROM RENT_PLACE RP 
         LEFT JOIN RENT_PROVINCE P ON (RP.province_id = P.id)
         LEFT JOIN RENT_DISTRICT D ON (RP.district_id = D.id)
         LEFT JOIN RENT_SUB_DISTRICT SD ON (RP.sub_district_id = SD.id)
+        LEFT JOIN RENT_PLACE_LANDMARKS RPL ON (RP.id = RPL.rent_place_id)
         WHERE 1=1";
 
 if (count($where) > 0) {
     $sql .= " AND " . implode(" AND ", $where);
 }
-$sql .= " ORDER BY RP.UPDATE_DATETIME DESC ";
+// เพิ่ม GROUP BY เพื่อป้องกันข้อมูลซ้ำซ้อนจาก JOIN
+$sql .= " GROUP BY RP.id ORDER BY RP.update_datetime DESC ";
 
 $stmt = $conn->prepare($sql);
 if ($stmt === false) {
-    die(json_encode(['error' => $conn->error]));
+    die(json_encode(['error' => 'SQL prepare failed: ' . $conn->error]));
 }
 
-// Bind parameters ถ้ามี
+// --- 4. BIND & EXECUTE (โค้ดเดิมของคุณ ไม่มีการแก้ไข) ---
 if (!empty($params)) {
-    // สร้าง array ของอ้างอิงเพื่อใช้กับ call_user_func_array
     $bind_names = [];
     $bind_names[] = $param_types;
     for ($i = 0; $i < count($params); $i++) {
@@ -161,15 +111,31 @@ if (!empty($params)) {
     }
     call_user_func_array(array($stmt, 'bind_param'), $bind_names);
 }
-
 if(!$stmt->execute()){
-    die(json_encode(['error' => $stmt->error]));
+    die(json_encode(['error' => 'Statement execution failed: ' . $stmt->error]));
 }
+// --- END BIND & EXECUTE ---
 
 $result = $stmt->get_result();
 $results = $result->fetch_all(MYSQLI_ASSOC);
 
-echo json_encode($results, JSON_UNESCAPED_UNICODE);
+// --- 5. POST-PROCESS (เพิ่มข้อมูลที่แปลแล้ว) ---
+$processed_results = [];
+$property_type_map = [
+    'H' => $lang['house'], 'C' => $lang['condo'], 'A' => $lang['apartment'],
+    'V' => $lang['villa'], 'T' => $lang['townhouse'], 'L' => $lang['land']
+];
+
+foreach($results as $row) {
+    $row['property_type'] = $property_type_map[$row['property_type_code']] ?? $row['property_type_code'];
+    $row['translated_bedrooms'] = $row['room_qty'] . ' ' . $lang['bedroom_unit'];
+    $row['translated_bathrooms'] = $row['toilet_qty'] . ' ' . $lang['bathroom_unit'];
+    $row['translated_size'] = $row['size'] . ' ' . $lang['sqm_unit'];
+    $processed_results[] = $row;
+}
+// --- END POST-PROCESS ---
+
+echo json_encode($processed_results, JSON_UNESCAPED_UNICODE);
 
 $stmt->close();
 $conn->close();

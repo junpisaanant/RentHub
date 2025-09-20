@@ -54,6 +54,13 @@ $lang = [
     'cancel_button' => 'Cancel',
     'apply_filters_button' => 'Apply Filters',
 
+    // For JS (Search Results)
+    'no_results_found' => 'No results found',
+    'price_on_request' => 'Price on request',
+    'bedroom_unit' => 'Bed',
+    'bathroom_unit' => 'Bath',
+    'sqm_unit' => 'sq.m.',
+
     // Manage Property Page
     'manage_properties' => 'Manage Properties',
     'add_property' => 'Add New Property',

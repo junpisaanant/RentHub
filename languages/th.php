@@ -54,6 +54,13 @@ $lang = [
     'cancel_button' => 'ยกเลิก',
     'apply_filters_button' => 'ปรับตามเงื่อนไข',
 
+    // For JS (Search Results)
+    'no_results_found' => 'ไม่พบผลลัพธ์',
+    'price_on_request' => 'ราคาตามตกลง',
+    'bedroom_unit' => 'ห้องนอน',
+    'bathroom_unit' => 'ห้องน้ำ',
+    'sqm_unit' => 'ตร.ม.',
+
     // Manage Property Page
     'manage_properties' => 'จัดการสินทรัพย์ที่ปล่อยเช่า',
     'add_property' => 'เพิ่มสินทรัพย์ใหม่',

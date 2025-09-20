@@ -54,6 +54,13 @@ $lang = [
     'cancel_button' => '取消',
     'apply_filters_button' => '应用筛选',
 
+    // For JS (Search Results)
+    'no_results_found' => '未找到结果',
+    'price_on_request' => '价格面议',
+    'bedroom_unit' => '卧室',
+    'bathroom_unit' => '浴室',
+    'sqm_unit' => '平方米',
+
     // Manage Property Page
     'manage_properties' => '管理出租资产',
     'add_property' => '添加新资产',
