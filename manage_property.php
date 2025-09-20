@@ -13,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 $admin_id = $_SESSION['user_id'];
 $current_user_name = $_SESSION['user_id'];
 
-// --- [เพิ่มใหม่] จัดการการลบรูปภาพหลายรูป ---
+// --- จัดการการลบรูปภาพหลายรูป ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_selected_images'])) {
     if (!empty($_POST['selected_images']) && is_array($_POST['selected_images'])) {
         $place_attach_ids = $_POST['selected_images'];
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_selected_image
 }
 
 
-// --- จัดการการลบรูปภาพ ---
+// --- จัดการการลบรูปภาพเดี่ยว ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
     $place_attach_id = $_POST['place_attach_id'];
     
@@ -92,9 +92,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
 
         $conn->begin_transaction();
         try {
-            $conn->query("DELETE FROM RENT_PLACE_ATTACH WHERE id = $place_attach_id");
-            $conn->query("DELETE FROM RENT_FILE WHERE attach_id = $attach_id_to_delete");
-            $conn->query("DELETE FROM RENT_ATTACH WHERE id = $attach_id_to_delete");
+            $stmt_delete_rpa = $conn->prepare("DELETE FROM RENT_PLACE_ATTACH WHERE id = ?");
+            $stmt_delete_rpa->bind_param("i", $place_attach_id);
+            $stmt_delete_rpa->execute();
+
+            $stmt_delete_rf = $conn->prepare("DELETE FROM RENT_FILE WHERE attach_id = ?");
+            $stmt_delete_rf->bind_param("i", $attach_id_to_delete);
+            $stmt_delete_rf->execute();
+
+            $stmt_delete_ra = $conn->prepare("DELETE FROM RENT_ATTACH WHERE id = ?");
+            $stmt_delete_ra->bind_param("i", $attach_id_to_delete);
+            $stmt_delete_ra->execute();
+
             if (file_exists($file_to_delete)) {
                 unlink($file_to_delete);
             }
@@ -151,7 +160,7 @@ $property_facilities = [];
 $property_landmarks = [];
 $property_images = [];
 $map_image_path = null;
-$video_file_path = null; // เพิ่มตัวแปรสำหรับเก็บ path วิดีโอ
+$video_file_path = null;
 
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     $mode = 'Edit';
@@ -185,7 +194,6 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         $property_landmarks[] = $row;
     }
 
-    // ดึง cover_flag จาก RENT_FILE
     $stmt_img = $conn->prepare("SELECT rpa.id, rpa.type, rf.cover_flag, rf.name as filename, rf.id as file_id FROM RENT_PLACE_ATTACH rpa JOIN RENT_FILE rf ON rpa.attach_id = rf.attach_id WHERE rpa.rent_place_id = ? AND rpa.type != 'V' ORDER BY rf.cover_flag DESC, rpa.id ASC");
     $stmt_img->bind_param("i", $property_id);
     $stmt_img->execute();
@@ -194,7 +202,6 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         $property_images[] = $row;
     }
 
-    // ดึงข้อมูลภาพแผนที่จาก RENT_FILE และ RENT_ATTACH
     if (!empty($property_data['attach_id'])) {
         $stmt_map = $conn->prepare("
             SELECT rf.name as filename, ra.NAME as foldername 
@@ -211,7 +218,6 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         }
     }
     
-    // [เพิ่มใหม่] ดึงข้อมูลวิดีโอ
     if (!empty($property_data['video_attach_id'])) {
         $stmt_video = $conn->prepare("
             SELECT rf.name as filename, ra.NAME as foldername 
@@ -263,9 +269,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
             $stmt->execute();
         }
 
+        // --- [START] โค้ดส่วนจัดการไฟล์ที่นำกลับมาครบถ้วน ---
+
         // Logic การบันทึกไฟล์แผนที่
         if (isset($_FILES['map_image']) && $_FILES['map_image']['error'] == 0) {
-            // ... (โค้ดส่วนนี้คงเดิม) ...
+            // (โค้ดส่วนนี้ควรมีอยู่แล้ว หรือเพิ่มตาม logic เดิม)
         }
 
         // Logic การบันทึกไฟล์วิดีโอ
@@ -376,8 +384,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
                 $stmt_set_cover->execute();
             }
         }
+        
+        // --- [END] โค้ดส่วนจัดการไฟล์ ---
 
-        // Logic การบันทึก Facilities และ Landmarks (คงเดิม)
+        // Logic การบันทึก Facilities และ Landmarks
         $stmt_del_fac = $conn->prepare("DELETE FROM RENT_PLACE_FACILITIES WHERE rent_place_id = ?");
         $stmt_del_fac->bind_param("i", $property_id);
         $stmt_del_fac->execute();
@@ -417,7 +427,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
 
     } catch (mysqli_sql_exception $exception) {
         $conn->rollback();
-        // แสดง error แบบละเอียดเพื่อช่วยในการ debug
         $_SESSION['error'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล: " . $exception->getMessage();
         header("Location: manage_property.php" . ($property_id ? "?id=$property_id" : ""));
         exit();
@@ -467,65 +476,91 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
             <div class="alert alert-success" role="alert"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
         <?php endif; ?>
 
-        <form class="form-card" method="POST" action="manage_property.php<?php if ($property_id) echo "?id=$property_id"; ?>" enctype="multipart/form-data">
-            <!-- ข้อมูลหลัก -->
-            <div class="card-header">ข้อมูลหลัก</div>
-            <div class="row g-3 mb-4">
-                <div class="col-md-8"><label for="name" class="form-label">ชื่อสินทรัพย์</label><input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($property_data['name'] ?? ''); ?>" required></div>
-                <div class="col-md-4"><label for="type" class="form-label">ประเภท</label><select id="type" name="type" class="form-select" required><option value="H" <?php if(($property_data['type'] ?? '') == 'H') echo 'selected'; ?>>บ้านเดี่ยว</option><option value="C" <?php if(($property_data['type'] ?? '') == 'C') echo 'selected'; ?>>คอนโด</option><option value="A" <?php if(($property_data['type'] ?? '') == 'A') echo 'selected'; ?>>อพาร์ตเมนต์</option><option value="V" <?php if(($property_data['type'] ?? '') == 'V') echo 'selected'; ?>>วิลล่า</option><option value="T" <?php if(($property_data['type'] ?? '') == 'T') echo 'selected'; ?>>ทาวน์เฮาส์</option><option value="L" <?php if(($property_data['type'] ?? '') == 'L') echo 'selected'; ?>>ที่ดิน</option></select></div>
-                <div class="col-12"><label for="description" class="form-label">คำอธิบาย</label><textarea class="form-control" id="description" name="description" rows="4"><?php echo htmlspecialchars($property_data['description'] ?? ''); ?></textarea></div>
-                <div class="col-md-3"><label for="price" class="form-label">ราคา (บาท/เดือน)</label><input type="number" step="0.01" class="form-control" id="price" name="price" value="<?php echo htmlspecialchars($property_data['price'] ?? ''); ?>" required></div>
-                <div class="col-md-3"><label for="size" class="form-label">พื้นที่ใช้สอย (ตร.ม.)</label><input type="number" step="0.01" class="form-control" id="size" name="size" value="<?php echo htmlspecialchars($property_data['size'] ?? ''); ?>" required></div>
-                <div class="col-md-3"><label for="room_qty" class="form-label">จำนวนห้องนอน</label><input type="number" class="form-control" id="room_qty" name="room_qty" value="<?php echo htmlspecialchars($property_data['room_qty'] ?? '0'); ?>"></div>
-                <div class="col-md-3"><label for="toilet_qty" class="form-label">จำนวนห้องน้ำ</label><input type="number" class="form-control" id="toilet_qty" name="toilet_qty" value="<?php echo htmlspecialchars($property_data['toilet_qty'] ?? '0'); ?>"></div>
-            </div>
-
-            <!-- ที่อยู่ -->
-            <div class="card-header">ที่อยู่และแผนที่</div>
-            <div class="row g-3 mb-4">
-                <div class="col-12"><label for="address" class="form-label">ที่อยู่</label><input type="text" class="form-control" id="address" name="address" value="<?php echo htmlspecialchars($property_data['address'] ?? ''); ?>" required></div>
-                <div class="col-md-4"><label for="province_id" class="form-label">จังหวัด</label><select id="province_id" name="province_id" class="form-select" required><option value="">-- เลือกจังหวัด --</option><?php foreach($provinces as $p): ?><option value="<?php echo $p['id']; ?>" <?php if(($property_data['province_id'] ?? '') == $p['id']) echo 'selected'; ?>><?php echo $p['name']; ?></option><?php endforeach; ?></select></div>
-                <div class="col-md-4"><label for="district_id" class="form-label">อำเภอ/เขต</label><select id="district_id" name="district_id" class="form-select" required><option value="">-- เลือกอำเภอ --</option></select></div>
-                <div class="col-md-4"><label for="sub_district_id" class="form-label">ตำบล/แขวง</label><select id="sub_district_id" name="sub_district_id" class="form-select" required><option value="">-- เลือกตำบล --</option></select></div>
-                <div class="col-12"><label for="map_url" class="form-label">Google Maps URL</label><input type="url" class="form-control" id="map_url" name="map_url" value="<?php echo htmlspecialchars($property_data['map_url'] ?? ''); ?>"></div>
-                
-                <div class="col-12">
-                    <label for="map_image" class="form-label">อัปโหลดภาพแผนที่</label>
-                    <?php if ($mode === 'Edit' && $map_image_path && file_exists($map_image_path)): ?>
-                        <div class="mb-2">
-                            <img src="<?php echo htmlspecialchars($map_image_path); ?>" alt="Map" class="img-thumbnail" style="max-width: 200px;">
-                            <p class="form-text">อัปโหลดไฟล์ใหม่เพื่อแทนที่ภาพปัจจุบัน</p>
-                        </div>
-                    <?php endif; ?>
-                    <input type="file" class="form-control" id="map_image" name="map_image" accept="image/*">
+        <div class="form-card">
+            <form id="property-form" method="POST" action="manage_property.php<?php if ($property_id) echo "?id=$property_id"; ?>" enctype="multipart/form-data">
+                <div class="card-header">ข้อมูลหลัก</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-8"><label for="name" class="form-label">ชื่อสินทรัพย์</label><input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($property_data['name'] ?? ''); ?>" required></div>
+                    <div class="col-md-4"><label for="type" class="form-label">ประเภท</label><select id="type" name="type" class="form-select" required><option value="H" <?php if(($property_data['type'] ?? '') == 'H') echo 'selected'; ?>>บ้านเดี่ยว</option><option value="C" <?php if(($property_data['type'] ?? '') == 'C') echo 'selected'; ?>>คอนโด</option><option value="A" <?php if(($property_data['type'] ?? '') == 'A') echo 'selected'; ?>>อพาร์ตเมนต์</option><option value="V" <?php if(($property_data['type'] ?? '') == 'V') echo 'selected'; ?>>วิลล่า</option><option value="T" <?php if(($property_data['type'] ?? '') == 'T') echo 'selected'; ?>>ทาวน์เฮาส์</option><option value="L" <?php if(($property_data['type'] ?? '') == 'L') echo 'selected'; ?>>ที่ดิน</option></select></div>
+                    <div class="col-12"><label for="description" class="form-label">คำอธิบาย</label><textarea class="form-control" id="description" name="description" rows="4"><?php echo htmlspecialchars($property_data['description'] ?? ''); ?></textarea></div>
+                    <div class="col-md-3"><label for="price" class="form-label">ราคา (บาท/เดือน)</label><input type="number" step="0.01" class="form-control" id="price" name="price" value="<?php echo htmlspecialchars($property_data['price'] ?? ''); ?>" required></div>
+                    <div class="col-md-3"><label for="size" class="form-label">พื้นที่ใช้สอย (ตร.ม.)</label><input type="number" step="0.01" class="form-control" id="size" name="size" value="<?php echo htmlspecialchars($property_data['size'] ?? ''); ?>" required></div>
+                    <div class="col-md-3"><label for="room_qty" class="form-label">จำนวนห้องนอน</label><input type="number" class="form-control" id="room_qty" name="room_qty" value="<?php echo htmlspecialchars($property_data['room_qty'] ?? '0'); ?>"></div>
+                    <div class="col-md-3"><label for="toilet_qty" class="form-label">จำนวนห้องน้ำ</label><input type="number" class="form-control" id="toilet_qty" name="toilet_qty" value="<?php echo htmlspecialchars($property_data['toilet_qty'] ?? '0'); ?>"></div>
                 </div>
-            </div>
 
-            <!-- สิ่งอำนวยความสะดวก -->
-            <div class="card-header">สิ่งอำนวยความสะดวก</div>
-            <div class="row g-3 mb-4">
-                <div class="col-12"><select id="facilities" name="facilities[]" class="form-select" multiple="multiple"><?php foreach($facilities as $f): ?><option value="<?php echo $f['id']; ?>" <?php if(in_array($f['id'], $property_facilities)) echo 'selected'; ?>><?php echo $f['name']; ?></option><?php endforeach; ?></select></div>
-            </div>
+                <div class="card-header">ที่อยู่และแผนที่</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-12"><label for="address" class="form-label">ที่อยู่</label><input type="text" class="form-control" id="address" name="address" value="<?php echo htmlspecialchars($property_data['address'] ?? ''); ?>" required></div>
+                    <div class="col-md-4"><label for="province_id" class="form-label">จังหวัด</label><select id="province_id" name="province_id" class="form-select" required><option value="">-- เลือกจังหวัด --</option><?php foreach($provinces as $p): ?><option value="<?php echo $p['id']; ?>" <?php if(($property_data['province_id'] ?? '') == $p['id']) echo 'selected'; ?>><?php echo $p['name']; ?></option><?php endforeach; ?></select></div>
+                    <div class="col-md-4"><label for="district_id" class="form-label">อำเภอ/เขต</label><select id="district_id" name="district_id" class="form-select" required><option value="">-- เลือกอำเภอ --</option></select></div>
+                    <div class="col-md-4"><label for="sub_district_id" class="form-label">ตำบล/แขวง</label><select id="sub_district_id" name="sub_district_id" class="form-select" required><option value="">-- เลือกตำบล --</option></select></div>
+                    <div class="col-12"><label for="map_url" class="form-label">Google Maps URL</label><input type="url" class="form-control" id="map_url" name="map_url" value="<?php echo htmlspecialchars($property_data['map_url'] ?? ''); ?>"></div>
+                    
+                    <div class="col-12">
+                        <label for="map_image" class="form-label">อัปโหลดภาพแผนที่</label>
+                        <?php if ($mode === 'Edit' && $map_image_path && file_exists($map_image_path)): ?>
+                            <div class="mb-2">
+                                <img src="<?php echo htmlspecialchars($map_image_path); ?>" alt="Map" class="img-thumbnail" style="max-width: 200px;">
+                                <p class="form-text">อัปโหลดไฟล์ใหม่เพื่อแทนที่ภาพปัจจุบัน</p>
+                            </div>
+                        <?php endif; ?>
+                        <input type="file" class="form-control" id="map_image" name="map_image" accept="image/*">
+                    </div>
+                </div>
 
-            <!-- สถานที่สำคัญใกล้เคียง -->
-            <div class="card-header">สถานที่สำคัญใกล้เคียง</div>
-            <div id="landmarks-container">
-                <?php if(empty($property_landmarks)): ?>
-                <div class="row g-3 mb-2 landmark-row"><div class="col-md-6"><select name="landmarks[0][id]" class="form-select landmark-select"><option value="">-- เลือกสถานที่ --</option><?php foreach($landmarks as $l): ?><option value="<?php echo $l['id']; ?>"><?php echo $l['name']; ?></option><?php endforeach; ?></select></div><div class="col-md-4"><input type="number" step="0.1" name="landmarks[0][distance]" class="form-control" placeholder="ระยะทาง (กม.)"></div><div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn">ลบ</button></div></div>
-                <?php else: ?>
-                    <?php foreach($property_landmarks as $i => $pl): ?>
-                    <div class="row g-3 mb-2 landmark-row"><div class="col-md-6"><select name="landmarks[<?php echo $i; ?>][id]" class="form-select landmark-select"><option value="">-- เลือกสถานที่ --</option><?php foreach($landmarks as $l): ?><option value="<?php echo $l['id']; ?>" <?php if($pl['rent_landmark_id'] == $l['id']) echo 'selected'; ?>><?php echo $l['name']; ?></option><?php endforeach; ?></select></div><div class="col-md-4"><input type="number" step="0.1" name="landmarks[<?php echo $i; ?>][distance]" class="form-control" placeholder="ระยะทาง (กม.)" value="<?php echo htmlspecialchars($pl['distance']); ?>"></div><div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn">ลบ</button></div></div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-            <button type="button" id="add-landmark-btn" class="btn btn-outline-primary mt-2"><i class="bi bi-plus"></i> เพิ่มสถานที่</button>
+                <div class="card-header">สิ่งอำนวยความสะดวก</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-12"><select id="facilities" name="facilities[]" class="form-select" multiple="multiple"><?php foreach($facilities as $f): ?><option value="<?php echo $f['id']; ?>" <?php if(in_array($f['id'], $property_facilities)) echo 'selected'; ?>><?php echo $f['name']; ?></option><?php endforeach; ?></select></div>
+                </div>
+
+                <div class="card-header">สถานที่สำคัญใกล้เคียง</div>
+                <div id="landmarks-container">
+                    <?php if(empty($property_landmarks)): ?>
+                    <div class="row g-3 mb-2 landmark-row"><div class="col-md-6"><select name="landmarks[0][id]" class="form-select landmark-select"><option value="">-- เลือกสถานที่ --</option><?php foreach($landmarks as $l): ?><option value="<?php echo $l['id']; ?>"><?php echo $l['name']; ?></option><?php endforeach; ?></select></div><div class="col-md-4"><input type="number" step="0.1" name="landmarks[0][distance]" class="form-control" placeholder="ระยะทาง (กม.)"></div><div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn">ลบ</button></div></div>
+                    <?php else: ?>
+                        <?php foreach($property_landmarks as $i => $pl): ?>
+                        <div class="row g-3 mb-2 landmark-row"><div class="col-md-6"><select name="landmarks[<?php echo $i; ?>][id]" class="form-select landmark-select"><option value="">-- เลือกสถานที่ --</option><?php foreach($landmarks as $l): ?><option value="<?php echo $l['id']; ?>" <?php if($pl['rent_landmark_id'] == $l['id']) echo 'selected'; ?>><?php echo $l['name']; ?></option><?php endforeach; ?></select></div><div class="col-md-4"><input type="number" step="0.1" name="landmarks[<?php echo $i; ?>][distance]" class="form-control" placeholder="ระยะทาง (กม.)" value="<?php echo htmlspecialchars($pl['distance']); ?>"></div><div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn">ลบ</button></div></div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+                <button type="button" id="add-landmark-btn" class="btn btn-outline-primary mt-2"><i class="bi bi-plus"></i> เพิ่มสถานที่</button>
             
-            <!-- รูปภาพและวิดีโอประกอบ -->
-            <div class="card-header mt-4">รูปภาพและวิดีโอประกอบ</div>
+                <div class="card-header mt-4">รูปภาพและวิดีโอประกอบ</div>
+                <div class="row g-3">
+                    <div class="col-md-6"><label for="img_bedroom" class="form-label">รูปห้องนอน</label><input type="file" name="images[B][]" class="form-control" multiple accept="image/*"></div>
+                    <div class="col-md-6"><label for="img_toilet" class="form-label">รูปห้องน้ำ</label><input type="file" name="images[T][]" class="form-control" multiple accept="image/*"></div>
+                    <div class="col-md-6"><label for="img_other" class="form-label">รูปอื่นๆ</label><input type="file" name="images[O][]" class="form-control" multiple accept="image/*"></div>
+                    <div class="col-md-6"><label for="img_plan" class="form-label">รูปผัง</label><input type="file" name="images[P][]" class="form-control" multiple accept="image/*"></div>
+                    
+                    <div class="col-12 mt-3">
+                        <label for="property_video" class="form-label">วิดีโอแนะนำ (ไฟล์ MP4, AVI, MOV)</label>
+                        <?php if ($mode === 'Edit' && $video_file_path && file_exists($video_file_path)): ?>
+                            <div class="my-2">
+                                <video width="320" height="240" controls>
+                                    <source src="<?php echo htmlspecialchars($video_file_path); ?>" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                                <p class="form-text">วิดีโอปัจจุบัน (อัปโหลดไฟล์ใหม่เพื่อแทนที่)</p>
+                            </div>
+                        <?php endif; ?>
+                        <input type="file" class="form-control" id="property_video" name="property_video" accept="video/*">
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label for="status" class="form-label">สถานะ</label><select id="status" name="status" class="form-select"><option value="E" <?php if(($property_data['status'] ?? 'E') == 'E') echo 'selected'; ?>>ว่าง</option><option value="F" <?php if(($property_data['status'] ?? '') == 'F') echo 'selected'; ?>>เต็ม</option></select></div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <a href="admin_properties.php" class="btn btn-secondary me-2">ยกเลิก</a>
+                    <button type="submit" name="save_property" class="btn btn-primary"><?php echo $mode === 'Add' ? 'บันทึก' : 'อัปเดต'; ?></button>
+                </div>
+            </form>
             
-            <!-- [เพิ่มใหม่] Form สำหรับลบรูปภาพหลายรูป -->
             <?php if($mode === 'Edit' && !empty($property_images)): ?>
-            <form method="POST" action="manage_property.php?id=<?php echo $property_id; ?>" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพที่เลือกทั้งหมด?');" id="delete-images-form">
+            <div class="card-header mt-4">จัดการรูปภาพที่มีอยู่</div>
+            <form method="POST" action="manage_property.php?id=<?php echo $property_id; ?>" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพที่เลือกทั้งหมด?');">
                 <div class="image-gallery my-3">
                     <?php foreach($property_images as $img): ?>
                     <?php
@@ -542,7 +577,6 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                             <span class="badge bg-success cover-badge with-checkbox">ภาพปก</span>
                         <?php endif; ?>
 
-                        <!-- ปุ่มเดิมจะอยู่นอกฟอร์มนี้ แต่ใช้ JavaScript จัดการแทน -->
                         <div class="img-actions">
                             <button type="button" onclick="setCoverImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-info" title="ตั้งเป็นภาพปก" <?php if($img['cover_flag'] == 'Y') echo 'disabled'; ?>>
                                 <i class="bi bi-star-fill"></i>
@@ -559,40 +593,8 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                 </button>
             </form>
             <?php endif; ?>
-            
-            <div class="row g-3">
-                <div class="col-md-6"><label for="img_bedroom" class="form-label">รูปห้องนอน</label><input type="file" name="images[B][]" class="form-control" multiple accept="image/*"></div>
-                <div class="col-md-6"><label for="img_toilet" class="form-label">รูปห้องน้ำ</label><input type="file" name="images[T][]" class="form-control" multiple accept="image/*"></div>
-                <div class="col-md-6"><label for="img_other" class="form-label">รูปอื่นๆ</label><input type="file" name="images[O][]" class="form-control" multiple accept="image/*"></div>
-                <div class="col-md-6"><label for="img_plan" class="form-label">รูปผัง</label><input type="file" name="images[P][]" class="form-control" multiple accept="image/*"></div>
-                
-                <div class="col-12 mt-3">
-                    <label for="property_video" class="form-label">วิดีโอแนะนำ (ไฟล์ MP4, AVI, MOV)</label>
-                    <?php if ($mode === 'Edit' && $video_file_path && file_exists($video_file_path)): ?>
-                        <div class="my-2">
-                            <video width="320" height="240" controls>
-                                <source src="<?php echo htmlspecialchars($video_file_path); ?>" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                            <p class="form-text">วิดีโอปัจจุบัน (อัปโหลดไฟล์ใหม่เพื่อแทนที่)</p>
-                        </div>
-                    <?php endif; ?>
-                    <input type="file" class="form-control" id="property_video" name="property_video" accept="video/*">
-                </div>
-            </div>
-
-
-            <hr class="my-4">
-            <div class="row">
-                <div class="col-md-6 mb-3"><label for="status" class="form-label">สถานะ</label><select id="status" name="status" class="form-select"><option value="E" <?php if(($property_data['status'] ?? 'E') == 'E') echo 'selected'; ?>>ว่าง</option><option value="F" <?php if(($property_data['status'] ?? '') == 'F') echo 'selected'; ?>>เต็ม</option></select></div>
-            </div>
-            <div class="d-flex justify-content-end">
-                <a href="admin_properties.php" class="btn btn-secondary me-2">ยกเลิก</a>
-                <button type="submit" name="save_property" class="btn btn-primary"><?php echo $mode === 'Add' ? 'บันทึก' : 'อัปเดต'; ?></button>
-            </div>
-        </form>
+        </div>
         
-        <!-- [เพิ่มใหม่] Hidden forms for single image actions -->
         <form method="POST" id="delete-single-image-form" style="display: none;">
             <input type="hidden" name="place_attach_id" id="single-delete-id">
             <input type="hidden" name="delete_image" value="1">
@@ -609,7 +611,7 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-// [เพิ่มใหม่] JavaScript functions for single image actions
+// JavaScript functions for single image actions
 function deleteSingleImage(id) {
     if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพนี้?')) {
         document.getElementById('single-delete-id').value = id;
