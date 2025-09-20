@@ -32,13 +32,46 @@ if (!$conn || $conn->connect_error) {
     exit();
 }
 
-// *** เพิ่มส่วนนี้: บังคับให้การเชื่อมต่อเป็น UTF-8 ***
+// *** บังคับให้การเชื่อมต่อเป็น UTF-8 ***
 $conn->set_charset("utf8mb4");
+
+/**
+ * [เพิ่มใหม่] ฟังก์ชันสำหรับดึง Path เต็มของไฟล์จาก attach_id
+ * @param mysqli $conn Connection object
+ * @param int|null $attach_id ID จากตาราง RENT_ATTACH
+ * @return string|null คืนค่า Path ของไฟล์ หรือ null ถ้าไม่พบ
+ */
+function get_document_path($conn, $attach_id) {
+    if (empty($attach_id)) {
+        return null;
+    }
+    $stmt = $conn->prepare(
+        "SELECT CONCAT('assets/rent_user/', ra.name, '/', rf.name) as file_path 
+         FROM RENT_FILE rf 
+         JOIN RENT_ATTACH ra ON rf.attach_id = ra.id 
+         WHERE ra.id = ?"
+    );
+    if ($stmt) {
+        $stmt->bind_param("i", $attach_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($data = $result->fetch_assoc()) {
+            // ตรวจสอบว่าไฟล์มีอยู่จริงบน server หรือไม่
+            if (file_exists($data['file_path'])) {
+                return $data['file_path'];
+            }
+        }
+        $stmt->close();
+    }
+    return null;
+}
+
 
 $user_id = (int)$_GET['user_id'];
 
-// --- เตรียมและรันคำสั่ง SQL ---
-$stmt = $conn->prepare("SELECT firstname, lastname, phone_no, line_id, identification_no, passport_no FROM RENT_USER WHERE id = ?");
+// --- [แก้ไข] เตรียมและรันคำสั่ง SQL ให้ดึง attach_id เพิ่ม ---
+$sql = "SELECT firstname, lastname, phone_no, line_id, identification_no, passport_no, id_card_attach_id, passport_attach_id FROM RENT_USER WHERE id = ?";
+$stmt = $conn->prepare($sql);
 
 if ($stmt === false) {
     http_response_code(500);
@@ -61,14 +94,18 @@ $result = $stmt->get_result();
 if ($result->num_rows > 0) {
     $user_data = $result->fetch_assoc();
     
+    // --- [แก้ไข] เพิ่มการดึง path รูปภาพและใส่เข้าไปใน response ---
     $response = [
         'firstname' => htmlspecialchars($user_data['firstname'] ?? ''),
         'lastname' => htmlspecialchars($user_data['lastname'] ?? ''),
         'phone_no' => htmlspecialchars($user_data['phone_no'] ?? ''),
         'line_id' => htmlspecialchars($user_data['line_id'] ?? ''),
         'identification_no' => htmlspecialchars($user_data['identification_no'] ?? ''),
-        'passport_no' => htmlspecialchars($user_data['passport_no'] ?? '')
+        'passport_no' => htmlspecialchars($user_data['passport_no'] ?? ''),
+        'id_card_path' => get_document_path($conn, $user_data['id_card_attach_id']),
+        'passport_path' => get_document_path($conn, $user_data['passport_attach_id'])
     ];
+    
 } else {
     http_response_code(404); // Not Found
     $response['error'] = 'ไม่พบข้อมูลผู้ใช้งาน';

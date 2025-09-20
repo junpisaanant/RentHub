@@ -136,6 +136,9 @@ $all_statuses = ['A', 'C', 'D', 'W', 'T', 'O'];
         .modal-body dt { font-weight: 700; color: #555; }
         .modal-body dd { margin-left: 0; padding-left: 1rem; border-left: 3px solid #eee; }
         #lineQrCode { max-width: 250px; height: auto; margin: 1rem auto; display: block; }
+        /* [เพิ่มใหม่] สไตล์สำหรับรูปเอกสาร */
+        .doc-thumbnail { width: 100px; height: auto; cursor: pointer; border: 1px solid #ddd; padding: 2px; border-radius: 4px; transition: box-shadow 0.2s; }
+        .doc-thumbnail:hover { box-shadow: 0 0 8px rgba(0,0,0,0.2); }
     </style>
 </head>
 
@@ -159,7 +162,6 @@ $all_statuses = ['A', 'C', 'D', 'W', 'T', 'O'];
             </div>
         <?php endif; ?>
 
-        <!-- Filter Card -->
         <div class="filter-card mb-5">
             <form method="GET" action="admin_transactions.php" class="row g-3 align-items-end">
                 <div class="col-lg-3 col-md-6"><label for="rent_place_id" class="form-label">สินทรัพย์</label><select class="form-select" id="rent_place_id" name="rent_place_id"><option value="">-- ทั้งหมด --</option><?php foreach ($properties as $prop): ?><option value="<?php echo $prop['ID']; ?>" <?php echo ($rent_place_id == $prop['ID']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($prop['NAME']); ?></option><?php endforeach; ?></select></div>
@@ -170,7 +172,6 @@ $all_statuses = ['A', 'C', 'D', 'W', 'T', 'O'];
             </form>
         </div>
 
-        <!-- Transactions Table Card -->
         <div class="table-card">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
@@ -210,7 +211,6 @@ $all_statuses = ['A', 'C', 'D', 'W', 'T', 'O'];
     </section>
 </main>
 
-<!-- User Detail Modal -->
 <div class="modal fade" id="userDetailModal" tabindex="-1" aria-labelledby="userDetailModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -228,7 +228,6 @@ $all_statuses = ['A', 'C', 'D', 'W', 'T', 'O'];
   </div>
 </div>
 
-<!-- Line QR Code Modal -->
 <div class="modal fade" id="lineQrModal" tabindex="-1" aria-labelledby="lineQrModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-sm modal-dialog-centered">
     <div class="modal-content">
@@ -244,6 +243,21 @@ $all_statuses = ['A', 'C', 'D', 'W', 'T', 'O'];
   </div>
 </div>
 
+<div class="modal fade" id="imageEnlargeModal" tabindex="-1" aria-labelledby="imageEnlargeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title" id="imageEnlargeModalLabel">ดูรูปภาพ</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+       </div>
+      <div class="modal-body text-center">
+        <img src="" id="enlargedImage" class="img-fluid" alt="Enlarged Image">
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
@@ -255,6 +269,7 @@ $(document).ready(function() {
         var userId = button.data('userid');
         var modalBody = $(this).find('.modal-body');
         modalBody.html('<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+        
         fetch('get_renter_details.php?user_id=' + userId)
             .then(response => response.json())
             .then(data => {
@@ -263,8 +278,42 @@ $(document).ready(function() {
                 } else {
                     let id_info = data.identification_no ? `<strong>เลขบัตรประชาชน:</strong> ${data.identification_no}` : (data.passport_no ? `<strong>พาสปอร์ต:</strong> ${data.passport_no}` : '<strong>เลขบัตร/พาสปอร์ต:</strong> -');
                     let line_link = data.line_id ? `<a href="#" class="line-qr-link" data-bs-toggle="modal" data-bs-target="#lineQrModal" data-lineid="${data.line_id}">${data.line_id}</a>` : '-';
-                    let content = `<dl class="row"><dt class="col-sm-5">ชื่อ - นามสกุล</dt><dd class="col-sm-7">${data.firstname} ${data.lastname}</dd><dt class="col-sm-5">เบอร์โทร</dt><dd class="col-sm-7"><a href="tel:${data.phone_no}">${data.phone_no}</a></dd><dt class="col-sm-5">Line ID</dt><dd class="col-sm-7">${line_link}</dd><dt class="col-sm-5">เลขบัตร/พาสปอร์ต</dt><dd class="col-sm-7">${id_info}</dd></dl>`;
-                    modalBody.html(content);
+                    
+                    // --- [แก้ไข] สร้างส่วนแสดงผลข้อมูลพื้นฐาน ---
+                    let content = `
+                        <dl class="row">
+                            <dt class="col-sm-5">ชื่อ - นามสกุล</dt><dd class="col-sm-7">${data.firstname} ${data.lastname}</dd>
+                            <dt class="col-sm-5">เบอร์โทร</dt><dd class="col-sm-7"><a href="tel:${data.phone_no}">${data.phone_no}</a></dd>
+                            <dt class="col-sm-5">Line ID</dt><dd class="col-sm-7">${line_link}</dd>
+                            <dt class="col-sm-5">เลขบัตร/พาสปอร์ต</dt><dd class="col-sm-7">${id_info}</dd>
+                        </dl>
+                    `;
+                    
+                    // --- [เพิ่มใหม่] สร้างส่วนแสดงผลรูปภาพเอกสาร ---
+                    let docsContent = '';
+                    if (data.id_card_path || data.passport_path) {
+                        docsContent += '<hr><h6 class="mt-3">เอกสารแนบ</h6><div class="row">';
+                        if (data.id_card_path) {
+                             docsContent += `
+                                <div class="col-md-6">
+                                    <strong>บัตรประชาชน:</strong><br>
+                                    <img src="${data.id_card_path}" class="doc-thumbnail enlarge-image mt-1" data-bs-toggle="modal" data-bs-target="#imageEnlargeModal">
+                                </div>
+                             `;
+                        }
+                        if (data.passport_path) {
+                             docsContent += `
+                                <div class="col-md-6">
+                                    <strong>พาสปอร์ต:</strong><br>
+                                    <img src="${data.passport_path}" class="doc-thumbnail enlarge-image mt-1" data-bs-toggle="modal" data-bs-target="#imageEnlargeModal">
+                                </div>
+                             `;
+                        }
+                        docsContent += '</div>';
+                    }
+
+                    // รวม content ทั้งหมดแล้วแสดงผล
+                    modalBody.html(content + docsContent);
                 }
             })
             .catch(error => {
@@ -282,6 +331,14 @@ $(document).ready(function() {
             var qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(lineUrl);
             qrImg.attr('src', qrApiUrl);
         }
+    });
+
+    // --- [เพิ่มใหม่] Event listener สำหรับการขยายรูปภาพ ---
+    $('#imageEnlargeModal').on('show.bs.modal', function(event) {
+        var thumbnail = $(event.relatedTarget); // รูปภาพ thumbnail ที่ถูกคลิก
+        var imageSource = thumbnail.attr('src'); // ดึง src ของ thumbnail
+        var modalImage = $(this).find('#enlargedImage');
+        modalImage.attr('src', imageSource); // ตั้งค่า src ของรูปใน modal
     });
 });
 </script>
