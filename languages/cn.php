@@ -2,12 +2,14 @@
 $lang = [
     // Header
     'home' => '首页',
-    'properties' => '出租房间列表',
-    'contact' => '联系我们',
     'login' => '登录',
-    'register' => '注册',
     'logout' => '登出',
-    'profile' => '个人资料',
+    'profile_info' => '个人资料',
+    'payment_verification' => '付款验证',
+    'my_assets' => '我的资产',
+    'manage_appointments' => '管理预约',
+    'dashboard' => '仪表板',
+    'manage_assets' => '管理资产',
 
     // Manage Property Page
     'manage_properties' => '管理出租资产',

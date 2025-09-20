@@ -2,12 +2,14 @@
 $lang = [
     // Header
     'home' => 'Home',
-    'properties' => 'Properties',
-    'contact' => 'Contact',
-    'login' => 'Login',
-    'register' => 'Register',
-    'logout' => 'Logout',
-    'profile' => 'Profile',
+    'login' => 'Log In',
+    'logout' => 'Log Out',
+    'profile_info' => 'Profile',
+    'payment_verification' => 'Payment Verification',
+    'my_assets' => 'My Assets',
+    'manage_appointments' => 'Manage Appointments',
+    'dashboard' => 'Dashboard',
+    'manage_assets' => 'Manage Assets',
 
     // Manage Property Page
     'manage_properties' => 'Manage Properties',

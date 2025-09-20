@@ -2,12 +2,14 @@
 $lang = [
     // Header
     'home' => 'หน้าแรก',
-    'properties' => 'รายการห้องเช่า',
-    'contact' => 'ติดต่อเรา',
     'login' => 'เข้าสู่ระบบ',
-    'register' => 'สมัครสมาชิก',
     'logout' => 'ออกจากระบบ',
-    'profile' => 'โปรไฟล์',
+    'profile_info' => 'ข้อมูลส่วนตัว',
+    'payment_verification' => 'ตรวจสอบและยืนยันการชำระเงิน',
+    'my_assets' => 'จัดการสินทรัพย์ของฉัน',
+    'manage_appointments' => 'จัดการการนัดหมาย',
+    'dashboard' => 'สรุปข้อมูลรายได้และห้องเช่า',
+    'manage_assets' => 'จัดการสินทรัพย์',
 
     // Manage Property Page
     'manage_properties' => 'จัดการสินทรัพย์ที่ปล่อยเช่า',
