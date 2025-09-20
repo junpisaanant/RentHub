@@ -60,6 +60,7 @@ $lang = [
     'bedroom_unit' => 'Bed',
     'bathroom_unit' => 'Bath',
     'sqm_unit' => 'sq.m.',
+    'price_on_request' => 'Price on request',
 
     // Manage Property Page
     'manage_properties' => 'Manage Properties',

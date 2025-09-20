@@ -1,10 +1,12 @@
 (function() {
   document.addEventListener('DOMContentLoaded', function() {
     
+    // ดึงคำแปลจาก PHP ที่เราสร้างใน index.php
     const translations = window.searchTranslations || {};
     const noResultsText = translations.no_results_found || 'ไม่พบผลลัพธ์';
-    const priceOnRequestText = translations.price_on_request || 'ราคาตามตกลง';
+    const priceOnRequestText = translations.price_on_request || 'ราคาตามตกลง'; // <--- ใช้ตัวแปรนี้
 
+    // เรียก load ผลลัพธ์ครั้งแรก
     performFilterSearch({});
 
     function performFilterSearch(filters) {
@@ -14,7 +16,10 @@
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: params.toString()
       })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
       .then(displaySearchResults)
       .catch(error => {
         console.error('Fetch Error:', error);
@@ -46,7 +51,6 @@
         });
 
         const img = document.createElement('img');
-        // จุดแสดงรูปภาพ (ถูกต้องแล้ว)
         img.src = item.attach_name ? 'assets/rent_place/' + item.attach_name : 'assets/img/properties/property-1.jpg';
         img.className = 'card-img-top';
         img.alt = item.rp_name;
@@ -57,26 +61,25 @@
 
         const title = document.createElement('h5');
         title.className = 'card-title';
-        // จุดแสดงชื่อที่แปลแล้ว (ถูกต้องแล้ว)
         title.textContent = item.rp_name;
         body.appendChild(title);
 
         const loc = document.createElement('p');
         loc.className = 'card-text text-muted mb-2';
-        // จุดแสดงที่อยู่ที่แปลแล้ว (ถูกต้องแล้ว)
         loc.textContent = `${item.sub_district_name}, ${item.district_name}, ${item.province_name}`;
         body.appendChild(loc);
 
         const price = document.createElement('p');
         price.className = 'card-text fw-bold mb-2';
+        
+        // *** แก้ไขจุดนี้ ***
         price.textContent = item.price === "0.00"
-          ? priceOnRequestText
+          ? priceOnRequestText // ใช้ตัวแปรที่ดึงคำแปลมา
           : `฿${Number(item.price).toLocaleString()}`;
         body.appendChild(price);
 
         const meta = document.createElement('p');
         meta.className = 'card-text text-secondary mt-auto';
-        // จุดแสดงข้อมูลที่แปลแล้ว (ถูกต้องแล้ว)
         meta.innerHTML = `
           <i class="fa fa-bed"></i> ${item.translated_bedrooms}
           &nbsp;|&nbsp;
@@ -92,11 +95,42 @@
       });
     }
 
-    // --- Event Listeners (โค้ดเดิมของคุณ) ---
+    // --- Event Listeners ---
     document.getElementById('searchButton').addEventListener('click', () => {
       const term = document.getElementById('searchInput').value.trim();
       performFilterSearch({ searchTerm: term });
     });
-    // ... โค้ดที่เหลือเหมือนเดิม ...
+
+    document.getElementById('searchInput').addEventListener('keyup', e => {
+      if (e.key === 'Enter') document.getElementById('searchButton').click();
+    });
+
+    document.querySelector('.clear-button').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      performFilterSearch({});
+    });
+
+    document.querySelector('#filterModal .btn-primary').addEventListener('click', () => {
+      const filters = {
+        type: document.getElementById('type').value,
+        minPrice: document.getElementById('minPrice').value,
+        maxPrice: document.getElementById('maxPrice').value,
+        roomQty: document.getElementById('roomQty').value,
+        minSize: document.getElementById('minSize').value,
+        maxSize: document.getElementById('maxSize').value,
+        distance: document.getElementById('distance').value,
+        toiletQty: document.getElementById('toiletQty').value,
+        feature: getSelected('rentFacilitiesCombo'),
+        facility: getSelected('rentFacilitiesFCombo')
+      };
+      performFilterSearch(filters);
+      bootstrap.Modal.getInstance(document.getElementById('filterModal')).hide();
+    });
+
+    function getSelected(id) {
+      return Array.from(document.querySelectorAll(`#${id} .feature-button.selected`))
+               .map(btn => btn.dataset.id)
+               .join(',');
+    }
   });
 })();

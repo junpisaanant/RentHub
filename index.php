@@ -126,6 +126,12 @@ include 'header.php';
     </div>
 </section>
 
+<script>
+    window.searchTranslations = {
+        no_results_found: "<?php echo addslashes($lang['no_results_found']); ?>",
+        price_on_request: "<?php echo addslashes($lang['price_on_request']); ?>"
+    };
+</script>
 <?php include 'footer.php'; ?>
 <script src="assets/js/search.js"></script>
 

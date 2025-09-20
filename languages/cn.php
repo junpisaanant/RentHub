@@ -60,6 +60,7 @@ $lang = [
     'bedroom_unit' => '卧室',
     'bathroom_unit' => '浴室',
     'sqm_unit' => '平方米',
+    'price_on_request' => '价格面议',
 
     // Manage Property Page
     'manage_properties' => '管理出租资产',
