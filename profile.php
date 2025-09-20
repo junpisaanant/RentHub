@@ -1,4 +1,5 @@
 <?php
+ob_start(); // เพิ่ม ob_start() เพื่อจัดการ header redirection
 include 'header.php';
 include 'db.php';
 
@@ -7,18 +8,197 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// --- ตรวจสอบหน้าปัจจุบันจาก URL (info หรือ password) ---
+$user_id = $_SESSION['user_id'];
 $page = $_GET['page'] ?? 'info';
 
-$user_id = $_SESSION['user_id'];
+// --- ข้อความแจ้งเตือนสำหรับแต่ละฟอร์ม ---
 $info_message = '';
 $info_message_type = '';
 $password_message = '';
 $password_message_type = '';
+$file_message = ''; // [เพิ่มใหม่] สำหรับฟอร์มไฟล์
+$file_message_type = ''; // [เพิ่มใหม่]
+
+// ==============================================================================
+// [เพิ่มใหม่] ฟังก์ชันสำหรับจัดการไฟล์
+// ==============================================================================
+
+// ฟังก์ชันสำหรับอัปโหลดเอกสาร
+function upload_document($conn, $user_id, $file_key, $column_to_update) {
+    if (isset($_FILES[$file_key]) && $_FILES[$file_key]['error'] == 0) {
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+        $file_type = mime_content_type($_FILES[$file_key]['tmp_name']);
+
+        if (!in_array($file_type, $allowed_types)) {
+            return "ประเภทไฟล์ไม่ได้รับอนุญาต (อนุญาตเฉพาะ jpg, png, gif, pdf)";
+        }
+
+        // สร้างโฟลเดอร์สำหรับ user และสำหรับเก็บเอกสาร
+        $user_dir = "assets/rent_user/" . $user_id;
+        $doc_dir = $user_dir . "/documents";
+        if (!is_dir($user_dir)) mkdir($user_dir, 0777, true);
+        if (!is_dir($doc_dir)) mkdir($doc_dir, 0777, true);
+
+        // สร้างชื่อไฟล์ใหม่เพื่อป้องกันการซ้ำกัน
+        $file_extension = pathinfo($_FILES[$file_key]['name'], PATHINFO_EXTENSION);
+        $new_filename = uniqid($file_key . '_', true) . '.' . $file_extension;
+        $destination = $doc_dir . '/' . $new_filename;
+        
+        // ย้ายไฟล์
+        if (move_uploaded_file($_FILES[$file_key]['tmp_name'], $destination)) {
+            $conn->begin_transaction();
+            try {
+                // 1. เพิ่มข้อมูลใน RENT_ATTACH
+                $stmt_attach = $conn->prepare("INSERT INTO RENT_ATTACH (name) VALUES (?)");
+                $attach_name = $user_id . "/documents";
+                $stmt_attach->bind_param("s", $attach_name);
+                $stmt_attach->execute();
+                $attach_id = $stmt_attach->insert_id;
+
+                // 2. เพิ่มข้อมูลใน RENT_FILE
+                $stmt_file = $conn->prepare("INSERT INTO RENT_FILE (attach_id, name) VALUES (?, ?)");
+                $stmt_file->bind_param("is", $attach_id, $new_filename);
+                $stmt_file->execute();
+                $file_id = $stmt_file->insert_id;
+
+                // 3. อัปเดต RENT_USER
+                $stmt_user = $conn->prepare("UPDATE RENT_USER SET $column_to_update = ? WHERE id = ?");
+                $stmt_user->bind_param("ii", $attach_id, $user_id);
+                $stmt_user->execute();
+                
+                $conn->commit();
+                return "สำเร็จ";
+            } catch (Exception $e) {
+                $conn->rollback();
+                unlink($destination); // ลบไฟล์ที่อัปโหลดถ้าเกิดข้อผิดพลาด
+                return "เกิดข้อผิดพลาดฐานข้อมูล: " . $e->getMessage();
+            }
+        } else {
+            return "ไม่สามารถย้ายไฟล์ได้";
+        }
+    }
+    return null; // ไม่มีไฟล์ถูกอัปโหลด
+}
+
+// ฟังก์ชันสำหรับลบเอกสาร
+function delete_document($conn, $user_id, $column_to_update) {
+    // 1. ดึง attach_id จาก RENT_USER
+    $stmt_get = $conn->prepare("SELECT $column_to_update FROM RENT_USER WHERE id = ?");
+    $stmt_get->bind_param("i", $user_id);
+    $stmt_get->execute();
+    $result = $stmt_get->get_result();
+    $user_data = $result->fetch_assoc();
+    $attach_id = $user_data[$column_to_update];
+
+    if ($attach_id) {
+        // 2. ดึงข้อมูลไฟล์
+        $stmt_file = $conn->prepare("SELECT rf.id as file_id, CONCAT('assets/rent_user/', ra.name, '/', rf.name) as file_path FROM RENT_FILE rf JOIN RENT_ATTACH ra ON rf.attach_id = ra.id WHERE ra.id = ?");
+        $stmt_file->bind_param("i", $attach_id);
+        $stmt_file->execute();
+        $file_result = $stmt_file->get_result();
+        $file_data = $file_result->fetch_assoc();
+
+        $conn->begin_transaction();
+        try {
+            // 3. ตั้งค่า attach_id ใน RENT_USER เป็น NULL
+            $stmt_update = $conn->prepare("UPDATE RENT_USER SET $column_to_update = NULL WHERE id = ?");
+            $stmt_update->bind_param("i", $user_id);
+            $stmt_update->execute();
+            
+            if ($file_data) {
+                // 4. ลบไฟล์ออกจาก server
+                if (file_exists($file_data['file_path'])) {
+                    unlink($file_data['file_path']);
+                }
+
+                // 5. ลบข้อมูลจาก RENT_FILE และ RENT_ATTACH
+                $stmt_del_file = $conn->prepare("DELETE FROM RENT_FILE WHERE id = ?");
+                $stmt_del_file->bind_param("i", $file_data['file_id']);
+                $stmt_del_file->execute();
+                
+                $stmt_del_attach = $conn->prepare("DELETE FROM RENT_ATTACH WHERE id = ?");
+                $stmt_del_attach->bind_param("i", $attach_id);
+                $stmt_del_attach->execute();
+            }
+
+            $conn->commit();
+            return true;
+        } catch (Exception $e) {
+            $conn->rollback();
+            return false;
+        }
+    }
+    return false;
+}
+
+// ฟังก์ชันสำหรับดึง path ของไฟล์
+function get_document_path($conn, $attach_id) {
+    if (empty($attach_id)) return null;
+    $stmt = $conn->prepare("SELECT CONCAT('assets/rent_user/', ra.name, '/', rf.name) as file_path FROM RENT_FILE rf JOIN RENT_ATTACH ra ON rf.attach_id = ra.id WHERE ra.id = ?");
+    $stmt->bind_param("i", $attach_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($data = $result->fetch_assoc()) {
+        if(file_exists($data['file_path'])){
+            return $data['file_path'];
+        }
+    }
+    return null;
+}
+
+// ==============================================================================
+// Logic การจัดการ POST requests
+// ==============================================================================
+
+// --- [เพิ่มใหม่] Logic สำหรับ "อัปเดตไฟล์เอกสาร" ---
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_files'])) {
+    $page = 'info';
+    $id_card_result = upload_document($conn, $user_id, 'id_card_image', 'id_card_attach_id');
+    $passport_result = upload_document($conn, $user_id, 'passport_image', 'passport_attach_id');
+
+    $messages = [];
+    if ($id_card_result) $messages['บัตรประชาชน'] = $id_card_result;
+    if ($passport_result) $messages['พาสปอร์ต'] = $passport_result;
+
+    $success_count = 0;
+    $error_messages = [];
+    foreach ($messages as $key => $msg) {
+        if ($msg === "สำเร็จ") {
+            $success_count++;
+        } else {
+            $error_messages[] = "$key: $msg";
+        }
+    }
+
+    if ($success_count > 0 && empty($error_messages)) {
+        $file_message = "อัปโหลดไฟล์สำเร็จ";
+        $file_message_type = "success";
+    } elseif (!empty($error_messages)) {
+        $file_message = "เกิดข้อผิดพลาด: <br>" . implode("<br>", $error_messages);
+        $file_message_type = "danger";
+    }
+    // ไม่ต้องแสดงข้อความถ้าไม่มีไฟล์อัปโหลด
+}
+
+// --- [เพิ่มใหม่] Logic สำหรับ "ลบไฟล์เอกสาร" ---
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_file'])) {
+    $page = 'info';
+    $file_to_delete = $_POST['delete_file']; // 'id_card' or 'passport'
+    $column = ($file_to_delete == 'id_card') ? 'id_card_attach_id' : 'passport_attach_id';
+
+    if (delete_document($conn, $user_id, $column)) {
+        $file_message = "ลบไฟล์เรียบร้อยแล้ว";
+        $file_message_type = "success";
+    } else {
+        $file_message = "เกิดข้อผิดพลาดในการลบไฟล์";
+        $file_message_type = "danger";
+    }
+}
+
 
 // --- Logic สำหรับ "อัปเดตข้อมูลส่วนตัว" ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
-    $page = 'info'; // กำหนดให้กลับมาหน้า info หลัง submit
+    $page = 'info'; 
     $firstname = $_POST['firstname'];
     $lastname = $_POST['lastname'];
     $phone_no = $_POST['phone_no'];
@@ -59,7 +239,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
 
 // --- Logic สำหรับ "เปลี่ยนรหัสผ่าน" ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
-    $page = 'password'; // กำหนดให้กลับมาหน้า password หลัง submit
+    $page = 'password'; 
     $current_password = $_POST['current_password'];
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
@@ -105,22 +285,20 @@ $user = $result->fetch_assoc();
 // ดึงรูปโปรไฟล์
 $profile_picture_path = 'https://placehold.co/120x120/EFEFEF/AAAAAA&text=Profile'; // รูปเริ่มต้น
 if ($user && !empty($user['attach_id'])) {
-    $attach_id = $user['attach_id'];
-    $stmt_file = $conn->prepare(
-        "SELECT CONCAT('assets/rent_user/', ra.name, '/', rf.name) as file_path FROM RENT_FILE rf JOIN RENT_ATTACH ra ON rf.attach_id = ra.id WHERE ra.id = ?"
-    );
-    $stmt_file->bind_param("i", $attach_id);
-    $stmt_file->execute();
-    $file_result = $stmt_file->get_result();
-    if ($file_data = $file_result->fetch_assoc()) {
-        if (file_exists($file_data['file_path'])) {
-            $profile_picture_path = $file_data['file_path'];
-        }
-    }
-    $stmt_file->close();
+    $path = get_document_path($conn, $user['attach_id']);
+    if($path) $profile_picture_path = $path;
 }
 
+// [เพิ่มใหม่] ดึงรูปเอกสาร
+$id_card_path = null;
+$passport_path = null;
 if ($user) {
+    if(!empty($user['id_card_attach_id'])) {
+       $id_card_path = get_document_path($conn, $user['id_card_attach_id']);
+    }
+    if(!empty($user['passport_attach_id'])) {
+        $passport_path = get_document_path($conn, $user['passport_attach_id']);
+    }
     $_SESSION['username'] = $user['username'];
 }
 $conn->close();
@@ -222,6 +400,69 @@ $conn->close();
                             <?php endif; ?>
                         </div>
                     </div>
+                    
+                    <div class="profile-content card mt-4">
+                        <div class="card-body">
+                            <h5 class="card-title-form">เอกสารยืนยันตัวตน</h5>
+                             <?php if ($file_message): ?>
+                                <div class="alert alert-<?php echo $file_message_type; ?>"><?php echo $file_message; ?></div>
+                            <?php endif; ?>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>บัตรประชาชน</h6>
+                                    <?php if ($id_card_path): ?>
+                                        <div class="mb-2">
+                                            <a href="<?php echo htmlspecialchars($id_card_path); ?>" target="_blank">
+                                                <img src="<?php echo htmlspecialchars($id_card_path); ?>" alt="ID Card" class="img-thumbnail" style="max-height: 150px;">
+                                            </a>
+                                        </div>
+                                        <form action="profile.php?page=info" method="post" onsubmit="return confirm('คุณต้องการลบไฟล์นี้ใช่หรือไม่?');">
+                                            <button type="submit" name="delete_file" value="id_card" class="btn btn-sm btn-danger">
+                                                <i class="bi bi-trash"></i> ลบไฟล์
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <p class="text-muted">ยังไม่มีการอัปโหลดไฟล์บัตรประชาชน</p>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>พาสปอร์ต</h6>
+                                     <?php if ($passport_path): ?>
+                                        <div class="mb-2">
+                                             <a href="<?php echo htmlspecialchars($passport_path); ?>" target="_blank">
+                                                <img src="<?php echo htmlspecialchars($passport_path); ?>" alt="Passport" class="img-thumbnail" style="max-height: 150px;">
+                                            </a>
+                                        </div>
+                                        <form action="profile.php?page=info" method="post" onsubmit="return confirm('คุณต้องการลบไฟล์นี้ใช่หรือไม่?');">
+                                            <button type="submit" name="delete_file" value="passport" class="btn btn-sm btn-danger">
+                                                <i class="bi bi-trash"></i> ลบไฟล์
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <p class="text-muted">ยังไม่มีการอัปโหลดไฟล์พาสปอร์ต</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <form action="profile.php?page=info" method="post" enctype="multipart/form-data" class="mt-3">
+                                <input type="hidden" name="update_files" value="1">
+                                <div class="mb-3">
+                                    <label for="id_card_image" class="form-label">อัปโหลดบัตรประชาชนใหม่</label>
+                                    <input type="file" name="id_card_image" id="id_card_image" class="form-control" accept="image/*,application/pdf">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="passport_image" class="form-label">อัปโหลดพาสปอร์ตใหม่</label>
+                                    <input type="file" name="passport_image" id="passport_image" class="form-control" accept="image/*,application/pdf">
+                                </div>
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary">อัปเดตไฟล์</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
 
                 <?php elseif ($page === 'password'): ?>
                     <div class="profile-content card">
@@ -267,12 +508,10 @@ $conn->close();
       </div>
       <form action="update_profile_picture.php" method="post" enctype="multipart/form-data">
         <div class="modal-body">
-            <!-- [เพิ่มใหม่] เพิ่ม img tag สำหรับแสดงภาพตัวอย่าง -->
             <div class="text-center mb-3">
                 <img id="image-preview" src="<?php echo htmlspecialchars($profile_picture_path); ?>" alt="Image Preview" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
             </div>
             <p>เลือกรูปภาพใหม่ที่ต้องการ (แนะนำขนาด 1:1 เช่น 500x500 pixels):</p>
-            <!-- [เพิ่มใหม่] เพิ่ม id ให้ input -->
             <input type="file" id="profile-picture-input" name="profile_picture" class="form-control" accept="image/png, image/jpeg, image/gif" required>
         </div>
         <div class="modal-footer">
@@ -285,7 +524,6 @@ $conn->close();
 </div>
 </main>
 
-<!-- [เพิ่มใหม่] JavaScript สำหรับแสดงภาพตัวอย่าง -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('profile-picture-input');
@@ -295,7 +533,6 @@ document.addEventListener('DOMContentLoaded', function() {
         fileInput.addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
-                // สร้าง URL ชั่วคราวสำหรับไฟล์ที่เลือก
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     imagePreview.src = e.target.result;
@@ -307,4 +544,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php include 'footer.php'; ?>
+<?php 
+include 'footer.php'; 
+ob_end_flush(); // ส่ง output ทั้งหมด
+?>
