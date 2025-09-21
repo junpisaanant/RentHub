@@ -1,6 +1,20 @@
 <?php
 session_start();
 include 'db.php'; // ไฟล์เชื่อมต่อฐานข้อมูล
+
+// --- Language Setup ---
+$lang_path = 'languages/';
+$lang_fall = 'th'; // Default language
+$lang_list = ['th', 'en', 'cn']; // Supported languages
+
+// Set language from session or query parameter
+if (isset($_GET['lang']) && in_array($_GET['lang'], $lang_list)) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+$lang_use = $_SESSION['lang'] ?? $lang_fall;
+include $lang_path . $lang_use . '.php';
+
+
 include 'header.php'; // ส่วนหัวของเว็บ
 
 // ตรวจสอบสิทธิ์การเข้าถึงของผู้ใช้
@@ -51,10 +65,10 @@ $available_rooms = $result_available['available_rooms'] ?? 0;
 // --- ดึงข้อมูลสำหรับกราฟ (ตามช่วงวันที่ที่เลือก) ---
 $chart_labels = [];
 $chart_data = [];
-$thai_months = [
-    '1' => 'ม.ค.', '2' => 'ก.พ.', '3' => 'มี.ค.', '4' => 'เม.ย.',
-    '5' => 'พ.ค.', '6' => 'มิ.ย.', '7' => 'ก.ค.', '8' => 'ส.ค.',
-    '9' => 'ก.ย.', '10' => 'ต.ค.', '11' => 'พ.ย.', '12' => 'ธ.ค.'
+$months = [
+    '1' => $lang['jan'], '2' => $lang['feb'], '3' => $lang['mar'], '4' => $lang['apr'],
+    '5' => $lang['may'], '6' => $lang['jun'], '7' => $lang['jul'], '8' => $lang['aug'],
+    '9' => $lang['sep'], '10' => $lang['oct'], '11' => $lang['nov'], '12' => $lang['dec']
 ];
 
 // สร้าง array ของเดือนทั้งหมดในช่วงวันที่ที่เลือกให้มีค่าเริ่มต้นเป็น 0
@@ -67,12 +81,13 @@ $period = new DatePeriod(
 
 foreach ($period as $date) {
     $month_key = $date->format('Y-m');
-    $chart_labels[] = $thai_months[$date->format('n')] . " " . ($date->format('Y') + 543);
+    $year_display = ($lang_use === 'th') ? ($date->format('Y') + 543) : $date->format('Y');
+    $chart_labels[] = $months[$date->format('n')] . " " . $year_display;
     $monthly_revenues[$month_key] = 0;
 }
 
 $stmt_chart = $conn->prepare("
-    SELECT 
+    SELECT
         DATE_FORMAT(t.TRANSFER_DATE, '%Y-%m') AS month,
         SUM(t.PRICE) AS monthly_sum
     FROM RENT_PLACE_APPOINTMENT t
@@ -95,7 +110,6 @@ $chart_data = array_values($monthly_revenues);
 
 ?>
 <head>
-    <!-- เพิ่ม CSS และ JS ที่จำเป็น -->
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -115,38 +129,36 @@ $chart_data = array_values($monthly_revenues);
 <main id="main">
     <section class="container py-5">
         <div class="section-title mb-4">
-            <h2>ภาพรวมระบบ</h2>
-            <p>สรุปข้อมูลรายได้และห้องเช่าของคุณ</p>
+            <h2><?php echo $lang['dashboard_title']; ?></h2>
+            <p><?php echo $lang['dashboard_subtitle']; ?></p>
         </div>
 
-        <!-- Date Filter Form -->
         <div class="filter-form mb-5">
             <form method="GET" action="dashboard.php" class="row g-3 align-items-end">
                 <div class="col-md-4">
-                    <label for="start_date" class="form-label">วันที่เริ่มต้น</label>
+                    <label for="start_date" class="form-label"><?php echo $lang['start_date']; ?></label>
                     <input type="date" class="form-control" id="start_date" name="start_date" value="<?php echo htmlspecialchars($start_date); ?>">
                 </div>
                 <div class="col-md-4">
-                    <label for="end_date" class="form-label">วันที่สิ้นสุด</label>
+                    <label for="end_date" class="form-label"><?php echo $lang['end_date']; ?></label>
                     <input type="date" class="form-control" id="end_date" name="end_date" value="<?php echo htmlspecialchars($end_date); ?>">
                 </div>
                 <div class="col-md-4 d-flex">
-                    <button type="submit" class="btn btn-primary me-2 flex-grow-1"><i class="bi bi-funnel-fill"></i> กรองข้อมูล</button>
+                    <button type="submit" class="btn btn-primary me-2 flex-grow-1"><i class="bi bi-funnel-fill"></i> <?php echo $lang['filter']; ?></button>
                     <a href="export_excel.php?start_date=<?php echo htmlspecialchars($start_date); ?>&end_date=<?php echo htmlspecialchars($end_date); ?>" class="btn btn-success flex-grow-1">
-                        <i class="bi bi-file-earmark-excel-fill"></i> Export Excel
+                        <i class="bi bi-file-earmark-excel-fill"></i> <?php echo $lang['export_excel']; ?>
                     </a>
                 </div>
             </form>
         </div>
 
-        <!-- Summary Cards -->
         <div class="row g-4 mb-5">
             <div class="col-lg-3 col-md-6">
                 <div class="card dashboard-card">
                     <div class="card-body">
                         <i class="bi bi-cash-stack icon text-success"></i>
                         <div>
-                            <h5 class="card-title">รายได้รวม (ตามช่วงที่เลือก)</h5>
+                            <h5 class="card-title"><?php echo $lang['total_revenue_selected']; ?></h5>
                             <p class="card-text">฿<?php echo number_format($total_revenue, 2); ?></p>
                         </div>
                     </div>
@@ -157,7 +169,7 @@ $chart_data = array_values($monthly_revenues);
                     <div class="card-body">
                         <i class="bi bi-calendar-check icon text-primary"></i>
                         <div>
-                            <h5 class="card-title">รายได้เดือนนี้</h5>
+                            <h5 class="card-title"><?php echo $lang['this_month_revenue']; ?></h5>
                             <p class="card-text">฿<?php echo number_format($monthly_revenue, 2); ?></p>
                         </div>
                     </div>
@@ -168,7 +180,7 @@ $chart_data = array_values($monthly_revenues);
                     <div class="card-body">
                         <i class="bi bi-person-plus icon text-info"></i>
                         <div>
-                            <h5 class="card-title">การเช่าใหม่ (ตามช่วงที่เลือก)</h5>
+                            <h5 class="card-title"><?php echo $lang['new_rentals_selected']; ?></h5>
                             <p class="card-text"><?php echo $new_rentals; ?></p>
                         </div>
                     </div>
@@ -179,7 +191,7 @@ $chart_data = array_values($monthly_revenues);
                     <div class="card-body">
                         <i class="bi bi-door-open icon text-warning"></i>
                         <div>
-                            <h5 class="card-title">ห้องว่างทั้งหมด</h5>
+                            <h5 class="card-title"><?php echo $lang['available_rooms']; ?></h5>
                             <p class="card-text"><?php echo $available_rooms; ?></p>
                         </div>
                     </div>
@@ -187,7 +199,6 @@ $chart_data = array_values($monthly_revenues);
             </div>
         </div>
 
-        <!-- Income Chart -->
         <div class="chart-container">
             <canvas id="incomeChart"></canvas>
         </div>
@@ -205,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         data: {
             labels: chartLabels,
             datasets: [{
-                label: 'รายได้ (บาท)',
+                label: '<?php echo $lang['income_baht']; ?>',
                 data: chartData,
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
@@ -218,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             responsive: true,
             scales: { y: { beginAtZero: true, ticks: { callback: value => '฿' + value.toLocaleString() } } },
             plugins: {
-                title: { display: true, text: 'กราฟแสดงรายได้รายเดือน (ตามช่วงที่เลือก)', font: { size: 18, family: 'Sarabun' } },
+                title: { display: true, text: '<?php echo $lang['monthly_income_chart']; ?>', font: { size: 18, family: 'Sarabun' } },
                 tooltip: {
                     callbacks: {
                         label: context => {

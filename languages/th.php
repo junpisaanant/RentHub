@@ -343,7 +343,33 @@ $lang = [
     'cannot_load_data' => 'ไม่สามารถโหลดข้อมูลได้',
     'scan_qr_line' => 'สแกนเพื่อเพิ่มเพื่อนใน Line',
     'view_image' => 'ดูรูปภาพ',
-    'close_button' => 'ปิด'
+    'close_button' => 'ปิด',
+
+    //dashboard.php
+    "dashboard_title" => "ภาพรวมระบบ",
+    "dashboard_subtitle" => "สรุปข้อมูลรายได้และห้องเช่าของคุณ",
+    "start_date" => "วันที่เริ่มต้น",
+    "end_date" => "วันที่สิ้นสุด",
+    "filter" => "กรองข้อมูล",
+    "export_excel" => "Export Excel",
+    "total_revenue_selected" => "รายได้รวม (ตามช่วงที่เลือก)",
+    "this_month_revenue" => "รายได้เดือนนี้",
+    "new_rentals_selected" => "การเช่าใหม่ (ตามช่วงที่เลือก)",
+    "available_rooms" => "ห้องว่างทั้งหมด",
+    "income_baht" => "รายได้ (บาท)",
+    "monthly_income_chart" => "กราฟแสดงรายได้รายเดือน (ตามช่วงที่เลือก)",
+    "jan" => "ม.ค.",
+    "feb" => "ก.พ.",
+    "mar" => "มี.ค.",
+    "apr" => "เม.ย.",
+    "may" => "พ.ค.",
+    "jun" => "มิ.ย.",
+    "jul" => "ก.ค.",
+    "aug" => "ส.ค.",
+    "sep" => "ก.ย.",
+    "oct" => "ต.ค.",
+    "nov" => "พ.ย.",
+    "dec" => "ธ.ค."
 
 ];
 ?>

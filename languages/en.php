@@ -343,6 +343,32 @@ $lang = [
     'cannot_load_data' => 'Could not load data',
     'scan_qr_line' => 'Scan to add friend on Line',
     'view_image' => 'View Image',
-    'close_button' => 'Close'
+    'close_button' => 'Close',
+
+    //dashboard.php
+    "dashboard_title" => "Dashboard",
+    "dashboard_subtitle" => "Summary of your income and rental rooms.",
+    "start_date" => "Start Date",
+    "end_date" => "End Date",
+    "filter" => "Filter",
+    "export_excel" => "Export Excel",
+    "total_revenue_selected" => "Total Revenue (Selected Range)",
+    "this_month_revenue" => "This Month's Revenue",
+    "new_rentals_selected" => "New Rentals (Selected Range)",
+    "available_rooms" => "Total Available Rooms",
+    "income_baht" => "Income (Baht)",
+    "monthly_income_chart" => "Monthly Income Chart (Selected Range)",
+    "jan" => "Jan",
+    "feb" => "Feb",
+    "mar" => "Mar",
+    "apr" => "Apr",
+    "may" => "May",
+    "jun" => "Jun",
+    "jul" => "Jul",
+    "aug" => "Aug",
+    "sep" => "Sep",
+    "oct" => "Oct",
+    "nov" => "Nov",
+    "dec" => "Dec"
 ];
 ?>

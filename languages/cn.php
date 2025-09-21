@@ -343,6 +343,32 @@ $lang = [
      'cannot_load_data' => '无法加载数据',
      'scan_qr_line' => '扫描二维码添加Line好友',
      'view_image' => '查看图片',
-     'close_button' => '关闭'
+     'close_button' => '关闭',
+
+     //dashboard.php
+     "dashboard_title" => "仪表板",
+    "dashboard_subtitle" => "您的收入和出租房间摘要",
+    "start_date" => "开始日期",
+    "end_date" => "结束日期",
+    "filter" => "筛选",
+    "export_excel" => "导出 Excel",
+    "total_revenue_selected" => "总收入 (选定范围)",
+    "this_month_revenue" => "本月收入",
+    "new_rentals_selected" => "新租赁 (选定范围)",
+    "available_rooms" => "全部空房",
+    "income_baht" => "收入 (泰铢)",
+    "monthly_income_chart" => "月收入图表 (选定范围)",
+    "jan" => "一月",
+    "feb" => "二月",
+    "mar" => "三月",
+    "apr" => "四月",
+    "may" => "五月",
+    "jun" => "六月",
+    "jul" => "七月",
+    "aug" => "八月",
+    "sep" => "九月",
+    "oct" => "十月",
+    "nov" => "十一月",
+    "dec" => "十二月"
 ];
 ?>
