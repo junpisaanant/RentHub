@@ -12,6 +12,7 @@ function sendSecurityDepositRequestEmail($userEmail, $userName, $transactionId, 
     }
 
     $mail = new PHPMailer(true);
+    $mail->SMTPDebug = 2; // เพิ่มบรรทัดนี้เข้าไป
 
     try {
         $mail->isSMTP();
