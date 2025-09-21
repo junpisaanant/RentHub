@@ -77,7 +77,7 @@ if(!$rent_name){
 
 <body class="index-page">
 <header id="header" class="header d-flex align-items-center fixed-top">
-    <div class="container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
+    <div class="container-fluid position-relative d-flex align-items-center justify-content-between">
 
         <a href="index.php?rent_name=<?php echo $rent_name; ?>" class="logo d-flex align-items-center">
             <h1 class="sitename"><?php echo $rent_name; ?></h1>
