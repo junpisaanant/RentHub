@@ -111,4 +111,8 @@
 
   <script src="assets/js/main.js"></script>
 
+  <a href="https://wa.me/66622455942" class="whatsapp-button" target="_blank">
+    <i class="bi bi-whatsapp"></i>
+  </a>
+
 </body>

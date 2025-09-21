@@ -1804,3 +1804,32 @@ section,
   padding-top: 20px; /* ลดระยะห่างด้านบนลง */
   padding: 0px; /* ลดระยะห่างด้านบนลง */
 }
+
+/*--------------------------------------------------------------
+# WhatsApp Button
+--------------------------------------------------------------*/
+.whatsapp-button {
+  position: fixed;
+  right: 20px;
+  /* ขยับตำแหน่งปุ่มให้สูงขึ้นไปอยู่เหนือปุ่ม Scroll-Top */
+  bottom: 90px;
+  width: 60px;
+  height: 60px;
+  background-color: #25D366;
+  color: #fff;
+  border-radius: 50%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.whatsapp-button:hover {
+  transform: scale(1.1);
+}
+
+.whatsapp-button i {
+  font-size: 32px;
+}
