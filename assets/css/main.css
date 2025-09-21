@@ -1798,3 +1798,9 @@ section,
     height: 50vh; /* ลดความสูงลงสำหรับหน้าจอที่เล็กกว่า */
   }
 }
+
+/* Adjust space above search section */
+#search {
+  padding-top: 20px; /* ลดระยะห่างด้านบนลง */
+  padding: 0px; /* ลดระยะห่างด้านบนลง */
+}

@@ -21,7 +21,7 @@ include 'header.php';
     <section id="hero">
     </section>
 
-    <section id="search" class="services section mb-5">
+    <section id="search" class="services section">
         <div class="search-bar">
             <div class="search-input">
                 <button id="searchButton" class="btn"><i class="bi bi-search"></i></button>
