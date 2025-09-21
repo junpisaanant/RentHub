@@ -2,7 +2,17 @@
 ob_start();
 session_start();
 include 'db.php'; // ไฟล์เชื่อมต่อฐานข้อมูล
-include 'header.php'; // ส่วนหัวของเว็บ
+
+// =================== [START] ADDED FOR MULTI-LANGUAGE ===================
+// Language switching logic
+if (isset($_GET['lang'])) {
+    $_SESSION['lang'] = $_GET['lang'];
+} elseif (!isset($_SESSION['lang'])) {
+    $_SESSION['lang'] = 'th';
+}
+include 'languages/' . $_SESSION['lang'] . '.php';
+// =================== [END] ADDED FOR MULTI-LANGUAGE ===================
+
 
 // ตรวจสอบสิทธิ์การเข้าถึงของผู้ใช้
 if (!isset($_SESSION['user_id'])) {
@@ -71,7 +81,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_selected_image
     header("Location: " . $_SERVER['HTTP_REFERER']);
     exit();
 }
-
 
 // --- จัดการการลบรูปภาพเดี่ยว ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_image'])) {
@@ -151,7 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_cover'])) {
     exit();
 }
 
-
 // --- กำหนดโหมด: 'Add' หรือ 'Edit' ---
 $mode = 'Add';
 $property_id = null;
@@ -202,9 +210,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         $property_images[] = $row;
     }
 
-    // [แก้ไขแล้ว] ดึงข้อมูลภาพแผนที่ให้รองรับทั้งข้อมูลเก่าและใหม่
     if (!empty($property_data['attach_id'])) {
-        // Try the new way first (with RENT_FILE)
         $stmt_map = $conn->prepare("SELECT rf.name as filename, ra.NAME as foldername FROM RENT_FILE rf JOIN RENT_ATTACH ra ON rf.attach_id = ra.id WHERE rf.attach_id = ? AND rf.type = 'M'");
         $stmt_map->bind_param("i", $property_data['attach_id']);
         $stmt_map->execute();
@@ -212,29 +218,11 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         if ($result_map->num_rows > 0) {
             $map_data = $result_map->fetch_assoc();
             $map_image_path = "assets/rent_place/" . $property_id . "/" . $map_data['foldername'] . "/" . $map_data['filename'];
-        } else {
-            // Fallback to the old way (path stored directly in RENT_ATTACH)
-            $stmt_map_old = $conn->prepare("SELECT NAME FROM RENT_ATTACH WHERE id = ?");
-            $stmt_map_old->bind_param("i", $property_data['attach_id']);
-            $stmt_map_old->execute();
-            $result_map_old = $stmt_map_old->get_result();
-            if ($result_map_old->num_rows > 0) {
-                $map_data_old = $result_map_old->fetch_assoc();
-                // Check if the NAME field contains a full path (a sign of old data)
-                if (strpos($map_data_old['NAME'], 'assets/rent_place') === 0) {
-                     $map_image_path = $map_data_old['NAME'];
-                }
-            }
         }
     }
     
     if (!empty($property_data['video_attach_id'])) {
-        $stmt_video = $conn->prepare("
-            SELECT rf.name as filename, ra.NAME as foldername 
-            FROM RENT_FILE rf 
-            JOIN RENT_ATTACH ra ON rf.attach_id = ra.id 
-            WHERE rf.attach_id = ? AND rf.type = 'V'
-        ");
+        $stmt_video = $conn->prepare("SELECT rf.name as filename, ra.NAME as foldername FROM RENT_FILE rf JOIN RENT_ATTACH ra ON rf.attach_id = ra.id WHERE rf.attach_id = ? AND rf.type = 'V'");
         $stmt_video->bind_param("i", $property_data['video_attach_id']);
         $stmt_video->execute();
         $result_video = $stmt_video->get_result();
@@ -244,15 +232,23 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         }
     }
 }
-
+include 'header.php'; // ส่วนหัวของเว็บ
 // --- จัดการการส่งฟอร์ม (เพิ่ม/แก้ไข) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
-    $name = $_POST['name'] ?? '';
+    
+    // --- [START] ADDED FOR MULTI-LANGUAGE ---
+    $name_th = $_POST['name_th'] ?? '';
+    $name_en = $_POST['name_en'] ?? '';
+    $name_cn = $_POST['name_cn'] ?? '';
+    $description_th = $_POST['description_th'] ?? '';
+    $description_en = $_POST['description_en'] ?? '';
+    $description_cn = $_POST['description_cn'] ?? '';
+    // --- [END] ADDED FOR MULTI-LANGUAGE ---
+    
     $price = $_POST['price'] ?? 0;
     $size = $_POST['size'] ?? 0;
     $room_qty = $_POST['room_qty'] ?? 0;
     $toilet_qty = $_POST['toilet_qty'] ?? 0;
-    $description = $_POST['description'] ?? '';
     $type = $_POST['type'] ?? '';
     $address = $_POST['address'] ?? '';
     $province_id = !empty($_POST['province_id']) ? $_POST['province_id'] : null;
@@ -267,20 +263,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
     $conn->begin_transaction();
     try {
         if ($mode === 'Add') {
-            $sql = "INSERT INTO RENT_PLACE (name, price, size, room_qty, toilet_qty, description, type, user_id, address, province_id, district_id, sub_district_id, map_url, status, create_user, create_datetime, update_user, update_datetime, attach_id, video_attach_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, NOW(), NULL, NULL)";
+            $sql = "INSERT INTO RENT_PLACE (name, name_en, name_cn, description, description_en, description_cn, price, size, room_qty, toilet_qty, type, user_id, address, province_id, district_id, sub_district_id, map_url, status, create_user, create_datetime, update_user, update_datetime, attach_id, video_attach_id) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, NOW(), NULL, NULL)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sddiissisiiissss", $name, $price, $size, $room_qty, $toilet_qty, $description, $type, $admin_id, $address, $province_id, $district_id, $sub_district_id, $map_url, $status, $current_user_name, $current_user_name);
+            $stmt->bind_param("ssssssddiisisiisssss", $name_th, $name_en, $name_cn, $description_th, $description_en, $description_cn, $price, $size, $room_qty, $toilet_qty, $type, $admin_id, $address, $province_id, $district_id, $sub_district_id, $map_url, $status, $current_user_name, $current_user_name);
             $stmt->execute();
             $property_id = $conn->insert_id;
         } else {
-            $sql = "UPDATE RENT_PLACE SET name=?, price=?, size=?, room_qty=?, toilet_qty=?, description=?, type=?, address=?, province_id=?, district_id=?, sub_district_id=?, map_url=?, status=?, update_user=?, update_datetime=NOW() WHERE id=? AND user_id=?";
+            $sql = "UPDATE RENT_PLACE SET name=?, name_en=?, name_cn=?, description=?, description_en=?, description_cn=?, price=?, size=?, room_qty=?, toilet_qty=?, type=?, address=?, province_id=?, district_id=?, sub_district_id=?, map_url=?, status=?, update_user=?, update_datetime=NOW() 
+                    WHERE id=? AND user_id=?";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sddiisssiiisssii", $name, $price, $size, $room_qty, $toilet_qty, $description, $type, $address, $province_id, $district_id, $sub_district_id, $map_url, $status, $current_user_name, $property_id, $admin_id);
+            $stmt->bind_param("ssssssddiissiiisssii", $name_th, $name_en, $name_cn, $description_th, $description_en, $description_cn, $price, $size, $room_qty, $toilet_qty, $type, $address, $province_id, $district_id, $sub_district_id, $map_url, $status, $current_user_name, $property_id, $admin_id);
             $stmt->execute();
         }
 
-        // [แก้ไขแล้ว] Logic การบันทึกไฟล์แผนที่ ให้สร้างข้อมูลใน RENT_FILE ด้วย
-        if (isset($_FILES['map_image']) && $_FILES['map_image']['error'] == 0) {
+        // The rest of the original code for file handling, facilities, landmarks is kept unchanged...
+        // ... (Logic for map_image, property_video, images, facilities, landmarks)
+         if (isset($_FILES['map_image']) && $_FILES['map_image']['error'] == 0) {
             $old_map_attach_id = null;
             if ($mode === 'Edit' && !empty($property_data['attach_id'])) {
                 $old_map_attach_id = $property_data['attach_id'];
@@ -324,14 +323,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
                     if (isset($old_map_file_to_delete) && file_exists($old_map_file_to_delete)) {
                         unlink($old_map_file_to_delete);
                     }
-                    // Also delete old records from RENT_FILE and RENT_ATTACH
                     $conn->query("DELETE FROM RENT_FILE WHERE attach_id = $old_map_attach_id");
                     $conn->query("DELETE FROM RENT_ATTACH WHERE id = $old_map_attach_id");
                 }
             }
         }
 
-        // Logic การบันทึกไฟล์วิดีโอ
         if (isset($_FILES['property_video']) && $_FILES['property_video']['error'] == 0) {
             $old_video_attach_id = null;
             if ($mode === 'Edit' && !empty($property_data['video_attach_id'])) {
@@ -381,8 +378,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_property'])) {
                 }
             }
         }
-
-        // Logic การบันทึกไฟล์รูปภาพอื่นๆ
+        
         $first_rent_file_id = null;
         if (isset($_FILES['images'])) {
             $images = $_FILES['images'];
@@ -516,8 +512,7 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
 <main id="main">
     <section class="container py-5">
         <div class="section-title mb-4">
-            <h2><?php echo $mode === 'Add' ? 'เพิ่มสินทรัพย์ใหม่' : 'แก้ไขสินทรัพย์'; ?></h2>
-            <p>กรุณากรอกข้อมูลสินทรัพย์ให้ครบถ้วน</p>
+            <h2><?php echo $mode === 'Add' ? $lang['add_property'] : $lang['edit_property']; ?></h2>
         </div>
 
         <?php if (isset($_SESSION['error'])): ?>
@@ -530,67 +525,91 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
 
         <div class="form-card">
             <form id="property-form" method="POST" action="manage_property.php<?php if ($property_id) echo "?id=$property_id"; ?>" enctype="multipart/form-data">
-                <div class="card-header">ข้อมูลหลัก</div>
-                <div class="row g-3 mb-4">
-                    <div class="col-md-8"><label for="name" class="form-label">ชื่อสินทรัพย์</label><input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($property_data['name'] ?? ''); ?>" required></div>
-                    <div class="col-md-4"><label for="type" class="form-label">ประเภท</label><select id="type" name="type" class="form-select" required><option value="H" <?php if(($property_data['type'] ?? '') == 'H') echo 'selected'; ?>>บ้านเดี่ยว</option><option value="C" <?php if(($property_data['type'] ?? '') == 'C') echo 'selected'; ?>>คอนโด</option><option value="A" <?php if(($property_data['type'] ?? '') == 'A') echo 'selected'; ?>>อพาร์ตเมนต์</option><option value="V" <?php if(($property_data['type'] ?? '') == 'V') echo 'selected'; ?>>วิลล่า</option><option value="T" <?php if(($property_data['type'] ?? '') == 'T') echo 'selected'; ?>>ทาวน์เฮาส์</option><option value="L" <?php if(($property_data['type'] ?? '') == 'L') echo 'selected'; ?>>ที่ดิน</option></select></div>
-                    <div class="col-12"><label for="description" class="form-label">คำอธิบาย</label><textarea class="form-control" id="description" name="description" rows="4"><?php echo htmlspecialchars($property_data['description'] ?? ''); ?></textarea></div>
-                    <div class="col-md-3"><label for="price" class="form-label">ราคา (บาท/เดือน)</label><input type="number" step="0.01" class="form-control" id="price" name="price" value="<?php echo htmlspecialchars($property_data['price'] ?? ''); ?>" required></div>
-                    <div class="col-md-3"><label for="size" class="form-label">พื้นที่ใช้สอย (ตร.ม.)</label><input type="number" step="0.01" class="form-control" id="size" name="size" value="<?php echo htmlspecialchars($property_data['size'] ?? ''); ?>" required></div>
-                    <div class="col-md-3"><label for="room_qty" class="form-label">จำนวนห้องนอน</label><input type="number" class="form-control" id="room_qty" name="room_qty" value="<?php echo htmlspecialchars($property_data['room_qty'] ?? '0'); ?>"></div>
-                    <div class="col-md-3"><label for="toilet_qty" class="form-label">จำนวนห้องน้ำ</label><input type="number" class="form-control" id="toilet_qty" name="toilet_qty" value="<?php echo htmlspecialchars($property_data['toilet_qty'] ?? '0'); ?>"></div>
+                <div class="card-header"><?php echo $lang['property_main_info']; ?></div>
+
+                 <ul class="nav nav-tabs" id="languageTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="th-tab" data-bs-toggle="tab" data-bs-target="#th-content" type="button" role="tab"><?php echo $lang['lang_th']; ?></button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="en-tab" data-bs-toggle="tab" data-bs-target="#en-content" type="button" role="tab"><?php echo $lang['lang_en']; ?></button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="cn-tab" data-bs-toggle="tab" data-bs-target="#cn-content" type="button" role="tab"><?php echo $lang['lang_cn']; ?></button>
+                    </li>
+                </ul>
+                <div class="tab-content border border-top-0 p-3 mb-3" id="languageTabContent">
+                    <div class="tab-pane fade show active" id="th-content" role="tabpanel">
+                        <div class="mb-3"><label for="name_th" class="form-label"><?php echo $lang['property_name']; ?> (TH)</label><input type="text" class="form-control" id="name_th" name="name_th" value="<?php echo htmlspecialchars($property_data['name'] ?? ''); ?>" required></div>
+                        <div class="mb-3"><label for="description_th" class="form-label"><?php echo $lang['property_description']; ?> (TH)</label><textarea class="form-control" id="description_th" name="description_th" rows="4"><?php echo htmlspecialchars($property_data['description'] ?? ''); ?></textarea></div>
+                    </div>
+                    <div class="tab-pane fade" id="en-content" role="tabpanel">
+                        <div class="mb-3"><label for="name_en" class="form-label"><?php echo $lang['property_name']; ?> (EN)</label><input type="text" class="form-control" id="name_en" name="name_en" value="<?php echo htmlspecialchars($property_data['name_en'] ?? ''); ?>"></div>
+                        <div class="mb-3"><label for="description_en" class="form-label"><?php echo $lang['property_description']; ?> (EN)</label><textarea class="form-control" id="description_en" name="description_en" rows="4"><?php echo htmlspecialchars($property_data['description_en'] ?? ''); ?></textarea></div>
+                    </div>
+                    <div class="tab-pane fade" id="cn-content" role="tabpanel">
+                        <div class="mb-3"><label for="name_cn" class="form-label"><?php echo $lang['property_name']; ?> (CN)</label><input type="text" class="form-control" id="name_cn" name="name_cn" value="<?php echo htmlspecialchars($property_data['name_cn'] ?? ''); ?>"></div>
+                        <div class="mb-3"><label for="description_cn" class="form-label"><?php echo $lang['property_description']; ?> (CN)</label><textarea class="form-control" id="description_cn" name="description_cn" rows="4"><?php echo htmlspecialchars($property_data['description_cn'] ?? ''); ?></textarea></div>
+                    </div>
+                </div>
+                 <div class="row g-3 mb-4">
+                    <div class="col-md-12"><label for="type" class="form-label"><?php echo $lang['property_type']; ?></label><select id="type" name="type" class="form-select" required><option value="H" <?php if(($property_data['type'] ?? '') == 'H') echo 'selected'; ?>><?php echo $lang['house']; ?></option><option value="C" <?php if(($property_data['type'] ?? '') == 'C') echo 'selected'; ?>><?php echo $lang['condo']; ?></option><option value="A" <?php if(($property_data['type'] ?? '') == 'A') echo 'selected'; ?>><?php echo $lang['apartment']; ?></option><option value="V" <?php if(($property_data['type'] ?? '') == 'V') echo 'selected'; ?>>Villa</option><option value="T" <?php if(($property_data['type'] ?? '') == 'T') echo 'selected'; ?>>Townhouse</option><option value="L" <?php if(($property_data['type'] ?? '') == 'L') echo 'selected'; ?>>Land</option></select></div>
+                    <div class="col-md-3"><label for="price" class="form-label"><?php echo $lang['price_per_month']; ?></label><input type="number" step="0.01" class="form-control" id="price" name="price" value="<?php echo htmlspecialchars($property_data['price'] ?? ''); ?>" required></div>
+                    <div class="col-md-3"><label for="size" class="form-label"><?php echo $lang['property_size']; ?></label><input type="number" step="0.01" class="form-control" id="size" name="size" value="<?php echo htmlspecialchars($property_data['size'] ?? ''); ?>" required></div>
+                    <div class="col-md-3"><label for="room_qty" class="form-label"><?php echo $lang['bedrooms']; ?></label><input type="number" class="form-control" id="room_qty" name="room_qty" value="<?php echo htmlspecialchars($property_data['room_qty'] ?? '0'); ?>"></div>
+                    <div class="col-md-3"><label for="toilet_qty" class="form-label"><?php echo $lang['bathrooms']; ?></label><input type="number" class="form-control" id="toilet_qty" name="toilet_qty" value="<?php echo htmlspecialchars($property_data['toilet_qty'] ?? '0'); ?>"></div>
                 </div>
 
-                <div class="card-header">ที่อยู่และแผนที่</div>
+                <div class="card-header"><?php echo $lang['address_map']; ?></div>
                 <div class="row g-3 mb-4">
-                    <div class="col-12"><label for="address" class="form-label">ที่อยู่</label><input type="text" class="form-control" id="address" name="address" value="<?php echo htmlspecialchars($property_data['address'] ?? ''); ?>" required></div>
-                    <div class="col-md-4"><label for="province_id" class="form-label">จังหวัด</label><select id="province_id" name="province_id" class="form-select" required><option value="">-- เลือกจังหวัด --</option><?php foreach($provinces as $p): ?><option value="<?php echo $p['id']; ?>" <?php if(($property_data['province_id'] ?? '') == $p['id']) echo 'selected'; ?>><?php echo $p['name']; ?></option><?php endforeach; ?></select></div>
-                    <div class="col-md-4"><label for="district_id" class="form-label">อำเภอ/เขต</label><select id="district_id" name="district_id" class="form-select" required><option value="">-- เลือกอำเภอ --</option></select></div>
-                    <div class="col-md-4"><label for="sub_district_id" class="form-label">ตำบล/แขวง</label><select id="sub_district_id" name="sub_district_id" class="form-select" required><option value="">-- เลือกตำบล --</option></select></div>
-                    <div class="col-12"><label for="map_url" class="form-label">Google Maps URL</label><input type="url" class="form-control" id="map_url" name="map_url" value="<?php echo htmlspecialchars($property_data['map_url'] ?? ''); ?>"></div>
+                    <div class="col-12"><label for="address" class="form-label"><?php echo $lang['address']; ?></label><input type="text" class="form-control" id="address" name="address" value="<?php echo htmlspecialchars($property_data['address'] ?? ''); ?>" required></div>
+                    <div class="col-md-4"><label for="province_id" class="form-label"><?php echo $lang['province']; ?></label><select id="province_id" name="province_id" class="form-select" required><option value=""><?php echo $lang['please_select_province']; ?></option><?php foreach($provinces as $p): ?><option value="<?php echo $p['id']; ?>" <?php if(($property_data['province_id'] ?? '') == $p['id']) echo 'selected'; ?>><?php echo $p['name']; ?></option><?php endforeach; ?></select></div>
+                    <div class="col-md-4"><label for="district_id" class="form-label"><?php echo $lang['district']; ?></label><select id="district_id" name="district_id" class="form-select" required><option value=""><?php echo $lang['please_select_district']; ?></option></select></div>
+                    <div class="col-md-4"><label for="sub_district_id" class="form-label"><?php echo $lang['sub_district']; ?></label><select id="sub_district_id" name="sub_district_id" class="form-select" required><option value=""><?php echo $lang['please_select_sub_district']; ?></option></select></div>
+                    <div class="col-12"><label for="map_url" class="form-label"><?php echo $lang['google_map_url']; ?></label><input type="url" class="form-control" id="map_url" name="map_url" value="<?php echo htmlspecialchars($property_data['map_url'] ?? ''); ?>"></div>
                     
                     <div class="col-12">
-                        <label for="map_image" class="form-label">อัปโหลดภาพแผนที่</label>
+                        <label for="map_image" class="form-label"><?php echo $lang['upload_map_image']; ?></label>
                         <?php if ($mode === 'Edit' && $map_image_path && file_exists($map_image_path)): ?>
                             <div class="mb-2">
                                 <img src="<?php echo htmlspecialchars($map_image_path); ?>" alt="Map" class="img-thumbnail" style="max-width: 200px;">
-                                <p class="form-text">อัปโหลดไฟล์ใหม่เพื่อแทนที่ภาพปัจจุบัน</p>
+                                <p class="form-text"><?php echo $lang['upload_new_to_replace']; ?></p>
                             </div>
                         <?php endif; ?>
                         <input type="file" class="form-control" id="map_image" name="map_image" accept="image/*">
                     </div>
                 </div>
 
-                <div class="card-header">สิ่งอำนวยความสะดวก</div>
+                <div class="card-header"><?php echo $lang['facilities']; ?></div>
                 <div class="row g-3 mb-4">
                     <div class="col-12"><select id="facilities" name="facilities[]" class="form-select" multiple="multiple"><?php foreach($facilities as $f): ?><option value="<?php echo $f['id']; ?>" <?php if(in_array($f['id'], $property_facilities)) echo 'selected'; ?>><?php echo $f['name']; ?></option><?php endforeach; ?></select></div>
                 </div>
 
-                <div class="card-header">สถานที่สำคัญใกล้เคียง</div>
+                <div class="card-header"><?php echo $lang['landmarks']; ?></div>
                 <div id="landmarks-container">
                     <?php if(empty($property_landmarks)): ?>
-                    <div class="row g-3 mb-2 landmark-row"><div class="col-md-6"><select name="landmarks[0][id]" class="form-select landmark-select"><option value="">-- เลือกสถานที่ --</option><?php foreach($landmarks as $l): ?><option value="<?php echo $l['id']; ?>"><?php echo $l['name']; ?></option><?php endforeach; ?></select></div><div class="col-md-4"><input type="number" step="0.1" name="landmarks[0][distance]" class="form-control" placeholder="ระยะทาง (กม.)"></div><div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn">ลบ</button></div></div>
+                    <div class="row g-3 mb-2 landmark-row"><div class="col-md-6"><select name="landmarks[0][id]" class="form-select landmark-select"><option value=""><?php echo $lang['please_select_landmark']; ?></option><?php foreach($landmarks as $l): ?><option value="<?php echo $l['id']; ?>"><?php echo $l['name']; ?></option><?php endforeach; ?></select></div><div class="col-md-4"><input type="number" step="0.1" name="landmarks[0][distance]" class="form-control" placeholder="<?php echo $lang['distance_km']; ?>"></div><div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn"><?php echo $lang['delete']; ?></button></div></div>
                     <?php else: ?>
                         <?php foreach($property_landmarks as $i => $pl): ?>
-                        <div class="row g-3 mb-2 landmark-row"><div class="col-md-6"><select name="landmarks[<?php echo $i; ?>][id]" class="form-select landmark-select"><option value="">-- เลือกสถานที่ --</option><?php foreach($landmarks as $l): ?><option value="<?php echo $l['id']; ?>" <?php if($pl['rent_landmark_id'] == $l['id']) echo 'selected'; ?>><?php echo $l['name']; ?></option><?php endforeach; ?></select></div><div class="col-md-4"><input type="number" step="0.1" name="landmarks[<?php echo $i; ?>][distance]" class="form-control" placeholder="ระยะทาง (กม.)" value="<?php echo htmlspecialchars($pl['distance']); ?>"></div><div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn">ลบ</button></div></div>
+                        <div class="row g-3 mb-2 landmark-row"><div class="col-md-6"><select name="landmarks[<?php echo $i; ?>][id]" class="form-select landmark-select"><option value=""><?php echo $lang['please_select_landmark']; ?></option><?php foreach($landmarks as $l): ?><option value="<?php echo $l['id']; ?>" <?php if($pl['rent_landmark_id'] == $l['id']) echo 'selected'; ?>><?php echo $l['name']; ?></option><?php endforeach; ?></select></div><div class="col-md-4"><input type="number" step="0.1" name="landmarks[<?php echo $i; ?>][distance]" class="form-control" placeholder="<?php echo $lang['distance_km']; ?>" value="<?php echo htmlspecialchars($pl['distance']); ?>"></div><div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn"><?php echo $lang['delete']; ?></button></div></div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
-                <button type="button" id="add-landmark-btn" class="btn btn-outline-primary mt-2"><i class="bi bi-plus"></i> เพิ่มสถานที่</button>
+                <button type="button" id="add-landmark-btn" class="btn btn-outline-primary mt-2"><i class="bi bi-plus"></i> <?php echo $lang['add_landmark']; ?></button>
             
-                <div class="card-header mt-4">รูปภาพและวิดีโอประกอบ</div>
+                <div class="card-header mt-4"><?php echo $lang['images_and_video']; ?></div>
                 <div class="row g-3">
-                    <div class="col-md-6"><label for="img_bedroom" class="form-label">รูปห้องนอน</label><input type="file" name="images[B][]" class="form-control" multiple accept="image/*"></div>
-                    <div class="col-md-6"><label for="img_toilet" class="form-label">รูปห้องน้ำ</label><input type="file" name="images[T][]" class="form-control" multiple accept="image/*"></div>
-                    <div class="col-md-6"><label for="img_other" class="form-label">รูปอื่นๆ</label><input type="file" name="images[O][]" class="form-control" multiple accept="image/*"></div>
-                    <div class="col-md-6"><label for="img_plan" class="form-label">รูปผัง</label><input type="file" name="images[P][]" class="form-control" multiple accept="image/*"></div>
+                    <div class="col-md-6"><label for="img_bedroom" class="form-label"><?php echo $lang['bedroom_images']; ?></label><input type="file" name="images[B][]" class="form-control" multiple accept="image/*"></div>
+                    <div class="col-md-6"><label for="img_toilet" class="form-label"><?php echo $lang['bathroom_images']; ?></label><input type="file" name="images[T][]" class="form-control" multiple accept="image/*"></div>
+                    <div class="col-md-6"><label for="img_other" class="form-label"><?php echo $lang['other_images']; ?></label><input type="file" name="images[O][]" class="form-control" multiple accept="image/*"></div>
+                    <div class="col-md-6"><label for="img_plan" class="form-label"><?php echo $lang['plan_images']; ?></label><input type="file" name="images[P][]" class="form-control" multiple accept="image/*"></div>
                     
                     <div class="col-12 mt-3">
-                        <label for="property_video" class="form-label">วิดีโอแนะนำ</label>
+                        <label for="property_video" class="form-label"><?php echo $lang['video']; ?></label>
                         <?php if ($mode === 'Edit' && $video_file_path && file_exists($video_file_path)): ?>
                             <div class="my-2">
                                 <video width="320" height="240" controls><source src="<?php echo htmlspecialchars($video_file_path); ?>" type="video/mp4"></video>
-                                <p class="form-text">วิดีโอปัจจุบัน (อัปโหลดไฟล์ใหม่เพื่อแทนที่)</p>
+                                <p class="form-text"><?php echo $lang['current_video']; ?></p>
                             </div>
                         <?php endif; ?>
                         <input type="file" class="form-control" id="property_video" name="property_video" accept="video/*">
@@ -599,17 +618,17 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
 
                 <hr class="my-4">
                 <div class="row">
-                    <div class="col-md-6 mb-3"><label for="status" class="form-label">สถานะ</label><select id="status" name="status" class="form-select"><option value="E" <?php if(($property_data['status'] ?? 'E') == 'E') echo 'selected'; ?>>ว่าง</option><option value="F" <?php if(($property_data['status'] ?? '') == 'F') echo 'selected'; ?>>เต็ม</option></select></div>
+                    <div class="col-md-6 mb-3"><label for="status" class="form-label"><?php echo $lang['status']; ?></label><select id="status" name="status" class="form-select"><option value="E" <?php if(($property_data['status'] ?? 'E') == 'E') echo 'selected'; ?>><?php echo $lang['status_available']; ?></option><option value="F" <?php if(($property_data['status'] ?? '') == 'F') echo 'selected'; ?>><?php echo $lang['status_full']; ?></option></select></div>
                 </div>
                 <div class="d-flex justify-content-end">
-                    <a href="admin_properties.php" class="btn btn-secondary me-2">ยกเลิก</a>
-                    <button type="submit" name="save_property" class="btn btn-primary"><?php echo $mode === 'Add' ? 'บันทึก' : 'อัปเดต'; ?></button>
+                    <a href="admin_properties.php" class="btn btn-secondary me-2"><?php echo $lang['cancel']; ?></a>
+                    <button type="submit" name="save_property" class="btn btn-primary"><?php echo $mode === 'Add' ? $lang['save'] : $lang['update']; ?></button>
                 </div>
             </form>
             
             <?php if($mode === 'Edit' && !empty($property_images)): ?>
-            <div class="card-header mt-4">จัดการรูปภาพที่มีอยู่</div>
-            <form method="POST" action="manage_property.php?id=<?php echo $property_id; ?>" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพที่เลือกทั้งหมด?');">
+            <div class="card-header mt-4"><?php echo $lang['manage_existing_images']; ?></div>
+            <form method="POST" action="manage_property.php?id=<?php echo $property_id; ?>" onsubmit="return confirm('<?php echo $lang['confirm_delete_selected_images']; ?>');">
                 <div class="image-gallery my-3">
                     <?php foreach($property_images as $img): ?>
                     <?php
@@ -621,16 +640,16 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
                         <input type="checkbox" name="selected_images[]" value="<?php echo $img['id']; ?>" class="form-check-input">
                         <img src="<?php echo htmlspecialchars($full_path); ?>" class="img-thumbnail">
                         <?php if($img['cover_flag'] == 'Y'): ?>
-                            <span class="badge bg-success cover-badge with-checkbox">ภาพปก</span>
+                            <span class="badge bg-success cover-badge with-checkbox"><?php echo $lang['cover_image']; ?></span>
                         <?php endif; ?>
                         <div class="img-actions">
-                            <button type="button" onclick="setCoverImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-info" title="ตั้งเป็นภาพปก" <?php if($img['cover_flag'] == 'Y') echo 'disabled'; ?>><i class="bi bi-star-fill"></i></button>
-                            <button type="button" onclick="deleteSingleImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-danger" title="ลบรูปภาพนี้"><i class="bi bi-trash"></i></button>
+                            <button type="button" onclick="setCoverImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-info" title="<?php echo $lang['set_as_cover']; ?>" <?php if($img['cover_flag'] == 'Y') echo 'disabled'; ?>><i class="bi bi-star-fill"></i></button>
+                            <button type="button" onclick="deleteSingleImage(<?php echo $img['id']; ?>)" class="btn btn-sm btn-danger" title="<?php echo $lang['delete_this_image']; ?>"><i class="bi bi-trash"></i></button>
                         </div>
                     </div>
                     <?php endforeach; ?>
                 </div>
-                <button type="submit" name="delete_selected_images" class="btn btn-danger mb-3"><i class="bi bi-trash"></i> ลบรูปภาพที่เลือก</button>
+                <button type="submit" name="delete_selected_images" class="btn btn-danger mb-3"><i class="bi bi-trash"></i> <?php echo $lang['delete_selected_images']; ?></button>
             </form>
             <?php endif; ?>
         </div>
@@ -641,22 +660,23 @@ $landmarks = $conn->query("SELECT id, name FROM RENT_LANDMARKS ORDER BY type, na
 </main>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 function deleteSingleImage(id) {
-    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพนี้?')) {
+    if (confirm('<?php echo $lang['confirm_delete_this_image']; ?>')) {
         document.getElementById('single-delete-id').value = id;
         document.getElementById('delete-single-image-form').submit();
     }
 }
 function setCoverImage(id) {
-    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการตั้งค่ารูปภาพนี้เป็นภาพปก?')) {
+    if (confirm('<?php echo $lang['confirm_set_as_cover']; ?>')) {
         document.getElementById('set-cover-id').value = id;
         document.getElementById('set-cover-image-form').submit();
     }
 }
 $(document).ready(function() {
-    $('#facilities').select2({ theme: 'bootstrap-5', placeholder: 'เลือกสิ่งอำนวยความสะดวก' });
+    $('#facilities').select2({ theme: 'bootstrap-5', placeholder: '<?php echo $lang['please_select_facilities']; ?>' });
     $('.landmark-select').select2({ theme: 'bootstrap-5' });
     const allDistricts = <?php echo json_encode($districts); ?>;
     const allSubDistricts = <?php echo json_encode($sub_districts); ?>;
@@ -664,8 +684,8 @@ $(document).ready(function() {
         const provinceId = $('#province_id').val();
         const $districtSelect = $('#district_id');
         const currentDistrictId = '<?php echo $property_data['district_id'] ?? ''; ?>';
-        $districtSelect.html('<option value="">-- เลือกอำเภอ --</option>');
-        $('#sub_district_id').html('<option value="">-- เลือกตำบล --</option>');
+        $districtSelect.html('<option value=""><?php echo $lang['please_select_district']; ?></option>');
+        $('#sub_district_id').html('<option value=""><?php echo $lang['please_select_sub_district']; ?></option>');
         if (provinceId) {
             const filteredDistricts = allDistricts.filter(d => d.province_id == provinceId);
             filteredDistricts.forEach(d => {
@@ -679,7 +699,7 @@ $(document).ready(function() {
         const districtId = $('#district_id').val();
         const $subDistrictSelect = $('#sub_district_id');
         const currentSubDistrictId = '<?php echo $property_data['sub_district_id'] ?? ''; ?>';
-        $subDistrictSelect.html('<option value="">-- เลือกตำบล --</option>');
+        $subDistrictSelect.html('<option value=""><?php echo $lang['please_select_sub_district']; ?></option>');
         if (districtId) {
             const filteredSubDistricts = allSubDistricts.filter(sd => sd.district_id == districtId);
             filteredSubDistricts.forEach(sd => {
@@ -700,14 +720,14 @@ $(document).ready(function() {
             <div class="row g-3 mb-2 landmark-row">
                 <div class="col-md-6">
                     <select name="landmarks[${landmarkIndex}][id]" class="form-select landmark-select-new">
-                        <option value="">-- เลือกสถานที่ --</option>
+                        <option value=""><?php echo $lang['please_select_landmark']; ?></option>
                         <?php foreach($landmarks as $l): ?>
                         <option value="<?php echo $l['id']; ?>"><?php echo $l['name']; ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-4"><input type="number" step="0.1" name="landmarks[${landmarkIndex}][distance]" class="form-control" placeholder="ระยะทาง (กม.)"></div>
-                <div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn">ลบ</button></div>
+                <div class="col-md-4"><input type="number" step="0.1" name="landmarks[${landmarkIndex}][distance]" class="form-control" placeholder="<?php echo $lang['distance_km']; ?>"></div>
+                <div class="col-md-2"><button type="button" class="btn btn-danger w-100 remove-landmark-btn"><?php echo $lang['delete']; ?></button></div>
             </div>`;
         $('#landmarks-container').append(landmarkRow);
         $('.landmark-select-new').select2({ theme: 'bootstrap-5' }).removeClass('landmark-select-new');
