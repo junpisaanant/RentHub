@@ -155,6 +155,62 @@ $lang = [
     "contact_us_whatsapp" => "Contact us on Whatsapp",
     "scan_qr_whatsapp" => "Scan this QR Code with your Whatsapp app",
     "contact_us_wechat" => "Contact us on Wechat",
-    "scan_qr_wechat" => "Scan this QR Code with your Wechat app"
+    "scan_qr_wechat" => "Scan this QR Code with your Wechat app",
+
+    //Profile.php
+    // Messages
+    'file_type_not_allowed' => 'File type not allowed (only jpg, png, gif, pdf are allowed)',
+    'success' => 'Success',
+    'db_error' => 'Database error: ',
+    'file_move_error' => 'Could not move file',
+    'file_upload_success' => 'File uploaded successfully',
+    'error_occurred' => 'An error occurred: ',
+    'file_deleted_success' => 'File deleted successfully',
+    'file_delete_error' => 'Error deleting file',
+    'email_in_use' => 'This email is already in use',
+    'profile_saved_success' => 'Profile saved successfully',
+    'profile_save_error' => 'Error saving profile',
+    'password_mismatch' => 'New password and confirmation do not match',
+    'password_change_success' => 'Password changed successfully',
+    'password_change_error' => 'Error changing password',
+    'current_password_incorrect' => 'Current password is incorrect',
+    'user_not_found' => 'User not found',
+    'confirm_delete_file' => 'Are you sure you want to delete this file?',
+
+    // Page Titles & Headers
+    'personal_information' => 'Personal Information',
+    'change_password' => 'Change Password',
+    'identity_documents' => 'Identity Documents',
+    'change_profile_picture' => 'Change Profile Picture',
+
+    // Labels & Placeholders
+    'firstname' => 'First Name',
+    'lastname' => 'Last Name',
+    'username' => 'Username',
+    'id_card_number' => 'ID Card Number',
+    'passport_number' => 'Passport Number',
+    'email' => 'Email',
+    'phone_number' => 'Phone Number',
+    'line_id' => 'Line ID',
+    'registration_date' => 'Registration Date',
+    'last_updated' => 'Last Updated',
+    'id_card' => 'ID Card',
+    'passport' => 'Passport',
+    'no_id_card_uploaded' => 'No ID card has been uploaded yet',
+    'no_passport_uploaded' => 'No passport has been uploaded yet',
+    'upload_new_id_card' => 'Upload New ID Card',
+    'upload_new_passport' => 'Upload New Passport',
+    'current_password' => 'Current Password',
+    'new_password' => 'New Password',
+    'confirm_new_password' => 'Confirm New Password',
+    'select_new_image_prompt' => 'Select a new image (recommended size 1:1, e.g., 500x500 pixels):',
+
+    // Buttons
+    'save_data' => 'Save Data',
+    'delete_file' => 'Delete File',
+    'update_files' => 'Update Files',
+    'change_password_btn' => 'Change Password',
+    'cancel' => 'Cancel',
+    'save_new_image' => 'Save New Image'
 ];
 ?>

@@ -155,6 +155,62 @@ $lang = [
     "contact_us_whatsapp" => "在 Whatsapp 上联系我们",
     "scan_qr_whatsapp" => "使用您的 Whatsapp 应用程序扫描此二维码",
     "contact_us_wechat" => "在微信上联系我们",
-    "scan_qr_wechat" => "使用您的微信应用程序扫描此二维码"
+    "scan_qr_wechat" => "使用您的微信应用程序扫描此二维码",
+
+    //Profile.php
+    // Messages
+    'file_type_not_allowed' => '文件类型不允许（只允许 jpg, png, gif, pdf）',
+    'success' => '成功',
+    'db_error' => '数据库错误: ',
+    'file_move_error' => '无法移动文件',
+    'file_upload_success' => '文件上传成功',
+    'error_occurred' => '发生错误: ',
+    'file_deleted_success' => '文件删除成功',
+    'file_delete_error' => '删除文件时出错',
+    'email_in_use' => '此电子邮件已被使用',
+    'profile_saved_success' => '个人资料保存成功',
+    'profile_save_error' => '保存个人资料时出错',
+    'password_mismatch' => '新密码和确认密码不匹配',
+    'password_change_success' => '密码修改成功',
+    'password_change_error' => '修改密码时出错',
+    'current_password_incorrect' => '当前密码不正确',
+    'user_not_found' => '未找到用户',
+    'confirm_delete_file' => '您确定要删除此文件吗？',
+    
+    // Page Titles & Headers
+    'personal_information' => '个人信息',
+    'change_password' => '修改密码',
+    'identity_documents' => '身份证明文件',
+    'change_profile_picture' => '更换个人资料图片',
+
+    // Labels & Placeholders
+    'firstname' => '名字',
+    'lastname' => '姓氏',
+    'username' => '用户名',
+    'id_card_number' => '身份证号码',
+    'passport_number' => '护照号码',
+    'email' => '电子邮件',
+    'phone_number' => '电话号码',
+    'line_id' => 'Line ID',
+    'registration_date' => '注册日期',
+    'last_updated' => '最后更新',
+    'id_card' => '身份证',
+    'passport' => '护照',
+    'no_id_card_uploaded' => '尚未上传身份证',
+    'no_passport_uploaded' => '尚未上传护照',
+    'upload_new_id_card' => '上传新身份证',
+    'upload_new_passport' => '上传新护照',
+    'current_password' => '当前密码',
+    'new_password' => '新密码',
+    'confirm_new_password' => '确认新密码',
+    'select_new_image_prompt' => '选择新图片（建议尺寸 1:1，例如 500x500 像素）:',
+
+    // Buttons
+    'save_data' => '保存数据',
+    'delete_file' => '删除文件',
+    'update_files' => '更新文件',
+    'change_password_btn' => '修改密码',
+    'cancel' => '取消',
+    'save_new_image' => '保存新图片'
 ];
 ?>

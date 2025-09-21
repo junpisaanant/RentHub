@@ -3,6 +3,14 @@ ob_start(); // เพิ่ม ob_start() เพื่อจัดการ head
 include 'header.php';
 include 'db.php';
 
+// --- Language Setup ---
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['th', 'en', 'cn'])) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+$current_lang = $_SESSION['lang'] ?? 'th'; // Default to Thai
+require_once "languages/{$current_lang}.php";
+
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
@@ -16,21 +24,21 @@ $info_message = '';
 $info_message_type = '';
 $password_message = '';
 $password_message_type = '';
-$file_message = ''; // [เพิ่มใหม่] สำหรับฟอร์มไฟล์
-$file_message_type = ''; // [เพิ่มใหม่]
+$file_message = '';
+$file_message_type = '';
 
 // ==============================================================================
 // [เพิ่มใหม่] ฟังก์ชันสำหรับจัดการไฟล์
 // ==============================================================================
 
 // ฟังก์ชันสำหรับอัปโหลดเอกสาร
-function upload_document($conn, $user_id, $file_key, $column_to_update) {
+function upload_document($conn, $user_id, $file_key, $column_to_update, $lang_vars) {
     if (isset($_FILES[$file_key]) && $_FILES[$file_key]['error'] == 0) {
         $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
         $file_type = mime_content_type($_FILES[$file_key]['tmp_name']);
 
         if (!in_array($file_type, $allowed_types)) {
-            return "ประเภทไฟล์ไม่ได้รับอนุญาต (อนุญาตเฉพาะ jpg, png, gif, pdf)";
+            return $lang_vars['file_type_not_allowed'];
         }
 
         // สร้างโฟลเดอร์สำหรับ user และสำหรับเก็บเอกสาร
@@ -67,14 +75,14 @@ function upload_document($conn, $user_id, $file_key, $column_to_update) {
                 $stmt_user->execute();
                 
                 $conn->commit();
-                return "สำเร็จ";
+                return $lang_vars['success'];
             } catch (Exception $e) {
                 $conn->rollback();
                 unlink($destination); // ลบไฟล์ที่อัปโหลดถ้าเกิดข้อผิดพลาด
-                return "เกิดข้อผิดพลาดฐานข้อมูล: " . $e->getMessage();
+                return $lang_vars['db_error'] . $e->getMessage();
             }
         } else {
-            return "ไม่สามารถย้ายไฟล์ได้";
+            return $lang_vars['file_move_error'];
         }
     }
     return null; // ไม่มีไฟล์ถูกอัปโหลด
@@ -153,17 +161,17 @@ function get_document_path($conn, $attach_id) {
 // --- [เพิ่มใหม่] Logic สำหรับ "อัปเดตไฟล์เอกสาร" ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_files'])) {
     $page = 'info';
-    $id_card_result = upload_document($conn, $user_id, 'id_card_image', 'id_card_attach_id');
-    $passport_result = upload_document($conn, $user_id, 'passport_image', 'passport_attach_id');
+    $id_card_result = upload_document($conn, $user_id, 'id_card_image', 'id_card_attach_id', $lang);
+    $passport_result = upload_document($conn, $user_id, 'passport_image', 'passport_attach_id', $lang);
 
     $messages = [];
-    if ($id_card_result) $messages['บัตรประชาชน'] = $id_card_result;
-    if ($passport_result) $messages['พาสปอร์ต'] = $passport_result;
+    if ($id_card_result) $messages[$lang['id_card']] = $id_card_result;
+    if ($passport_result) $messages[$lang['passport']] = $passport_result;
 
     $success_count = 0;
     $error_messages = [];
     foreach ($messages as $key => $msg) {
-        if ($msg === "สำเร็จ") {
+        if ($msg === $lang['success']) {
             $success_count++;
         } else {
             $error_messages[] = "$key: $msg";
@@ -171,10 +179,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_files'])) {
     }
 
     if ($success_count > 0 && empty($error_messages)) {
-        $file_message = "อัปโหลดไฟล์สำเร็จ";
+        $file_message = $lang['file_upload_success'];
         $file_message_type = "success";
     } elseif (!empty($error_messages)) {
-        $file_message = "เกิดข้อผิดพลาด: <br>" . implode("<br>", $error_messages);
+        $file_message = $lang['error_occurred'] . "<br>" . implode("<br>", $error_messages);
         $file_message_type = "danger";
     }
     // ไม่ต้องแสดงข้อความถ้าไม่มีไฟล์อัปโหลด
@@ -187,10 +195,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_file'])) {
     $column = ($file_to_delete == 'id_card') ? 'id_card_attach_id' : 'passport_attach_id';
 
     if (delete_document($conn, $user_id, $column)) {
-        $file_message = "ลบไฟล์เรียบร้อยแล้ว";
+        $file_message = $lang['file_deleted_success'];
         $file_message_type = "success";
     } else {
-        $file_message = "เกิดข้อผิดพลาดในการลบไฟล์";
+        $file_message = $lang['file_delete_error'];
         $file_message_type = "danger";
     }
 }
@@ -213,7 +221,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
     $result_check_email = $stmt_check_email->get_result();
 
     if ($result_check_email->num_rows > 0) {
-        $info_message = "อีเมลนี้ถูกใช้งานแล้ว";
+        $info_message = $lang['email_in_use'];
         $info_message_type = "danger";
     } else {
         $update_datetime = date('Y-m-d H:i:s');
@@ -225,11 +233,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
         $stmt_update->bind_param("sssssssssi", $firstname, $lastname, $phone_no, $email, $line_id, $identification_no, $passport_no, $update_user, $update_datetime, $user_id);
 
         if ($stmt_update->execute()) {
-            $info_message = "บันทึกข้อมูลส่วนตัวสำเร็จ";
+            $info_message = $lang['profile_saved_success'];
             $info_message_type = "success";
             $_SESSION['firstname'] = $firstname;
         } else {
-            $info_message = "เกิดข้อผิดพลาดในการบันทึกข้อมูลส่วนตัว";
+            $info_message = $lang['profile_save_error'];
             $info_message_type = "danger";
         }
         $stmt_update->close();
@@ -245,7 +253,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
     $confirm_password = $_POST['confirm_password'];
 
     if ($new_password !== $confirm_password) {
-        $password_message = "รหัสผ่านใหม่และการยืนยันไม่ตรงกัน";
+        $password_message = $lang['password_mismatch'];
         $password_message_type = "danger";
     } else {
         $stmt_pass = $conn->prepare("SELECT password FROM RENT_USER WHERE id = ?");
@@ -259,15 +267,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
             $stmt_update_pass = $conn->prepare("UPDATE RENT_USER SET password = ? WHERE id = ?");
             $stmt_update_pass->bind_param("si", $hashed_new_password, $user_id);
             if ($stmt_update_pass->execute()) {
-                $password_message = "เปลี่ยนรหัสผ่านสำเร็จแล้ว";
+                $password_message = $lang['password_change_success'];
                 $password_message_type = "success";
             } else {
-                $password_message = "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
+                $password_message = $lang['password_change_error'];
                 $password_message_type = "danger";
             }
             $stmt_update_pass->close();
         } else {
-            $password_message = "รหัสผ่านปัจจุบันไม่ถูกต้อง";
+            $password_message = $lang['current_password_incorrect'];
             $password_message_type = "danger";
         }
         $stmt_pass->close();
@@ -314,7 +322,7 @@ $conn->close();
                     <div class="card-body">
                         <div class="profile-summary text-center">
                             <img src="<?php echo htmlspecialchars($profile_picture_path); ?>" alt="Profile Picture" class="profile-picture rounded-circle mb-3">
-                            <a href="#" class="edit-button" data-bs-toggle="modal" data-bs-target="#editProfilePicModal" title="เปลี่ยนรูปโปรไฟล์">
+                            <a href="#" class="edit-button" data-bs-toggle="modal" data-bs-target="#editProfilePicModal" title="<?php echo $lang['change_profile_picture']; ?>">
                                 <i class="fas fa-pencil-alt"></i>
                             </a>
                         </div>
@@ -322,10 +330,10 @@ $conn->close();
                         <nav class="profile-nav mt-4">
                             <ul class="list-group">
                                 <li class="list-group-item <?php echo ($page === 'info') ? 'active' : ''; ?>">
-                                    <a href="profile.php?page=info"><i class="bi bi-person-circle me-2"></i>ข้อมูลส่วนตัว</a>
+                                    <a href="profile.php?page=info"><i class="bi bi-person-circle me-2"></i><?php echo $lang['personal_information']; ?></a>
                                 </li>
                                 <li class="list-group-item <?php echo ($page === 'password') ? 'active' : ''; ?>">
-                                    <a href="profile.php?page=password"><i class="bi bi-key me-2"></i>เปลี่ยนรหัสผ่าน</a>
+                                    <a href="profile.php?page=password"><i class="bi bi-key me-2"></i><?php echo $lang['change_password']; ?></a>
                                 </li>
                             </ul>
                         </nav>
@@ -337,10 +345,10 @@ $conn->close();
                 <?php if ($page === 'info'): ?>
                     <div class="profile-content card">
                         <div class="card-body">
-                            <h5 class="card-title-form">ข้อมูลส่วนตัว</h5>
+                            <h5 class="card-title-form"><?php echo $lang['personal_information']; ?></h5>
                             
                             <?php if ($info_message): ?>
-                                <div class="alert alert-<?php echo $info_message_type; ?>"><?php echo htmlspecialchars($info_message); ?></div>
+                                <div class="alert alert-<?php echo $info_message_type; ?>"><?php echo $info_message; ?></div>
                             <?php endif; ?>
 
                             <?php if ($user): ?>
@@ -348,99 +356,99 @@ $conn->close();
                                 <input type="hidden" name="update_profile" value="1">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label for="firstname" class="form-label">ชื่อจริง</label>
+                                        <label for="firstname" class="form-label"><?php echo $lang['firstname']; ?></label>
                                         <input type="text" class="form-control" id="firstname" name="firstname" value="<?php echo htmlspecialchars($user['firstname']); ?>" required>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label for="lastname" class="form-label">นามสกุล</label>
+                                        <label for="lastname" class="form-label"><?php echo $lang['lastname']; ?></label>
                                         <input type="text" class="form-control" id="lastname" name="lastname" value="<?php echo htmlspecialchars($user['lastname']); ?>" required>
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="username" class="form-label">Username</label>
+                                    <label for="username" class="form-label"><?php echo $lang['username']; ?></label>
                                     <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" readonly disabled>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="identification_no" class="form-label">เลขบัตรประชาชน</label>
+                                    <label for="identification_no" class="form-label"><?php echo $lang['id_card_number']; ?></label>
                                     <input type="text" class="form-control" id="identification_no" name="identification_no" value="<?php echo htmlspecialchars($user['identification_no'] ?? ''); ?>">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="passport_no" class="form-label">เลขพาสปอร์ต</label>
+                                    <label for="passport_no" class="form-label"><?php echo $lang['passport_number']; ?></label>
                                     <input type="text" class="form-control" id="passport_no" name="passport_no" value="<?php echo htmlspecialchars($user['passport_no'] ?? ''); ?>">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="email" class="form-label">อีเมล</label>
+                                    <label for="email" class="form-label"><?php echo $lang['email']; ?></label>
                                     <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="phone_no" class="form-label">เบอร์โทรศัพท์</label>
+                                    <label for="phone_no" class="form-label"><?php echo $lang['phone_number']; ?></label>
                                     <input type="text" class="form-control" id="phone_no" name="phone_no" value="<?php echo htmlspecialchars($user['phone_no']); ?>" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="line_id" class="form-label">Line ID</label>
+                                    <label for="line_id" class="form-label"><?php echo $lang['line_id']; ?></label>
                                     <input type="text" class="form-control" id="line_id" name="line_id" value="<?php echo htmlspecialchars($user['line_id'] ?? ''); ?>">
                                 </div>
                                 <hr>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">วันที่สมัคร</label>
+                                        <label class="form-label"><?php echo $lang['registration_date']; ?></label>
                                         <p class="form-control-static"><?php echo date('d/m/Y H:i', strtotime($user['create_datetime'])); ?></p>
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">แก้ไขล่าสุด</label>
+                                        <label class="form-label"><?php echo $lang['last_updated']; ?></label>
                                         <p class="form-control-static"><?php echo date('d/m/Y H:i', strtotime($user['update_datetime'])); ?></p>
                                     </div>
                                 </div>
                                 <div class="pt-2 text-end">
-                                    <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
+                                    <button type="submit" class="btn btn-primary"><?php echo $lang['save_data']; ?></button>
                                 </div>
                             </form>
                             <?php else: ?>
-                                <div class="alert alert-danger">ไม่พบข้อมูลผู้ใช้</div>
+                                <div class="alert alert-danger"><?php echo $lang['user_not_found']; ?></div>
                             <?php endif; ?>
                         </div>
                     </div>
                     
                     <div class="profile-content card mt-4">
                         <div class="card-body">
-                            <h5 class="card-title-form">เอกสารยืนยันตัวตน</h5>
+                            <h5 class="card-title-form"><?php echo $lang['identity_documents']; ?></h5>
                              <?php if ($file_message): ?>
                                 <div class="alert alert-<?php echo $file_message_type; ?>"><?php echo $file_message; ?></div>
                             <?php endif; ?>
 
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h6>บัตรประชาชน</h6>
+                                    <h6><?php echo $lang['id_card']; ?></h6>
                                     <?php if ($id_card_path): ?>
                                         <div class="mb-2">
                                             <a href="<?php echo htmlspecialchars($id_card_path); ?>" target="_blank">
                                                 <img src="<?php echo htmlspecialchars($id_card_path); ?>" alt="ID Card" class="img-thumbnail" style="max-height: 150px;">
                                             </a>
                                         </div>
-                                        <form action="profile.php?page=info" method="post" onsubmit="return confirm('คุณต้องการลบไฟล์นี้ใช่หรือไม่?');">
+                                        <form action="profile.php?page=info" method="post" onsubmit="return confirm('<?php echo $lang['confirm_delete_file']; ?>');">
                                             <button type="submit" name="delete_file" value="id_card" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i> ลบไฟล์
+                                                <i class="bi bi-trash"></i> <?php echo $lang['delete_file']; ?>
                                             </button>
                                         </form>
                                     <?php else: ?>
-                                        <p class="text-muted">ยังไม่มีการอัปโหลดไฟล์บัตรประชาชน</p>
+                                        <p class="text-muted"><?php echo $lang['no_id_card_uploaded']; ?></p>
                                     <?php endif; ?>
                                 </div>
                                 <div class="col-md-6">
-                                    <h6>พาสปอร์ต</h6>
+                                    <h6><?php echo $lang['passport']; ?></h6>
                                      <?php if ($passport_path): ?>
                                         <div class="mb-2">
                                              <a href="<?php echo htmlspecialchars($passport_path); ?>" target="_blank">
                                                 <img src="<?php echo htmlspecialchars($passport_path); ?>" alt="Passport" class="img-thumbnail" style="max-height: 150px;">
                                             </a>
                                         </div>
-                                        <form action="profile.php?page=info" method="post" onsubmit="return confirm('คุณต้องการลบไฟล์นี้ใช่หรือไม่?');">
+                                        <form action="profile.php?page=info" method="post" onsubmit="return confirm('<?php echo $lang['confirm_delete_file']; ?>');">
                                             <button type="submit" name="delete_file" value="passport" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i> ลบไฟล์
+                                                <i class="bi bi-trash"></i> <?php echo $lang['delete_file']; ?>
                                             </button>
                                         </form>
                                     <?php else: ?>
-                                        <p class="text-muted">ยังไม่มีการอัปโหลดไฟล์พาสปอร์ต</p>
+                                        <p class="text-muted"><?php echo $lang['no_passport_uploaded']; ?></p>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -450,15 +458,15 @@ $conn->close();
                             <form action="profile.php?page=info" method="post" enctype="multipart/form-data" class="mt-3">
                                 <input type="hidden" name="update_files" value="1">
                                 <div class="mb-3">
-                                    <label for="id_card_image" class="form-label">อัปโหลดบัตรประชาชนใหม่</label>
+                                    <label for="id_card_image" class="form-label"><?php echo $lang['upload_new_id_card']; ?></label>
                                     <input type="file" name="id_card_image" id="id_card_image" class="form-control" accept="image/*,application/pdf">
                                 </div>
                                 <div class="mb-3">
-                                    <label for="passport_image" class="form-label">อัปโหลดพาสปอร์ตใหม่</label>
+                                    <label for="passport_image" class="form-label"><?php echo $lang['upload_new_passport']; ?></label>
                                     <input type="file" name="passport_image" id="passport_image" class="form-control" accept="image/*,application/pdf">
                                 </div>
                                 <div class="text-end">
-                                    <button type="submit" class="btn btn-primary">อัปเดตไฟล์</button>
+                                    <button type="submit" class="btn btn-primary"><?php echo $lang['update_files']; ?></button>
                                 </div>
                             </form>
                         </div>
@@ -467,28 +475,28 @@ $conn->close();
                 <?php elseif ($page === 'password'): ?>
                     <div class="profile-content card">
                         <div class="card-body">
-                            <h5 class="card-title-form">เปลี่ยนรหัสผ่าน</h5>
+                            <h5 class="card-title-form"><?php echo $lang['change_password']; ?></h5>
 
                             <?php if ($password_message): ?>
-                                <div class="alert alert-<?php echo $password_message_type; ?>"><?php echo htmlspecialchars($password_message); ?></div>
+                                <div class="alert alert-<?php echo $password_message_type; ?>"><?php echo $password_message; ?></div>
                             <?php endif; ?>
 
                             <form action="profile.php?page=password" method="post" class="mt-4">
                                 <input type="hidden" name="change_password" value="1">
                                 <div class="mb-3">
-                                    <label for="current_password" class="form-label">รหัสผ่านปัจจุบัน</label>
+                                    <label for="current_password" class="form-label"><?php echo $lang['current_password']; ?></label>
                                     <input type="password" class="form-control" id="current_password" name="current_password" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="new_password" class="form-label">รหัสผ่านใหม่</label>
+                                    <label for="new_password" class="form-label"><?php echo $lang['new_password']; ?></label>
                                     <input type="password" class="form-control" id="new_password" name="new_password" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="confirm_password" class="form-label">ยืนยันรหัสผ่านใหม่</label>
+                                    <label for="confirm_password" class="form-label"><?php echo $lang['confirm_new_password']; ?></label>
                                     <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
                                 </div>
                                 <div class="pt-2 text-end">
-                                    <button type="submit" class="btn btn-primary">เปลี่ยนรหัสผ่าน</button>
+                                    <button type="submit" class="btn btn-primary"><?php echo $lang['change_password_btn']; ?></button>
                                 </div>
                             </form>
                         </div>
@@ -503,7 +511,7 @@ $conn->close();
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editProfilePicModalLabel">เปลี่ยนรูปโปรไฟล์</h5>
+        <h5 class="modal-title" id="editProfilePicModalLabel"><?php echo $lang['change_profile_picture']; ?></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form action="update_profile_picture.php" method="post" enctype="multipart/form-data">
@@ -511,12 +519,12 @@ $conn->close();
             <div class="text-center mb-3">
                 <img id="image-preview" src="<?php echo htmlspecialchars($profile_picture_path); ?>" alt="Image Preview" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
             </div>
-            <p>เลือกรูปภาพใหม่ที่ต้องการ (แนะนำขนาด 1:1 เช่น 500x500 pixels):</p>
+            <p><?php echo $lang['select_new_image_prompt']; ?></p>
             <input type="file" id="profile-picture-input" name="profile_picture" class="form-control" accept="image/png, image/jpeg, image/gif" required>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-            <button type="submit" class="btn btn-primary">บันทึกรูปใหม่</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo $lang['cancel']; ?></button>
+            <button type="submit" class="btn btn-primary"><?php echo $lang['save_new_image']; ?></button>
         </div>
       </form>
     </div>

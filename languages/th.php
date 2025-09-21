@@ -155,6 +155,63 @@ $lang = [
     "contact_us_whatsapp" => "ติดต่อเราใน Whatsapp",
     "scan_qr_whatsapp" => "สแกน QR Code นี้ด้วย Whatsapp ของคุณ",
     "contact_us_wechat" => "ติดต่อเราใน Wechat",
-    "scan_qr_wechat" => "สแกน QR Code นี้ด้วย Wechat ของคุณ"
+    "scan_qr_wechat" => "สแกน QR Code นี้ด้วย Wechat ของคุณ",
+
+    //Profile.php
+    // Messages
+    'file_type_not_allowed' => 'ประเภทไฟล์ไม่ได้รับอนุญาต (อนุญาตเฉพาะ jpg, png, gif, pdf)',
+    'success' => 'สำเร็จ',
+    'db_error' => 'เกิดข้อผิดพลาดฐานข้อมูล: ',
+    'file_move_error' => 'ไม่สามารถย้ายไฟล์ได้',
+    'file_upload_success' => 'อัปโหลดไฟล์สำเร็จ',
+    'error_occurred' => 'เกิดข้อผิดพลาด: ',
+    'file_deleted_success' => 'ลบไฟล์เรียบร้อยแล้ว',
+    'file_delete_error' => 'เกิดข้อผิดพลาดในการลบไฟล์',
+    'email_in_use' => 'อีเมลนี้ถูกใช้งานแล้ว',
+    'profile_saved_success' => 'บันทึกข้อมูลส่วนตัวสำเร็จ',
+    'profile_save_error' => 'เกิดข้อผิดพลาดในการบันทึกข้อมูลส่วนตัว',
+    'password_mismatch' => 'รหัสผ่านใหม่และการยืนยันไม่ตรงกัน',
+    'password_change_success' => 'เปลี่ยนรหัสผ่านสำเร็จแล้ว',
+    'password_change_error' => 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน',
+    'current_password_incorrect' => 'รหัสผ่านปัจจุบันไม่ถูกต้อง',
+    'user_not_found' => 'ไม่พบข้อมูลผู้ใช้',
+    'confirm_delete_file' => 'คุณต้องการลบไฟล์นี้ใช่หรือไม่?',
+
+    // Page Titles & Headers
+    'personal_information' => 'ข้อมูลส่วนตัว',
+    'change_password' => 'เปลี่ยนรหัสผ่าน',
+    'identity_documents' => 'เอกสารยืนยันตัวตน',
+    'change_profile_picture' => 'เปลี่ยนรูปโปรไฟล์',
+
+    // Labels & Placeholders
+    'firstname' => 'ชื่อจริง',
+    'lastname' => 'นามสกุล',
+    'username' => 'Username',
+    'id_card_number' => 'เลขบัตรประชาชน',
+    'passport_number' => 'เลขพาสปอร์ต',
+    'email' => 'อีเมล',
+    'phone_number' => 'เบอร์โทรศัพท์',
+    'line_id' => 'Line ID',
+    'registration_date' => 'วันที่สมัคร',
+    'last_updated' => 'แก้ไขล่าสุด',
+    'id_card' => 'บัตรประชาชน',
+    'passport' => 'พาสปอร์ต',
+    'no_id_card_uploaded' => 'ยังไม่มีการอัปโหลดไฟล์บัตรประชาชน',
+    'no_passport_uploaded' => 'ยังไม่มีการอัปโหลดไฟล์พาสปอร์ต',
+    'upload_new_id_card' => 'อัปโหลดบัตรประชาชนใหม่',
+    'upload_new_passport' => 'อัปโหลดพาสปอร์ตใหม่',
+    'current_password' => 'รหัสผ่านปัจจุบัน',
+    'new_password' => 'รหัสผ่านใหม่',
+    'confirm_new_password' => 'ยืนยันรหัสผ่านใหม่',
+    'select_new_image_prompt' => 'เลือกรูปภาพใหม่ที่ต้องการ (แนะนำขนาด 1:1 เช่น 500x500 pixels):',
+
+    // Buttons
+    'save_data' => 'บันทึกข้อมูล',
+    'delete_file' => 'ลบไฟล์',
+    'update_files' => 'อัปเดตไฟล์',
+    'change_password_btn' => 'เปลี่ยนรหัสผ่าน',
+    'cancel' => 'ยกเลิก',
+    'save_new_image' => 'บันทึกรูปใหม่'
+
 ];
 ?>
