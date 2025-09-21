@@ -133,6 +133,28 @@ $lang = [
     'contact_move_in_date' => 'Desired Move-in Date',
     'contact_message_placeholder' => 'Message',
     'contact_send_appointment' => 'Send Appointment',
-    'contact_alert_no_date' => 'Please specify the appointment date.'
+    'contact_alert_no_date' => 'Please specify the appointment date.',
+
+    // Footer
+    "address" => "Address",
+    "address_detail_1" => "163 Soi Charoen Rat 8",
+    "address_detail_2" => "Bang Khlo, Bang Kho Laem, Bangkok",
+    "contact" => "Contact",
+    "phone" => "Phone:",
+    "email" => "Email:",
+    "opening_hours" => "Opening Hours",
+    "mon_sat" => "Mon-Sat:",
+    "hours" => "8:00 AM - 6:00 PM",
+    "sunday" => "Sunday",
+    "closed" => "Closed",
+    "follow_us" => "Follow Us",
+    "copyright" => "Copyright",
+    "all_rights_reserved" => "All Rights Reserved",
+    "contact_us_line" => "Contact us on Line",
+    "scan_qr_line" => "Scan this QR Code with your Line app",
+    "contact_us_whatsapp" => "Contact us on Whatsapp",
+    "scan_qr_whatsapp" => "Scan this QR Code with your Whatsapp app",
+    "contact_us_wechat" => "Contact us on Wechat",
+    "scan_qr_wechat" => "Scan this QR Code with your Wechat app"
 ];
 ?>

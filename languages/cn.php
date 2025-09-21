@@ -133,6 +133,28 @@ $lang = [
     'contact_move_in_date' => '期望入住日期',
     'contact_message_placeholder' => '信息',
     'contact_send_appointment' => '发送预约',
-    'contact_alert_no_date' => '请指定预约日期。'
+    'contact_alert_no_date' => '请指定预约日期。',
+
+    // Footer
+    "address" => "地址",
+    "address_detail_1" => "163 Soi Charoen Rat 8",
+    "address_detail_2" => "Bang Khlo, Bang Kho Laem, 曼谷",
+    "contact" => "联系方式",
+    "phone" => "电话:",
+    "email" => "电子邮件:",
+    "opening_hours" => "营业时间",
+    "mon_sat" => "周一至周六:",
+    "hours" => "上午 8:00 - 下午 6:00",
+    "sunday" => "星期天",
+    "closed" => "关闭",
+    "follow_us" => "关注我们",
+    "copyright" => "版权",
+    "all_rights_reserved" => "保留所有权利",
+    "contact_us_line" => "在 Line 上联系我们",
+    "scan_qr_line" => "使用您的 Line 应用程序扫描此二维码",
+    "contact_us_whatsapp" => "在 Whatsapp 上联系我们",
+    "scan_qr_whatsapp" => "使用您的 Whatsapp 应用程序扫描此二维码",
+    "contact_us_wechat" => "在微信上联系我们",
+    "scan_qr_wechat" => "使用您的微信应用程序扫描此二维码"
 ];
 ?>

@@ -5,9 +5,9 @@
         <div class="col-lg-3 col-md-6 d-flex">
           <i class="bi bi-geo-alt icon"></i>
           <div class="address">
-            <h4>Address</h4>
-            <p>163 ซอยเจริญราษฎร์ 8 </p>
-            <p>แขวงบางโคล่ เขตบางคอแหลม กรุงเทพมหานคร</p>
+            <h4><?php echo $lang['address']; ?></h4>
+            <p><?php echo $lang['address_detail_1']; ?></p>
+            <p><?php echo $lang['address_detail_2']; ?></p>
             <p></p>
           </div>
 
@@ -16,10 +16,10 @@
         <div class="col-lg-3 col-md-6 d-flex">
           <i class="bi bi-telephone icon"></i>
           <div>
-            <h4>Contact</h4>
+            <h4><?php echo $lang['contact']; ?></h4>
             <p>
-              <strong>Phone:</strong> <span>062-245-5942</span><br>
-              <strong>Email:</strong> <span>n.juiprasert@gmail.com</span><br>
+              <strong><?php echo $lang['phone']; ?></strong> <span>062-245-5942</span><br>
+              <strong><?php echo $lang['email']; ?></strong> <span>n.juiprasert@gmail.com</span><br>
             </p>
           </div>
         </div>
@@ -27,16 +27,16 @@
         <div class="col-lg-3 col-md-6 d-flex">
           <i class="bi bi-clock icon"></i>
           <div>
-            <h4>Opening Hours</h4>
+            <h4><?php echo $lang['opening_hours']; ?></h4>
             <p>
-              <strong>Mon-Sat:</strong> <span>8:00 - 18:00 น.</span><br>
-              <strong>Sunday</strong>: <span>Closed</span>
+              <strong><?php echo $lang['mon_sat']; ?></strong> <span><?php echo $lang['hours']; ?></span><br>
+              <strong><?php echo $lang['sunday']; ?></strong>: <span><?php echo $lang['closed']; ?></span>
             </p>
           </div>
         </div>
 
         <div class="col-lg-3 col-md-6">
-          <h4>Follow Us</h4>
+          <h4><?php echo $lang['follow_us']; ?></h4>
           <div class="social-links d-flex">
             <a href="https://www.facebook.com/profile.php?id=61573999664508" class="facebook" target="_blank"><i class="bi bi-facebook"></i></a>
             <a href="https://www.instagram.com/the_prestigeliving_sathorn?igsh=MTlvZDRvYnR2dHkycg==" class="instagram" target="_blank"><i class="bi bi-instagram"></i></a>
@@ -50,72 +50,65 @@
     </div>
 
     <div class="container copyright text-center mt-4">
-      <p>© <span>Copyright</span> <strong class="px-1 sitename">The Prestige Living</strong> <span>All Rights Reserved</span></p>
+      <p>© <span><?php echo $lang['copyright']; ?></span> <strong class="px-1 sitename">The Prestige Living</strong> <span><?php echo $lang['all_rights_reserved']; ?></span></p>
     </div>
 
-    <!-- Modal สำหรับแสดง QR Code ของ Line -->
-  <div class="modal fade" id="lineModal" tabindex="-1" aria-labelledby="lineModalLabel" aria-hidden="true">
+    <div class="modal fade" id="lineModal" tabindex="-1" aria-labelledby="lineModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="lineModalLabel">ติดต่อเราใน Line</h5>
+          <h5 class="modal-title" id="lineModalLabel"><?php echo $lang['contact_us_line']; ?></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body text-center">
           <img src="assets/img/line.jpg" alt="QR Code Line" class="img-fluid" style="max-width: 200px;">
-          <p>สแกน QR Code นี้ด้วย Line ของคุณ</p>
+          <p><?php echo $lang['scan_qr_line']; ?></p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal สำหรับแสดง QR Code ของ Whatsapp -->
   <div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="whatsappModalLabel">ติดต่อเราใน Whatsapp</h5>
+          <h5 class="modal-title" id="whatsappModalLabel"><?php echo $lang['contact_us_whatsapp']; ?></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body text-center">
           <img src="assets/img/whatsapp.jpg" alt="QR Code Whatsapp" class="img-fluid" style="max-width: 200px;">
-          <p>สแกน QR Code นี้ด้วย Whatsapp ของคุณ</p>
+          <p><?php echo $lang['scan_qr_whatsapp']; ?></p>
         </div>
       </div>
     </div>
   </div>
 
-<!-- Modal สำหรับแสดง QR Code ของ Wechat -->
 <div class="modal fade" id="wechatModal" tabindex="-1" aria-labelledby="wechatModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="wechatModalLabel">ติดต่อเราใน Wechat</h5>
+        <h5 class="modal-title" id="wechatModalLabel"><?php echo $lang['contact_us_wechat']; ?></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center">
         <img src="assets/img/wechat.jpg" alt="QR Code Wechat" class="img-fluid" style="max-width: 200px;">
-        <p>สแกน QR Code นี้ด้วย Wechat ของคุณ</p>
+        <p><?php echo $lang['scan_qr_wechat']; ?></p>
       </div>
     </div>
   </div>
 </div>
 
   </footer>
-  <!-- Scroll Top -->
   <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
-  <!-- Preloader -->
   <div id="preloader"></div>
 
-  <!-- Vendor JS Files -->
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/php-email-form/validate.js"></script>
   <script src="assets/vendor/aos/aos.js"></script>
   <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
   <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
 
-  <!-- Main JS File -->
   <script src="assets/js/main.js"></script>
 
 </body>

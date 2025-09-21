@@ -133,6 +133,28 @@ $lang = [
     'contact_move_in_date' => 'วันที่ต้องการเข้าพัก',
     'contact_message_placeholder' => 'ข้อความ',
     'contact_send_appointment' => 'บันทึกนัดหมาย',
-    'contact_alert_no_date' => 'กรุณาระบุวันที่นัดหมายด้วยค่ะ'
+    'contact_alert_no_date' => 'กรุณาระบุวันที่นัดหมายด้วยค่ะ',
+
+    // Footer
+    "address" => "ที่อยู่",
+    "address_detail_1" => "163 ซอยเจริญราษฎร์ 8",
+    "address_detail_2" => "แขวงบางโคล่ เขตบางคอแหลม กรุงเทพมหานคร",
+    "contact" => "ติดต่อ",
+    "phone" => "เบอร์โทรศัพท์:",
+    "email" => "อีเมล:",
+    "opening_hours" => "เวลาทำการ",
+    "mon_sat" => "จันทร์-เสาร์:",
+    "hours" => "8:00 - 18:00 น.",
+    "sunday" => "วันอาทิตย์",
+    "closed" => "ปิด",
+    "follow_us" => "ติดตามเรา",
+    "copyright" => "ลิขสิทธิ์",
+    "all_rights_reserved" => "สงวนลิขสิทธิ์",
+    "contact_us_line" => "ติดต่อเราใน Line",
+    "scan_qr_line" => "สแกน QR Code นี้ด้วย Line ของคุณ",
+    "contact_us_whatsapp" => "ติดต่อเราใน Whatsapp",
+    "scan_qr_whatsapp" => "สแกน QR Code นี้ด้วย Whatsapp ของคุณ",
+    "contact_us_wechat" => "ติดต่อเราใน Wechat",
+    "scan_qr_wechat" => "สแกน QR Code นี้ด้วย Wechat ของคุณ"
 ];
 ?>
