@@ -2,6 +2,19 @@
 ob_start();
 session_start();
 include 'db.php'; // ไฟล์เชื่อมต่อฐานข้อมูล
+
+// --- [เพิ่มใหม่] โหลดไฟล์ภาษา ---
+if (!isset($_SESSION['lang'])) {
+    $_SESSION['lang'] = 'th'; // ค่าเริ่มต้นคือภาษาไทย
+}
+$lang_file = 'languages/' . $_SESSION['lang'] . '.php';
+if (file_exists($lang_file)) {
+    include $lang_file;
+} else {
+    include 'languages/th.php'; // หากไฟล์ภาษาไม่มี ให้ใช้ภาษาไทยเป็นค่าเริ่มต้น
+}
+// --- จบส่วนโหลดไฟล์ภาษา ---
+
 include 'header.php'; // ส่วนหัวของเว็บ
 
 // ตรวจสอบสิทธิ์การเข้าถึงของผู้ใช้
@@ -13,11 +26,10 @@ if (!isset($_SESSION['user_id'])) {
 $admin_id = $_SESSION['user_id'];
 $current_user_name = $_SESSION['user_id'];
 
-// --- [เพิ่มใหม่] จัดการการลบสินทรัพย์ ---
+// --- จัดการการลบสินทรัพย์ ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_property'])) {
     $property_id_to_delete = $_POST['property_id'];
 
-    // 1. ตรวจสอบว่าสินทรัพย์นี้มีผู้เช่าที่ยัง Active อยู่หรือไม่ (W, T, O)
     $check_sql = "SELECT COUNT(id) AS active_tenants FROM RENT_PLACE_APPOINTMENT WHERE rent_place_id = ? AND status IN ('W', 'T', 'O')";
     $stmt_check = $conn->prepare($check_sql);
     $stmt_check->bind_param("i", $property_id_to_delete);
@@ -25,38 +37,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_property'])) {
     $result_check = $stmt_check->get_result()->fetch_assoc();
 
     if ($result_check['active_tenants'] == 0) {
-        // ไม่มีผู้เช่า สามารถลบได้
-        // **สำคัญ:** ควรลบข้อมูลที่เกี่ยวข้องในตารางลูกก่อน (cascade delete)
         $conn->begin_transaction();
         try {
             $conn->query("DELETE FROM RENT_PLACE_FACILITIES WHERE rent_place_id = $property_id_to_delete");
             $conn->query("DELETE FROM RENT_PLACE_LANDMARKS WHERE rent_place_id = $property_id_to_delete");
             $conn->query("DELETE FROM RENT_PLACE_ATTACH WHERE rent_place_id = $property_id_to_delete");
-            // (อาจจะต้องลบจาก RENT_FILE และ RENT_ATTACH ด้วยหากโครงสร้างซับซ้อนกว่านี้)
 
-            // สุดท้าย ลบตัวสินทรัพย์หลัก
             $delete_sql = "DELETE FROM RENT_PLACE WHERE id = ? AND user_id = ?";
             $stmt_delete = $conn->prepare($delete_sql);
             $stmt_delete->bind_param("ii", $property_id_to_delete, $admin_id);
             $stmt_delete->execute();
 
             $conn->commit();
-            $_SESSION['message'] = "ลบสินทรัพย์รหัส #$property_id_to_delete สำเร็จแล้ว";
+            $_SESSION['message'] = sprintf($lang['delete_property_success'], $property_id_to_delete);
 
         } catch (mysqli_sql_exception $exception) {
             $conn->rollback();
-            $_SESSION['error'] = "เกิดข้อผิดพลาดในการลบข้อมูล: " . $exception->getMessage();
+            $_SESSION['error'] = $lang['delete_error'] . $exception->getMessage();
         }
 
     } else {
-        // มีผู้เช่าอยู่ ลบไม่ได้
-        $_SESSION['error'] = "ไม่สามารถลบสินทรัพย์รหัส #$property_id_to_delete ได้ เนื่องจากยังมีผู้เช่าอยู่";
+        $_SESSION['error'] = sprintf($lang['delete_property_error_has_tenants'], $property_id_to_delete);
     }
 
     header("Location: admin_properties.php");
     exit();
 }
 
+// --- [แก้ไข] เลือกฟิลด์ชื่อตามภาษาที่ตั้งค่า ---
+$lang_suffix = '';
+if ($_SESSION['lang'] == 'en') {
+    $lang_suffix = '_en';
+} elseif ($_SESSION['lang'] == 'cn') {
+    $lang_suffix = '_cn';
+}
+
+$name_column = "p.name" . $lang_suffix;
+// --- จบส่วนแก้ไข ---
 
 // --- จัดการการค้นหา ---
 $search_term = $_GET['search'] ?? '';
@@ -65,11 +82,11 @@ $search_term = $_GET['search'] ?? '';
 $sql = "
     SELECT 
         p.id, 
-        p.name, 
+        -- [แก้ไข] ถ้าค่าในภาษาที่เลือกเป็น NULL หรือค่าว่าง ให้แสดงชื่อภาษาไทยแทน
+        IFNULL(NULLIF(TRIM($name_column), ''), p.name) as name, 
         p.price, 
         p.type, 
         p.status,
-        -- ตรวจสอบว่าสินทรัพย์นี้สามารถลบได้หรือไม่ (ไม่มีผู้เช่าสถานะ W, T, O)
         (SELECT COUNT(id) FROM RENT_PLACE_APPOINTMENT WHERE rent_place_id = p.id AND status IN ('W', 'T', 'O')) AS active_tenants
     FROM RENT_PLACE p
     WHERE p.user_id = ?
@@ -79,9 +96,13 @@ $params = [$admin_id];
 $types = 'i';
 
 if (!empty($search_term)) {
-    $sql .= " AND p.name LIKE ?";
-    $params[] = "%" . $search_term . "%";
-    $types .= 's';
+    // [แก้ไข] ค้นหาจากทุกภาษา
+    $sql .= " AND (p.name LIKE ? OR p.name_en LIKE ? OR p.name_cn LIKE ?)";
+    $search_param = "%" . $search_term . "%";
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $types .= 'sss';
 }
 
 $sql .= " ORDER BY p.id DESC";
@@ -94,14 +115,12 @@ if ($stmt) {
     $properties_result = $stmt->get_result();
 }
 
-// --- Helper Functions ---
-function getPropertyType($type) {
-    $types = ['H' => 'บ้านเดี่ยว', 'C' => 'คอนโด', 'A' => 'อพาร์ตเมนต์', 'V' => 'วิลล่า', 'T' => 'ทาวน์เฮาส์', 'L' => 'ที่ดิน'];
-    return $types[$type] ?? 'ไม่ระบุ';
+// --- [แก้ไข] Helper Functions ให้ใช้ตัวแปรภาษา ---
+function getPropertyType($type, $lang) {
+    return $lang['property_types'][$type] ?? $lang['property_types']['unspecified'];
 }
-function getPropertyStatus($status) {
-    $statuses = ['E' => ['text' => 'ว่าง', 'class' => 'success'], 'F' => ['text' => 'เต็ม', 'class' => 'danger']];
-    return $statuses[$status] ?? ['text' => 'ไม่ระบุ', 'class' => 'secondary'];
+function getPropertyStatus($status, $lang) {
+    return $lang['property_statuses'][$status] ?? $lang['property_statuses']['unspecified'];
 }
 ?>
 
@@ -121,10 +140,10 @@ function getPropertyStatus($status) {
     <section class="container py-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div class="section-title mb-0">
-                <h2>จัดการสินทรัพย์</h2>
-                <p>เพิ่ม แก้ไข และลบสินทรัพย์สำหรับปล่อยเช่าของคุณ</p>
+                <h2><?php echo $lang['manage_properties_title']; ?></h2>
+                <p><?php echo $lang['manage_properties_subtitle']; ?></p>
             </div>
-            <a href="manage_property.php" class="btn btn-primary"><i class="bi bi-plus-circle"></i> เพิ่มสินทรัพย์ใหม่</a>
+            <a href="manage_property.php" class="btn btn-primary"><i class="bi bi-plus-circle"></i> <?php echo $lang['add_new_property']; ?></a>
         </div>
 
         <?php if (isset($_SESSION['message'])): ?>
@@ -141,10 +160,9 @@ function getPropertyStatus($status) {
         <?php endif; ?>
 
         <div class="table-card">
-            <!-- Search Form -->
             <form method="GET" action="admin_properties.php" class="mb-4">
                 <div class="input-group">
-                    <input type="text" name="search" class="form-control" placeholder="ค้นหาชื่อสินทรัพย์..." value="<?php echo htmlspecialchars($search_term); ?>">
+                    <input type="text" name="search" class="form-control" placeholder="<?php echo $lang['search_placeholder']; ?>" value="<?php echo htmlspecialchars($search_term); ?>">
                     <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
                 </div>
             </form>
@@ -153,22 +171,22 @@ function getPropertyStatus($status) {
                 <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>รหัส</th>
-                            <th>ชื่อสินทรัพย์</th>
-                            <th>ประเภท</th>
-                            <th class="text-end">ราคา (บาท/เดือน)</th>
-                            <th class="text-center">สถานะ</th>
-                            <th class="text-center">จัดการ</th>
+                            <th><?php echo $lang['col_id']; ?></th>
+                            <th><?php echo $lang['col_property_name']; ?></th>
+                            <th><?php echo $lang['col_type']; ?></th>
+                            <th class="text-end"><?php echo $lang['col_price']; ?></th>
+                            <th class="text-center"><?php echo $lang['col_status']; ?></th>
+                            <th class="text-center"><?php echo $lang['col_manage']; ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($properties_result && $properties_result->num_rows > 0): ?>
                             <?php while ($row = $properties_result->fetch_assoc()): ?>
-                                <?php $statusInfo = getPropertyStatus($row['status']); ?>
+                                <?php $statusInfo = getPropertyStatus($row['status'], $lang); ?>
                                 <tr>
                                     <td>#<?php echo $row['id']; ?></td>
                                     <td><?php echo htmlspecialchars($row['name']); ?></td>
-                                    <td><?php echo getPropertyType($row['type']); ?></td>
+                                    <td><?php echo getPropertyType($row['type'], $lang); ?></td>
                                     <td class="text-end"><?php echo number_format($row['price'], 2); ?></td>
                                     <td class="text-center">
                                         <span class="badge bg-<?php echo $statusInfo['class']; ?>">
@@ -176,14 +194,14 @@ function getPropertyStatus($status) {
                                         </span>
                                     </td>
                                     <td class="text-center action-buttons">
-                                        <a href="manage_property.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil-square"></i> แก้ไข</a>
+                                        <a href="manage_property.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil-square"></i> <?php echo $lang['btn_edit']; ?></a>
                                         
-                                        <form method="POST" class="d-inline" onsubmit="return confirm('คุณต้องการลบสินทรัพย์นี้ใช่หรือไม่?');">
+                                        <form method="POST" class="d-inline" onsubmit="return confirm('<?php echo $lang['delete_confirm']; ?>');">
                                             <input type="hidden" name="property_id" value="<?php echo $row['id']; ?>">
                                             <button type="submit" name="delete_property" class="btn btn-sm btn-danger" 
                                                 <?php if ($row['active_tenants'] > 0) echo 'disabled'; ?>
-                                                title="<?php if ($row['active_tenants'] > 0) echo 'ไม่สามารถลบได้เนื่องจากมีผู้เช่าอยู่'; ?>">
-                                                <i class="bi bi-trash"></i> ลบ
+                                                title="<?php if ($row['active_tenants'] > 0) echo $lang['tooltip_delete_disabled']; ?>">
+                                                <i class="bi bi-trash"></i> <?php echo $lang['btn_delete']; ?>
                                             </button>
                                         </form>
                                     </td>
@@ -191,7 +209,7 @@ function getPropertyStatus($status) {
                             <?php endwhile; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-4">ไม่พบข้อมูลสินทรัพย์</td>
+                                <td colspan="6" class="text-center text-muted py-4"><?php echo $lang['no_data_found']; ?></td>
                             </tr>
                         <?php endif; ?>
                     </tbody>

@@ -369,6 +369,51 @@ $lang = [
     "sep" => "九月",
     "oct" => "十月",
     "nov" => "十一月",
-    "dec" => "十二月"
+    "dec" => "十二月",
+
+    //admin_properties.php
+    // Admin Properties Page
+    'manage_properties_title' => '管理房产',
+    'manage_properties_subtitle' => '添加、编辑和删除您的出租房产。',
+    'add_new_property' => '添加新房产',
+    'search_placeholder' => '搜索房产名称...',
+
+    // Table Headers
+    'col_id' => 'ID',
+    'col_property_name' => '房产名称',
+    'col_type' => '类型',
+    'col_price' => '价格 (泰铢/月)',
+    'col_status' => '状态',
+    'col_manage' => '管理',
+
+    // Buttons
+    'btn_edit' => '编辑',
+    'btn_delete' => '删除',
+
+    // Property Types
+    'property_types' => [
+        'H' => '独栋别墅',
+        'C' => '公寓',
+        'A' => '公寓楼',
+        'V' => '别墅',
+        'T' => '联排别墅',
+        'L' => '土地',
+        'unspecified' => '未指定'
+    ],
+
+    // Property Statuses
+    'property_statuses' => [
+        'E' => ['text' => '可租', 'class' => 'success'],
+        'F' => ['text' => '已满', 'class' => 'danger'],
+        'unspecified' => ['text' => '未指定', 'class' => 'secondary']
+    ],
+
+    // Messages & Alerts
+    'delete_property_success' => '房产 #%s 已成功删除。',
+    'delete_property_error_has_tenants' => '无法删除房产 #%s，因为存在有效租户。',
+    'delete_error' => '删除数据时出错: ',
+    'delete_confirm' => '您确定要删除此房产吗？',
+    'no_data_found' => '未找到房产数据。',
+    'tooltip_delete_disabled' => '无法删除，房产有有效租户。',
 ];
 ?>

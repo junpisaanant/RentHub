@@ -369,7 +369,52 @@ $lang = [
     "sep" => "ก.ย.",
     "oct" => "ต.ค.",
     "nov" => "พ.ย.",
-    "dec" => "ธ.ค."
+    "dec" => "ธ.ค.",
+
+    //admin_properties.php
+    // Admin Properties Page
+    'manage_properties_title' => 'จัดการสินทรัพย์',
+    'manage_properties_subtitle' => 'เพิ่ม แก้ไข และลบสินทรัพย์สำหรับปล่อยเช่าของคุณ',
+    'add_new_property' => 'เพิ่มสินทรัพย์ใหม่',
+    'search_placeholder' => 'ค้นหาชื่อสินทรัพย์...',
+    
+    // Table Headers
+    'col_id' => 'รหัส',
+    'col_property_name' => 'ชื่อสินทรัพย์',
+    'col_type' => 'ประเภท',
+    'col_price' => 'ราคา (บาท/เดือน)',
+    'col_status' => 'สถานะ',
+    'col_manage' => 'จัดการ',
+
+    // Buttons
+    'btn_edit' => 'แก้ไข',
+    'btn_delete' => 'ลบ',
+
+    // Property Types
+    'property_types' => [
+        'H' => 'บ้านเดี่ยว',
+        'C' => 'คอนโด',
+        'A' => 'อพาร์ตเมนต์',
+        'V' => 'วิลล่า',
+        'T' => 'ทาวน์เฮาส์',
+        'L' => 'ที่ดิน',
+        'unspecified' => 'ไม่ระบุ'
+    ],
+
+    // Property Statuses
+    'property_statuses' => [
+        'E' => ['text' => 'ว่าง', 'class' => 'success'],
+        'F' => ['text' => 'เต็ม', 'class' => 'danger'],
+        'unspecified' => ['text' => 'ไม่ระบุ', 'class' => 'secondary']
+    ],
+
+    // Messages & Alerts
+    'delete_property_success' => 'ลบสินทรัพย์รหัส #%s สำเร็จแล้ว',
+    'delete_property_error_has_tenants' => 'ไม่สามารถลบสินทรัพย์รหัส #%s ได้ เนื่องจากยังมีผู้เช่าอยู่',
+    'delete_error' => 'เกิดข้อผิดพลาดในการลบข้อมูล: ',
+    'delete_confirm' => 'คุณต้องการลบสินทรัพย์นี้ใช่หรือไม่?',
+    'no_data_found' => 'ไม่พบข้อมูลสินทรัพย์',
+    'tooltip_delete_disabled' => 'ไม่สามารถลบได้เนื่องจากมีผู้เช่าอยู่',
 
 ];
 ?>

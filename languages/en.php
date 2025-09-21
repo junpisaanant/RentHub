@@ -369,6 +369,51 @@ $lang = [
     "sep" => "Sep",
     "oct" => "Oct",
     "nov" => "Nov",
-    "dec" => "Dec"
+    "dec" => "Dec",
+
+    //admin_properties.php
+    // Admin Properties Page
+    'manage_properties_title' => 'Manage Properties',
+    'manage_properties_subtitle' => 'Add, edit, and delete your rental properties.',
+    'add_new_property' => 'Add New Property',
+    'search_placeholder' => 'Search property name...',
+
+    // Table Headers
+    'col_id' => 'ID',
+    'col_property_name' => 'Property Name',
+    'col_type' => 'Type',
+    'col_price' => 'Price (THB/Month)',
+    'col_status' => 'Status',
+    'col_manage' => 'Manage',
+
+    // Buttons
+    'btn_edit' => 'Edit',
+    'btn_delete' => 'Delete',
+
+    // Property Types
+    'property_types' => [
+        'H' => 'Detached House',
+        'C' => 'Condominium',
+        'A' => 'Apartment',
+        'V' => 'Villa',
+        'T' => 'Townhouse',
+        'L' => 'Land',
+        'unspecified' => 'Unspecified'
+    ],
+
+    // Property Statuses
+    'property_statuses' => [
+        'E' => ['text' => 'Available', 'class' => 'success'],
+        'F' => ['text' => 'Occupied', 'class' => 'danger'],
+        'unspecified' => ['text' => 'Unspecified', 'class' => 'secondary']
+    ],
+
+    // Messages & Alerts
+    'delete_property_success' => 'Property #%s has been successfully deleted.',
+    'delete_property_error_has_tenants' => 'Cannot delete property #%s because there are active tenants.',
+    'delete_error' => 'Error deleting data: ',
+    'delete_confirm' => 'Are you sure you want to delete this property?',
+    'no_data_found' => 'No property data found.',
+    'tooltip_delete_disabled' => 'Cannot delete, property has active tenants.',
 ];
 ?>
