@@ -211,6 +211,53 @@ $lang = [
     'update_files' => 'Update Files',
     'change_password_btn' => 'Change Password',
     'cancel' => 'Cancel',
-    'save_new_image' => 'Save New Image'
+    'save_new_image' => 'Save New Image',
+
+    //Transaction.php
+    // Page Title
+    'transaction_history_title' => 'Transaction History',
+    'transaction_history_subtitle' => 'All your appointments and payment records',
+
+    // Table Headers
+    'col_transaction_id' => 'Transaction ID',
+    'col_property_name' => 'Property Name',
+    'col_appointment_date' => 'Appointment Date',
+    'col_checkin_date' => 'Check-in Date',
+    'col_payment_date' => 'Payment Date',
+    'col_price' => 'Price (THB)',
+    'col_status' => 'Status',
+    'col_manage' => 'Action',
+
+    // Table Content
+    'no_transactions_found' => 'No transaction history found',
+    'pay_button' => 'Pay',
+
+    // Payment Modal
+    'modal_title_payment_confirmation' => 'Confirm Payment',
+    'modal_transaction_id' => 'Transaction ID',
+    'modal_amount_to_pay' => 'Amount to Pay (THB)',
+    'modal_attach_proof' => 'Attach Proof of Payment',
+    'modal_file_format_notice' => 'Please attach an image file .jpg, .jpeg, .png',
+    'cancel_button' => 'Cancel',
+    'confirm_payment_button' => 'Confirm Payment',
+
+    // Status Texts
+    'status_map' => [
+        'A' => ['text' => 'Appointed', 'class' => 'primary'],
+        'C' => ['text' => 'Cancelled', 'class' => 'secondary'],
+        'D' => ['text' => 'No-show', 'class' => 'dark'],
+        'W' => ['text' => 'Waiting for Payment', 'class' => 'warning'],
+        'T' => ['text' => 'Waiting for Confirmation', 'class' => 'info'],
+        'O' => ['text' => 'Paid', 'class' => 'success']
+    ],
+    'status_unknown' => 'Unknown',
+    
+    // Server Messages
+    'payment_proof_success' => 'Payment proof for transaction #%s has been sent. Please wait for confirmation.',
+    'error_updating_appointment' => 'Error updating appointment information.',
+    'error_creating_attachment_group' => 'Error creating file attachment group.',
+    'error_uploading_file' => 'Sorry, there was an error uploading your file.',
+    'file_not_image' => 'File is not an image.',
+    'please_attach_proof' => 'Please attach the proof of payment.'
 ];
 ?>

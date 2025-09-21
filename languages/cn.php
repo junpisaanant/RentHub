@@ -211,6 +211,53 @@ $lang = [
     'update_files' => '更新文件',
     'change_password_btn' => '修改密码',
     'cancel' => '取消',
-    'save_new_image' => '保存新图片'
+    'save_new_image' => '保存新图片',
+
+    //Transaction.php
+    // Page Title
+    'transaction_history_title' => '交易记录',
+    'transaction_history_subtitle' => '您所有的预约和付款记录',
+
+    // Table Headers
+    'col_transaction_id' => '交易编号',
+    'col_property_name' => '房产名称',
+    'col_appointment_date' => '预约日期',
+    'col_checkin_date' => '入住日期',
+    'col_payment_date' => '付款日期',
+    'col_price' => '价格 (泰铢)',
+    'col_status' => '状态',
+    'col_manage' => '操作',
+
+    // Table Content
+    'no_transactions_found' => '未找到交易记录',
+    'pay_button' => '支付',
+
+    // Payment Modal
+    'modal_title_payment_confirmation' => '确认付款',
+    'modal_transaction_id' => '交易编号',
+    'modal_amount_to_pay' => '应付金额 (泰铢)',
+    'modal_attach_proof' => '附上付款凭证',
+    'modal_file_format_notice' => '请附上 .jpg, .jpeg, .png 格式的图片文件',
+    'cancel_button' => '取消',
+    'confirm_payment_button' => '确认付款',
+
+    // Status Texts
+    'status_map' => [
+        'A' => ['text' => '已预约', 'class' => 'primary'],
+        'C' => ['text' => '已取消', 'class' => 'secondary'],
+        'D' => ['text' => '未赴约', 'class' => 'dark'],
+        'W' => ['text' => '等待付款', 'class' => 'warning'],
+        'T' => ['text' => '等待确认', 'class' => 'info'],
+        'O' => ['text' => '已支付', 'class' => 'success']
+    ],
+    'status_unknown' => '未知',
+
+    // Server Messages
+    'payment_proof_success' => '交易 #%s 的付款凭证已发送。请等待确认。',
+    'error_updating_appointment' => '更新预约信息时出错。',
+    'error_creating_attachment_group' => '创建文件附件组时出错。',
+    'error_uploading_file' => '抱歉，上传文件时出错。',
+    'file_not_image' => '文件不是图像。',
+    'please_attach_proof' => '请附上付款凭证。'
 ];
 ?>

@@ -211,7 +211,54 @@ $lang = [
     'update_files' => 'อัปเดตไฟล์',
     'change_password_btn' => 'เปลี่ยนรหัสผ่าน',
     'cancel' => 'ยกเลิก',
-    'save_new_image' => 'บันทึกรูปใหม่'
+    'save_new_image' => 'บันทึกรูปใหม่',
+
+    //Transaction.php
+    // Page Title
+    'transaction_history_title' => 'ประวัติการทำรายการ',
+    'transaction_history_subtitle' => 'รายการนัดหมายและชำระเงินทั้งหมดของคุณ',
+
+    // Table Headers
+    'col_transaction_id' => 'รหัสรายการ',
+    'col_property_name' => 'ชื่อสินทรัพย์',
+    'col_appointment_date' => 'วันที่นัดหมาย',
+    'col_checkin_date' => 'วันที่ต้องการเข้าพัก',
+    'col_payment_date' => 'วันที่ชำระเงิน',
+    'col_price' => 'ราคา (บาท)',
+    'col_status' => 'สถานะ',
+    'col_manage' => 'จัดการ',
+
+    // Table Content
+    'no_transactions_found' => 'ไม่พบประวัติการทำรายการ',
+    'pay_button' => 'ชำระเงิน',
+
+    // Payment Modal
+    'modal_title_payment_confirmation' => 'ยืนยันการชำระเงิน',
+    'modal_transaction_id' => 'รหัสรายการ',
+    'modal_amount_to_pay' => 'ยอดที่ต้องชำระ (บาท)',
+    'modal_attach_proof' => 'แนบหลักฐานการชำระเงิน',
+    'modal_file_format_notice' => 'กรุณาแนบไฟล์รูปภาพ .jpg, .jpeg, .png',
+    'cancel_button' => 'ยกเลิก',
+    'confirm_payment_button' => 'ยืนยันการชำระเงิน',
+
+    // Status Texts
+    'status_map' => [
+        'A' => ['text' => 'นัดหมาย', 'class' => 'primary'],
+        'C' => ['text' => 'ไม่ตกลง', 'class' => 'secondary'],
+        'D' => ['text' => 'ไม่มาตามนัด', 'class' => 'dark'],
+        'W' => ['text' => 'รอชำระเงิน', 'class' => 'warning'],
+        'T' => ['text' => 'รอยืนยัน', 'class' => 'info'],
+        'O' => ['text' => 'ชำระเงินแล้ว', 'class' => 'success']
+    ],
+    'status_unknown' => 'ไม่ระบุ',
+
+    // Server Messages
+    'payment_proof_success' => 'ส่งหลักฐานการชำระเงินสำหรับรายการ #%s สำเร็จแล้ว กรุณารอการยืนยัน',
+    'error_updating_appointment' => 'เกิดข้อผิดพลาดในการอัปเดตข้อมูลการนัดหมาย',
+    'error_creating_attachment_group' => 'เกิดข้อผิดพลาดในการสร้างกลุ่มไฟล์แนบ',
+    'error_uploading_file' => 'ขออภัย, เกิดข้อผิดพลาดในการอัปโหลดไฟล์',
+    'file_not_image' => 'ไฟล์ที่อัปโหลดไม่ใช่ไฟล์รูปภาพ',
+    'please_attach_proof' => 'กรุณาแนบไฟล์หลักฐานการชำระเงิน'
 
 ];
 ?>

@@ -5,6 +5,18 @@ error_reporting(E_ALL);
 
 ob_start();
 session_start();
+
+// --- จัดการเรื่องภาษา ---
+if (!isset($_SESSION['lang'])) {
+    $_SESSION['lang'] = 'th'; // ค่าเริ่มต้นคือภาษาไทย
+}
+if (isset($_GET['lang'])) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+// โหลดไฟล์ภาษา
+include 'languages/' . $_SESSION['lang'] . '.php';
+
+
 include 'db.php'; // ไฟล์เชื่อมต่อฐานข้อมูล
 
 // --- จัดการการส่งฟอร์มชำระเงิน ---
@@ -56,22 +68,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_payment'])) {
                     $stmt_update->bind_param("isii", $attach_id, $current_user_name, $appointment_id, $user_id);
                     
                     if ($stmt_update->execute()) {
-                        $_SESSION['message'] = "ส่งหลักฐานการชำระเงินสำหรับรายการ #$appointment_id สำเร็จแล้ว กรุณารอการยืนยัน";
+                        $_SESSION['message'] = sprintf($lang['payment_proof_success'], $appointment_id);
                     } else {
-                        $_SESSION['error'] = "เกิดข้อผิดพลาดในการอัปเดตข้อมูลการนัดหมาย";
+                        $_SESSION['error'] = $lang['error_updating_appointment'];
                     }
                 } else {
-                     $_SESSION['error'] = "เกิดข้อผิดพลาดในการสร้างกลุ่มไฟล์แนบ";
+                     $_SESSION['error'] = $lang['error_creating_attachment_group'];
                 }
 
             } else {
-                $_SESSION['error'] = "ขออภัย, เกิดข้อผิดพลาดในการอัปโหลดไฟล์";
+                $_SESSION['error'] = $lang['error_uploading_file'];
             }
         } else {
-            $_SESSION['error'] = "ไฟล์ที่อัปโหลดไม่ใช่ไฟล์รูปภาพ";
+            $_SESSION['error'] = $lang['file_not_image'];
         }
     } else {
-        $_SESSION['error'] = "กรุณาแนบไฟล์หลักฐานการชำระเงิน";
+        $_SESSION['error'] = $lang['please_attach_proof'];
     }
 
     header("Location: transaction.php");
@@ -88,6 +100,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
+$current_lang = $_SESSION['lang'];
 
 // --- ดึงข้อมูลประวัติการทำรายการของผู้ใช้ ---
 $sql = "
@@ -98,7 +111,11 @@ $sql = "
         t.transfer_date,
         t.price,
         t.status,
-        rp.name AS place_name
+        CASE
+            WHEN ? = 'en' AND rp.name_en IS NOT NULL AND rp.name_en != '' THEN rp.name_en
+            WHEN ? = 'cn' AND rp.name_cn IS NOT NULL AND rp.name_cn != '' THEN rp.name_cn
+            ELSE rp.name
+        END AS place_name
     FROM RENT_PLACE_APPOINTMENT t
     JOIN RENT_PLACE rp ON t.rent_place_id = rp.id
     WHERE t.rent_user_id = ?
@@ -108,22 +125,15 @@ $sql = "
 $stmt = $conn->prepare($sql);
 $transactions_result = null;
 if ($stmt) {
-    $stmt->bind_param("i", $user_id);
+    $stmt->bind_param("ssi", $current_lang, $current_lang, $user_id);
     $stmt->execute();
     $transactions_result = $stmt->get_result();
 }
 
 // ฟังก์ชันสำหรับแปลงรหัสสถานะเป็นข้อความที่อ่านง่าย
-function getStatusText($status) {
-    $statusMap = [
-        'A' => ['text' => 'นัดหมาย', 'class' => 'primary'],
-        'C' => ['text' => 'ไม่ตกลง', 'class' => 'secondary'],
-        'D' => ['text' => 'ไม่มาตามนัด', 'class' => 'dark'],
-        'W' => ['text' => 'รอชำระเงิน', 'class' => 'warning'],
-        'T' => ['text' => 'รอยืนยัน', 'class' => 'info'],
-        'O' => ['text' => 'ชำระเงินแล้ว', 'class' => 'success']
-    ];
-    return $statusMap[$status] ?? ['text' => 'ไม่ระบุ', 'class' => 'light'];
+function getStatusText($status, $lang) {
+    $statusMap = $lang['status_map'];
+    return $statusMap[$status] ?? ['text' => $lang['status_unknown'], 'class' => 'light'];
 }
 ?>
 
@@ -141,11 +151,10 @@ function getStatusText($status) {
 <main id="main">
     <section class="container py-5">
         <div class="section-title mb-4">
-            <h2>ประวัติการทำรายการ</h2>
-            <p>รายการนัดหมายและชำระเงินทั้งหมดของคุณ</p>
+            <h2><?php echo $lang['transaction_history_title']; ?></h2>
+            <p><?php echo $lang['transaction_history_subtitle']; ?></p>
         </div>
         
-        <!-- แสดงข้อความแจ้งเตือน (ถ้ามี) -->
         <?php if (isset($_SESSION['message'])): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <?php echo $_SESSION['message']; unset($_SESSION['message']); ?>
@@ -164,20 +173,20 @@ function getStatusText($status) {
                 <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>รหัสรายการ</th>
-                            <th>ชื่อสินทรัพย์</th>
-                            <th>วันที่นัดหมาย</th>
-                            <th>วันที่ต้องการเข้าพัก</th>
-                            <th>วันที่ชำระเงิน</th>
-                            <th class="text-end">ราคา (บาท)</th>
-                            <th class="text-center">สถานะ</th>
-                            <th class="text-center">จัดการ</th>
+                            <th><?php echo $lang['col_transaction_id']; ?></th>
+                            <th><?php echo $lang['col_property_name']; ?></th>
+                            <th><?php echo $lang['col_appointment_date']; ?></th>
+                            <th><?php echo $lang['col_checkin_date']; ?></th>
+                            <th><?php echo $lang['col_payment_date']; ?></th>
+                            <th class="text-end"><?php echo $lang['col_price']; ?></th>
+                            <th class="text-center"><?php echo $lang['col_status']; ?></th>
+                            <th class="text-center"><?php echo $lang['col_manage']; ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ($transactions_result && $transactions_result->num_rows > 0): ?>
                             <?php while ($row = $transactions_result->fetch_assoc()): ?>
-                                <?php $statusInfo = getStatusText($row['status']); ?>
+                                <?php $statusInfo = getStatusText($row['status'], $lang); ?>
                                 <tr>
                                     <td>#<?php echo $row['id']; ?></td>
                                     <td><?php echo htmlspecialchars($row['place_name']); ?></td>
@@ -197,7 +206,7 @@ function getStatusText($status) {
                                                     data-bs-target="#paymentModal"
                                                     data-id="<?php echo $row['id']; ?>"
                                                     data-price="<?php echo number_format($row['price'], 2); ?>">
-                                                ชำระเงิน
+                                                <?php echo $lang['pay_button']; ?>
                                             </button>
                                         <?php else: ?>
                                             -
@@ -207,7 +216,7 @@ function getStatusText($status) {
                             <?php endwhile; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">ไม่พบประวัติการทำรายการ</td>
+                                <td colspan="8" class="text-center text-muted py-4"><?php echo $lang['no_transactions_found']; ?></td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
@@ -217,34 +226,33 @@ function getStatusText($status) {
     </section>
 </main>
 
-<!-- Payment Modal -->
 <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="paymentModalLabel">ยืนยันการชำระเงิน</h5>
+        <h5 class="modal-title" id="paymentModalLabel"><?php echo $lang['modal_title_payment_confirmation']; ?></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form action="transaction.php" method="POST" enctype="multipart/form-data">
           <div class="modal-body">
             <input type="hidden" id="appointment_id" name="appointment_id" value="">
             <div class="mb-3">
-                <label class="form-label">รหัสรายการ</label>
+                <label class="form-label"><?php echo $lang['modal_transaction_id']; ?></label>
                 <input type="text" id="display_appointment_id" class="form-control" disabled>
             </div>
             <div class="mb-3">
-                <label class="form-label">ยอดที่ต้องชำระ (บาท)</label>
+                <label class="form-label"><?php echo $lang['modal_amount_to_pay']; ?></label>
                 <input type="text" id="display_price" class="form-control" disabled>
             </div>
             <div class="mb-3">
-                <label for="payment_proof" class="form-label">แนบหลักฐานการชำระเงิน</label>
+                <label for="payment_proof" class="form-label"><?php echo $lang['modal_attach_proof']; ?></label>
                 <input class="form-control" type="file" id="payment_proof" name="payment_proof" required accept="image/*">
-                <div class="form-text">กรุณาแนบไฟล์รูปภาพ .jpg, .jpeg, .png</div>
+                <div class="form-text"><?php echo $lang['modal_file_format_notice']; ?></div>
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
-            <button type="submit" name="submit_payment" class="btn btn-primary">ยืนยันการชำระเงิน</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo $lang['cancel_button']; ?></button>
+            <button type="submit" name="submit_payment" class="btn btn-primary"><?php echo $lang['confirm_payment_button']; ?></button>
           </div>
       </form>
     </div>
