@@ -445,6 +445,14 @@ $lang = [
     "DEPOSIT_REQUEST_INSTRUCTIONS" => "Please upload proof of payment for the security deposit through our secure portal. This deposit is refundable and will be returned to you after your stay, provided there are no damages to the property.",
     "DEPOSIT_REQUEST_LOGIN_PROMPT" => "You can upload your proof of payment by accessing your transaction details here:",
     "DEPOSIT_REQUEST_LINK_TEXT" => "Upload Proof of Payment",
-    "DEPOSIT_REQUEST_REGARDS" => "Best regards"
+    "DEPOSIT_REQUEST_REGARDS" => "Best regards",
+
+    //ส่งเมลลืมรหัสผ่าน
+    "FORGOT_PASS_SUBJECT" => "Your New Password for The Prestige Living",
+    "FORGOT_PASS_GREETING" => "Hello",
+    "FORGOT_PASS_BODY1" => "We have received a request to reset your password. Here is your new temporary password:",
+    "FORGOT_PASS_BODY2" => "New Password:",
+    "FORGOT_PASS_BODY3" => "For your security, we strongly recommend that you log in and change this temporary password immediately.",
+    "FORGOT_PASS_REGARDS" => "Best regards"
 ];
 ?>

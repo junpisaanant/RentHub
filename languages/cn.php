@@ -446,6 +446,14 @@ $lang = [
     "DEPOSIT_REQUEST_INSTRUCTIONS" => "请通过我们的安全门户上传押金付款证明。这笔押金是可退还的，如果在您住宿后财产没有损坏，押金将退还给您。",
     "DEPOSIT_REQUEST_LOGIN_PROMPT" => "您可以通过在此处访问您的交易详情来上传您的付款证明：",
     "DEPOSIT_REQUEST_LINK_TEXT" => "上传付款证明",
-    "DEPOSIT_REQUEST_REGARDS" => "诚挚的问候"
+    "DEPOSIT_REQUEST_REGARDS" => "诚挚的问候",
+
+    //ส่งเมลลืมรหัสผ่าน
+    "FORGOT_PASS_SUBJECT" => "您的 The Prestige Living 新密码",
+    "FORGOT_PASS_GREETING" => "你好",
+    "FORGOT_PASS_BODY1" => "我们收到了重置您帐户密码的请求。这是您的新临时密码：",
+    "FORGOT_PASS_BODY2" => "新密码：",
+    "FORGOT_PASS_BODY3" => "为了您的安全，我们强烈建议您立即登录并更改此临时密码。",
+    "FORGOT_PASS_REGARDS" => "诚挚的问候"
 ];
 ?>
