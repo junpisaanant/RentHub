@@ -23,12 +23,24 @@ if (isset($_SESSION['lang']) && $_SESSION['lang'] != 'th') {
 }
 
 //Query ดึงข้อมูลของห้องเช่านี้
-$sql = "SELECT RP.id, RP.name
-, RP.price, RP.size, RP.room_qty, RP.toilet_qty, RP.description
-, RP.address,P.name{$lang_sql} AS province_name , D.name{$lang_sql} AS district_name, SD.name{$lang_sql} AS sub_district_name
-, CONCAT(RU.firstname, ' ', RU.lastname) AS fullname, RU.phone_no, RP.map_url
-, RU.email, RU.line_id
-, CASE RP.type 
+// แก้ไข: เพิ่มการเลือกฟิลด์ name, description, address ตามภาษาที่เลือก
+$sql = "SELECT RP.id, 
+       COALESCE(NULLIF(RP.name{$lang_sql}, ''), RP.name) AS name,
+       RP.price, 
+       RP.size, 
+       RP.room_qty, 
+       RP.toilet_qty, 
+       COALESCE(NULLIF(RP.description{$lang_sql}, ''), RP.description) AS description,
+       COALESCE(NULLIF(RP.address{$lang_sql}, ''), RP.address) AS address,
+       COALESCE(NULLIF(P.name{$lang_sql}, ''), P.name) AS province_name, 
+       COALESCE(NULLIF(D.name{$lang_sql}, ''), D.name) AS district_name, 
+       COALESCE(NULLIF(SD.name{$lang_sql}, ''), SD.name) AS sub_district_name,
+       CONCAT(RU.firstname, ' ', RU.lastname) AS fullname, 
+       RU.phone_no, 
+       RP.map_url,
+       RU.email, 
+       RU.line_id,
+       CASE RP.type 
             WHEN 'H' THEN '{$lang['house']}'
             WHEN 'C' THEN '{$lang['condo']}'
             WHEN 'A' THEN '{$lang['apartment']}'
@@ -36,9 +48,9 @@ $sql = "SELECT RP.id, RP.name
             WHEN 'T' THEN '{$lang['townhouse']}'
             WHEN 'L' THEN '{$lang['land']}'
             ELSE RP.type
-        END AS property_type
-, CONCAT(RU.id, '/',RUF.name) AS user_image
-, CONCAT(RP.id, '/', RPA.name, '/',RPF.name) AS map_image
+        END AS property_type,
+       CONCAT(RU.id, '/',RUF.name) AS user_image,
+       CONCAT(RP.id, '/', RPA.name, '/',RPF.name) AS map_image
 FROM RENT_PLACE RP
 INNER JOIN RENT_PROVINCE P ON (P.id = RP.province_id)
 INNER JOIN RENT_DISTRICT D ON (D.id = RP.district_id)
@@ -46,12 +58,12 @@ INNER JOIN RENT_SUB_DISTRICT SD ON (SD.id = RP.sub_district_id)
 INNER JOIN RENT_USER RU ON (RU.id = RP.user_id)
 LEFT JOIN RENT_ATTACH RUA ON (RU.attach_id = RUA.id)
 LEFT JOIN RENT_FILE RUF ON (RUF.attach_id = RUA.id)
-
 LEFT JOIN RENT_ATTACH RPA ON (RP.attach_id = RPA.id)
 LEFT JOIN RENT_FILE RPF ON (RPF.attach_id = RPA.id)
 WHERE 1=1
 AND RP.id = ?
 ORDER BY RP.create_datetime DESC";
+
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $id);
 // execute statement
