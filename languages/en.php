@@ -341,6 +341,7 @@ $lang = [
     'update_status_success' => 'Successfully updated status for item #',
     'update_status_error' => 'An error occurred while updating the status',
     'no_permission' => 'You do not have permission for this action',
+    'actions' => 'Actions',
 
     // Statuses
     'status_appointed' => 'Appointed',
@@ -436,5 +437,14 @@ $lang = [
     'delete_confirm' => 'Are you sure you want to delete this property?',
     'no_data_found' => 'No property data found.',
     'tooltip_delete_disabled' => 'Cannot delete, property has active tenants.',
+
+    //ส่งเมลยืนยันให้ชำระเงิน
+    "DEPOSIT_REQUEST_SUBJECT" => "Action Required: Security Deposit for Your Booking",
+    "DEPOSIT_REQUEST_GREETING" => "Dear",
+    "DEPOSIT_REQUEST_THANK_YOU" => "Thank you for your booking. To finalize your reservation, a security deposit is required.",
+    "DEPOSIT_REQUEST_INSTRUCTIONS" => "Please upload proof of payment for the security deposit through our secure portal. This deposit is refundable and will be returned to you after your stay, provided there are no damages to the property.",
+    "DEPOSIT_REQUEST_LOGIN_PROMPT" => "You can upload your proof of payment by accessing your transaction details here:",
+    "DEPOSIT_REQUEST_LINK_TEXT" => "Upload Proof of Payment",
+    "DEPOSIT_REQUEST_REGARDS" => "Best regards"
 ];
 ?>

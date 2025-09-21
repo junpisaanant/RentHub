@@ -2,7 +2,7 @@
 ob_start(); // Start output buffering
 session_start();
 include 'db.php'; // ไฟล์เชื่อมต่อฐานข้อมูล
-include 'header.php'; // ส่วนหัวของเว็บ (สันนิษฐานว่ามีการตั้งค่า $lang ที่นี่)
+include 'header.php'; // ส่วนหัวของเว็บ (สันนิษฐานว่ามีการตั้งค่า $lang และ $_SESSION['lang'] ที่นี่)
 
 // --- [ย้ายมาไว้บนสุด] จัดการการอัปเดตสถานะ (เมื่อมีการส่งฟอร์ม) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     }
     
     $admin_id = $_SESSION['user_id'];
-    $current_user_name = $_SESSION['user_id'];
+    $current_user_name = $_SESSION['user_id']; // Should be user name, adjust if you store it differently
     $appointment_id = $_POST['appointment_id'];
     $new_status = $_POST['new_status'];
 
@@ -27,19 +27,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         $update_sql = "UPDATE RENT_PLACE_APPOINTMENT SET status = ?, update_user = ?, update_datetime = NOW() WHERE id = ?";
         $stmt_update = $conn->prepare($update_sql);
         $stmt_update->bind_param("ssi", $new_status, $current_user_name, $appointment_id);
+        
         if ($stmt_update->execute()) {
             $_SESSION['message'] = $lang['update_status_success'] . $appointment_id;
+
+            // --- [โค้ดที่แก้ไข] ---
+            // ตรวจสอบว่าสถานะที่เปลี่ยนเป็น 'W' (รอยืนยันชำระเงิน) หรือไม่
+            if ($new_status == 'W') {
+                // ดึงข้อมูลผู้เช่าเพื่อใช้ในการส่งอีเมล (เอา u.lang ออก)
+                $renter_sql = "
+                    SELECT u.email, u.firstname, u.lastname 
+                    FROM RENT_USER u
+                    JOIN RENT_PLACE_APPOINTMENT a ON u.id = a.rent_user_id
+                    WHERE a.id = ?
+                ";
+                $stmt_renter = $conn->prepare($renter_sql);
+                $stmt_renter->bind_param("i", $appointment_id);
+                $stmt_renter->execute();
+                $renter_result = $stmt_renter->get_result();
+                
+                if ($renter_details = $renter_result->fetch_assoc()) {
+                    require_once 'send_security_deposit_request_email.php';
+                    
+                    $renter_name = $renter_details['firstname'] . ' ' . $renter_details['lastname'];
+                    $renter_email = $renter_details['email'];
+                    // ใช้ภาษาจาก Session ปัจจุบันของผู้ใช้ที่กำลัง login อยู่
+                    $email_lang = $_SESSION['lang'] ?? 'th'; 
+                    
+                    // เรียกฟังก์ชันส่งอีเมล
+                    sendSecurityDepositRequestEmail($renter_email, $renter_name, $appointment_id, $email_lang);
+                }
+                $stmt_renter->close();
+            }
+            // --- [สิ้นสุดโค้ดที่แก้ไข] ---
+
         } else {
             $_SESSION['error'] = $lang['update_status_error'];
         }
+        $stmt_update->close();
     } else {
         $_SESSION['error'] = $lang['no_permission'];
     }
+    $stmt_check->close();
 
     $query_string = http_build_query($_GET);
     header("Location: admin_transactions.php?" . $query_string);
     exit();
 }
+
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -50,9 +85,9 @@ $admin_id = $_SESSION['user_id'];
 
 // --- Language-aware fields ---
 $lang_suffix = '';
-if ($_SESSION['lang'] == 'en') {
+if (isset($_SESSION['lang']) && $_SESSION['lang'] == 'en') {
     $lang_suffix = '_en';
-} elseif ($_SESSION['lang'] == 'cn') {
+} elseif (isset($_SESSION['lang']) && $_SESSION['lang'] == 'cn') {
     $lang_suffix = '_cn';
 }
 
@@ -108,7 +143,7 @@ $sql .= " ORDER BY t.date DESC, t.id DESC";
 $stmt_transactions = $conn->prepare($sql);
 $transactions_result = null;
 if ($stmt_transactions) {
-    if (!empty($types)) {
+    if (!empty($types) && count($params) > 0) {
         $stmt_transactions->bind_param($types, ...$params);
     }
     $stmt_transactions->execute();
@@ -227,7 +262,7 @@ $all_statuses = ['A', 'C', 'D', 'W', 'T', 'O'];
                                     <form method="POST" class="d-inline"><input type="hidden" name="appointment_id" value="<?php echo $row['id']; ?>"><input type="hidden" name="new_status" value="C"><button type="submit" name="update_status" class="btn btn-sm btn-secondary" onclick="return confirm('<?php echo $lang['confirm_disagreement']; ?>')"><?php echo $lang['disagree_to_rent']; ?></button></form>
                                     <form method="POST" class="d-inline"><input type="hidden" name="appointment_id" value="<?php echo $row['id']; ?>"><input type="hidden" name="new_status" value="D"><button type="submit" name="update_status" class="btn btn-sm btn-danger" onclick="return confirm('<?php echo $lang['confirm_no_show']; ?>')"><?php echo $lang['no_show']; ?></button></form>
                                 <?php elseif ($row['status'] == 'T'): ?>
-                                     <form method="POST" class="d-inline"><input type="hidden" name="appointment_id" value="<?php echo $row['id']; ?>"><input type="hidden" name="new_status" value="O"><button type="submit" name="update_status" class="btn btn-sm btn-success" onclick="return confirm('<?php echo $lang['confirm_payment_verification']; ?>')"><?php echo $lang['verify_payment']; ?></button></form>
+                                    <form method="POST" class="d-inline"><input type="hidden" name="appointment_id" value="<?php echo $row['id']; ?>"><input type="hidden" name="new_status" value="O"><button type="submit" name="update_status" class="btn btn-sm btn-success" onclick="return confirm('<?php echo $lang['confirm_payment_verification']; ?>')"><?php echo $lang['verify_payment']; ?></button></form>
                                     <?php if (!empty($row['attach_id'])): ?><a href="view_attachment.php?id=<?php echo $row['attach_id']; ?>" class="btn btn-sm btn-info" target="_blank"><?php echo $lang['view_document']; ?></a><?php endif; ?>
                                 <?php else: ?> - <?php endif; ?>
                             </td>
@@ -277,10 +312,10 @@ $all_statuses = ['A', 'C', 'D', 'W', 'T', 'O'];
 <div class="modal fade" id="imageEnlargeModal" tabindex="-1" aria-labelledby="imageEnlargeModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
-       <div class="modal-header">
+        <div class="modal-header">
          <h5 class="modal-title" id="imageEnlargeModalLabel"><?php echo $lang['view_image']; ?></h5>
          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-       </div>
+        </div>
       <div class="modal-body text-center">
         <img src="" id="enlargedImage" class="img-fluid" alt="Enlarged Image">
       </div>
@@ -325,20 +360,20 @@ $(document).ready(function() {
                     if (data.id_card_path || data.passport_path) {
                         docsContent += `<hr><h6 class="mt-3"><?php echo $lang['attached_documents']; ?></h6><div class="row">`;
                         if (data.id_card_path) {
-                             docsContent += `
+                               docsContent += `
                                 <div class="col-md-6">
                                     <strong><?php echo $lang['id_card']; ?>:</strong><br>
                                     <img src="${data.id_card_path}" class="doc-thumbnail enlarge-image mt-1" data-bs-toggle="modal" data-bs-target="#imageEnlargeModal">
                                 </div>
-                             `;
+                              `;
                         }
                         if (data.passport_path) {
-                             docsContent += `
+                               docsContent += `
                                 <div class="col-md-6">
                                     <strong><?php echo $lang['passport']; ?>:</strong><br>
                                     <img src="${data.passport_path}" class="doc-thumbnail enlarge-image mt-1" data-bs-toggle="modal" data-bs-target="#imageEnlargeModal">
                                 </div>
-                             `;
+                              `;
                         }
                         docsContent += '</div>';
                     }

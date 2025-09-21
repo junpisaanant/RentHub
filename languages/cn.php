@@ -342,6 +342,7 @@ $lang = [
      'update_status_success' => '成功更新项目状态 #',
      'update_status_error' => '更新状态时发生错误',
      'no_permission' => '您没有执行此操作的权限',
+     'actions' => '行動',
      
      // Statuses
      'status_appointed' => '已预约',
@@ -437,5 +438,14 @@ $lang = [
     'delete_confirm' => '您确定要删除此房产吗？',
     'no_data_found' => '未找到房产数据。',
     'tooltip_delete_disabled' => '无法删除，房产有有效租户。',
+
+     //ส่งเมลยืนยันให้ชำระเงิน
+     "DEPOSIT_REQUEST_SUBJECT" => "需要您采取行动：为您的预订支付押金",
+    "DEPOSIT_REQUEST_GREETING" => "尊敬的",
+    "DEPOSIT_REQUEST_THANK_YOU" => "感谢您的预订。为了最终确定您的预订，需要支付押金。",
+    "DEPOSIT_REQUEST_INSTRUCTIONS" => "请通过我们的安全门户上传押金付款证明。这笔押金是可退还的，如果在您住宿后财产没有损坏，押金将退还给您。",
+    "DEPOSIT_REQUEST_LOGIN_PROMPT" => "您可以通过在此处访问您的交易详情来上传您的付款证明：",
+    "DEPOSIT_REQUEST_LINK_TEXT" => "上传付款证明",
+    "DEPOSIT_REQUEST_REGARDS" => "诚挚的问候"
 ];
 ?>
