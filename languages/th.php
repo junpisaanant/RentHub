@@ -122,6 +122,17 @@ $lang = [
     'select_district' => 'เลือกอำเภอ/เขต',
     'select_sub_district' => 'เลือกตำบล/แขวง',
     'select_property_type' => 'เลือกประเภทสินทรัพย์',
-    'select_place' => '-- เลือกสถานที่ --'
+    'select_place' => '-- เลือกสถานที่ --',
+
+    // Contact Page
+    'contact_address' => 'ที่อยู่',
+    'contact_call_us' => 'โทรหาเรา',
+    'contact_email_us' => 'อีเมลหาเรา',
+    'contact_line_id' => 'Line ID',
+    'contact_appointment_date' => 'วันที่นัดหมาย',
+    'contact_move_in_date' => 'วันที่ต้องการเข้าพัก',
+    'contact_message_placeholder' => 'ข้อความ',
+    'contact_send_appointment' => 'บันทึกนัดหมาย',
+    'contact_alert_no_date' => 'กรุณาระบุวันที่นัดหมายด้วยค่ะ'
 ];
 ?>

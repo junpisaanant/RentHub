@@ -122,6 +122,17 @@ $lang = [
     'select_district' => 'Select District',
     'select_sub_district' => 'Select Sub-district',
     'select_property_type' => 'Select Property Type',
-    'select_place' => '-- Select Place --'
+    'select_place' => '-- Select Place --',
+
+    // Contact Page
+    'contact_address' => 'Address',
+    'contact_call_us' => 'Call Us',
+    'contact_email_us' => 'Email Us',
+    'contact_line_id' => 'Line ID',
+    'contact_appointment_date' => 'Appointment Date',
+    'contact_move_in_date' => 'Desired Move-in Date',
+    'contact_message_placeholder' => 'Message',
+    'contact_send_appointment' => 'Send Appointment',
+    'contact_alert_no_date' => 'Please specify the appointment date.'
 ];
 ?>

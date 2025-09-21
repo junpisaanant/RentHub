@@ -122,6 +122,17 @@ $lang = [
     'select_district' => '选择区/县',
     'select_sub_district' => '选择街道/乡',
     'select_property_type' => '选择资产类型',
-    'select_place' => '-- 选择地点 --'
+    'select_place' => '-- 选择地点 --',
+
+    // Contact Page
+    'contact_address' => '地址',
+    'contact_call_us' => '联系我们',
+    'contact_email_us' => '给我们发邮件',
+    'contact_line_id' => 'Line ID',
+    'contact_appointment_date' => '预约日期',
+    'contact_move_in_date' => '期望入住日期',
+    'contact_message_placeholder' => '信息',
+    'contact_send_appointment' => '发送预约',
+    'contact_alert_no_date' => '请指定预约日期。'
 ];
 ?>

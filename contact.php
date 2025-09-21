@@ -1,31 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- Flatpickr CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<!-- Flatpickr JS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-<?php 
+<?php
 $mode = 'contect';
-include 'header.php'; 
+include 'header.php';
 
 //ดึงข้อมูลมาแสดงในหน้าจอ
 include 'db.php'; // เชื่อมต่อฐานข้อมูลด้วย mysqli
 
 $id = $_REQUEST['rent_place_id'];
+
+// Language selection
+$lang_sql = '';
+if (isset($_SESSION['lang']) && $_SESSION['lang'] != 'th') {
+    if ($_SESSION['lang'] == 'en') {
+        $lang_sql = '_en';
+    } else if ($_SESSION['lang'] == 'cn') {
+        $lang_sql = '_cn';
+    }
+}
+
 //Query ดึงข้อมูลของห้องเช่านี้
 $sql = "SELECT RP.id, RP.name
 , RP.price, RP.size, RP.room_qty, RP.toilet_qty, RP.description
-, RP.address,P.name AS province_name , D.name AS district_name, SD.name AS sub_district_name
+, RP.address,P.name{$lang_sql} AS province_name , D.name{$lang_sql} AS district_name, SD.name{$lang_sql} AS sub_district_name
 , CONCAT(RU.firstname, ' ', RU.lastname) AS fullname, RU.phone_no, RP.map_url
 , RU.email, RU.line_id
 , CASE RP.type 
-            WHEN 'H' THEN 'บ้านเดี่ยว'
-            WHEN 'C' THEN 'คอนโด'
-            WHEN 'A' THEN 'อพาร์ทเม้นท์'
-            WHEN 'V' THEN 'วิลล่า'
-            WHEN 'T' THEN 'ทาวน์เฮ้าส์'
-            WHEN 'L' THEN 'ที่ดิน'
+            WHEN 'H' THEN '{$lang['house']}'
+            WHEN 'C' THEN '{$lang['condo']}'
+            WHEN 'A' THEN '{$lang['apartment']}'
+            WHEN 'V' THEN '{$lang['villa']}'
+            WHEN 'T' THEN '{$lang['townhouse']}'
+            WHEN 'L' THEN '{$lang['land']}'
             ELSE RP.type
         END AS property_type
 , CONCAT(RU.id, '/',RUF.name) AS user_image
@@ -83,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById("contactForm").addEventListener("submit", function(e) {
     const date = document.getElementById("appointment_date").value;
     if (!date) {
-      alert("กรุณาระบุวันที่นัดหมายด้วยค่ะ");
+      alert("<?php echo $lang['contact_alert_no_date']; ?>");
       e.preventDefault(); // ยกเลิกการส่ง
     }
   });
@@ -91,51 +100,41 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
   <main class="main">
 
-    <!-- Contact Section -->
     <section id="contact" class="contact section">
 
       <div class="container" data-aos="fade-up" data-aos-delay="100">
 
         <div class="mb-4" data-aos="fade-up" data-aos-delay="200">
           <iframe style="border:0; width: 100%; height: 270px;" src="<?php echo $data['map_url'];?>" frameborder="0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        </div><!-- End Google Maps -->
-
-        <div class="row gy-4">
+        </div><div class="row gy-4">
 
           <div class="col-lg-4">
             <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="300">
               <i class="bi bi-geo-alt flex-shrink-0"></i>
               <div>
-                <h3>Address</h3>
+                <h3><?php echo $lang['contact_address']; ?></h3>
                 <p><?php echo $data['address'] . '<br>' . $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></p>
               </div>
-            </div><!-- End Info Item -->
-
-            <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="400">
+            </div><div class="info-item d-flex" data-aos="fade-up" data-aos-delay="400">
               <i class="bi bi-telephone flex-shrink-0"></i>
               <div>
-                <h3>Call Us</h3>
+                <h3><?php echo $lang['contact_call_us']; ?></h3>
                 <p><?php echo $data['phone_no'];?></p>
               </div>
-            </div><!-- End Info Item -->
-
-            <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="500">
+            </div><div class="info-item d-flex" data-aos="fade-up" data-aos-delay="500">
               <i class="bi bi-envelope flex-shrink-0"></i>
               <div>
-                <h3>Email Us</h3>
+                <h3><?php echo $lang['contact_email_us']; ?></h3>
                 <p><?php echo $data['email'];?></p>
               </div>
-            </div><!-- End Info Item -->
-
-            <?php if($data['line_id']){ ?>
+            </div><?php if($data['line_id']){ ?>
               <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="500">
                 <i class="fab fa-line flex-shrink-0"></i>
                 <div>
-                  <h3>Line id</h3>
+                  <h3><?php echo $lang['contact_line_id']; ?></h3>
                   <p><?php echo $data['line_id'];?></p>
                 </div>
-              </div><!-- End Info Item -->
-            <?php } ?>
+              </div><?php } ?>
 
           </div>
 
@@ -145,17 +144,17 @@ document.addEventListener('DOMContentLoaded', function () {
               <input type="hidden" name="price" value="<?php echo $data['price']; ?>">
               <div class="row gy-4">
                 <div class="col-md-6">
-                  <label for="appointment_date">วันที่นัดหมาย <span style="color:red;">*</span></label>
+                  <label for="appointment_date"><?php echo $lang['contact_appointment_date']; ?> <span style="color:red;">*</span></label>
                   <input type="text" id="appointment_date" name="appointment_date" class="form-control" required>
                 </div>
 
                 <div class="col-md-6">
-                  <label for="in_date">วันที่ต้องการเข้าพัก</label>
+                  <label for="in_date"><?php echo $lang['contact_move_in_date']; ?></label>
                   <input type="text" id="in_date" name="in_date" class="form-control">
                 </div>
 
                 <div class="col-md-12">
-                  <textarea class="form-control" name="remark" rows="6" placeholder="Message" ></textarea>
+                  <textarea class="form-control" name="remark" rows="6" placeholder="<?php echo $lang['contact_message_placeholder']; ?>" ></textarea>
                 </div>
 
                 <div class="col-md-12 text-center">
@@ -164,21 +163,17 @@ document.addEventListener('DOMContentLoaded', function () {
                   <div class="sent-message">Your message has been sent. Thank you!</div>
 
                   <button type="submit" class="btn btn-outline-dark px-4 py-2 rounded-pill">
-                    บันทึกนัดหมาย
+                  <?php echo $lang['contact_send_appointment']; ?>
                   </button>
                 </div>
 
               </div>
             </form>
-          </div><!-- End Contact Form -->
-
-        </div>
+          </div></div>
 
       </div>
 
-    </section><!-- /Contact Section -->
-
-  </main>
+    </section></main>
 
   <?php include 'footer.php'; ?>
 
