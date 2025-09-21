@@ -1781,3 +1781,20 @@ section,
   /* เพิ่มระยะห่างด้านบน 80px (ปรับค่าได้) เพื่อให้เนื้อหาไม่โดน Header บัง */
   margin-top: 100px;
 }
+
+/* Hero Section Background Fix */
+#hero {
+  background-image: url('../img/theprestige-2.png'); /* กำหนดรูปภาพพื้นหลัง */
+  background-size: cover;                         /* ทำให้รูปภาพขยายเต็มพื้นที่ โดยไม่เสียสัดส่วน */
+  background-position: center center;             /* จัดให้ภาพอยู่ตรงกลางเสมอ */
+  background-repeat: no-repeat;                   /* ไม่ต้องแสดงภาพซ้ำ */
+  width: 100%;                                    /* ความกว้างเต็ม 100% */
+  height: 100vh;                                   /* ความสูง 90% ของความสูงหน้าจอ */
+}
+
+/* ปรับความสูงสำหรับหน้าจอมือถือ */
+@media (max-width: 768px) {
+  #hero {
+    height: 50vh; /* ลดความสูงลงสำหรับหน้าจอที่เล็กกว่า */
+  }
+}

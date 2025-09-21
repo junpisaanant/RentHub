@@ -19,7 +19,6 @@ include 'header.php';
 
 <main class="main">
     <section id="hero">
-        <img src="assets/img/theprestige-2.png" class="img-fluid w-100" alt="The Prestige Living">
     </section>
 
     <section id="search" class="services section mb-5">
