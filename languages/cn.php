@@ -290,6 +290,59 @@ $lang = [
     'error_creating_attachment_group' => '创建文件附件组时出错。',
     'error_uploading_file' => '抱歉，上传文件时出错。',
     'file_not_image' => '文件不是图像。',
-    'please_attach_proof' => '请附上付款凭证。'
+    'please_attach_proof' => '请附上付款凭证。',
+
+    //admin_transactions.php
+     // Manage Transactions Page (新)
+     'manage_appointments_title' => '管理预约和收入',
+     'manage_appointments_subtitle' => '查看您所有的预约和收入记录',
+     'property' => '资产',
+     'all_properties' => '-- 全部 --',
+     'all_statuses' => '-- 全部 --',
+     'appointment_date_range' => '预约日期范围',
+     'to_date' => '至',
+     'export_button' => '导出',
+     'id' => 'ID',
+     'renter' => '租户',
+     'appointment_date' => '预约日期',
+     'move_in_date' => '入住日期',
+     'payment_date' => '付款日期',
+     'agree_to_rent' => '同意租赁',
+     'disagree_to_rent' => '不同意',
+     'no_show' => '未赴约',
+     'verify_payment' => '核实付款',
+     'view_document' => '查看文件',
+     'no_data_found' => '未找到符合条件的数据',
+     'confirm_agreement' => '确认客户同意租赁（以等待付款）？',
+     'confirm_disagreement' => '确认客户不同意入住？',
+     'confirm_no_show' => '确认客户未按时赴约？',
+     'confirm_payment_verification' => '确认付款核实？',
+     'update_status_success' => '成功更新项目状态 #',
+     'update_status_error' => '更新状态时发生错误',
+     'no_permission' => '您没有执行此操作的权限',
+     
+     // Statuses
+     'status_appointed' => '已预约',
+     'status_cancelled' => '不同意',
+     'status_no_show' => '未赴约',
+     'status_waiting_payment' => '等待付款',
+     'status_waiting_verification' => '等待核实',
+     'status_paid' => '已付款',
+     'status_unknown' => '未知',
+ 
+     // Renter Detail Modal
+     'renter_information' => '租户信息',
+     'full_name' => '全名',
+     'phone_number' => '电话',
+     'id_card_no' => '身份证号码',
+     'passport_no' => '护照号码',
+     'id_card_or_passport' => '身份证/护照',
+     'attached_documents' => '附件',
+     'id_card' => '身份证',
+     'passport' => '护照',
+     'cannot_load_data' => '无法加载数据',
+     'scan_qr_line' => '扫描二维码添加Line好友',
+     'view_image' => '查看图片',
+     'close_button' => '关闭'
 ];
 ?>

@@ -290,7 +290,60 @@ $lang = [
     'error_creating_attachment_group' => 'เกิดข้อผิดพลาดในการสร้างกลุ่มไฟล์แนบ',
     'error_uploading_file' => 'ขออภัย, เกิดข้อผิดพลาดในการอัปโหลดไฟล์',
     'file_not_image' => 'ไฟล์ที่อัปโหลดไม่ใช่ไฟล์รูปภาพ',
-    'please_attach_proof' => 'กรุณาแนบไฟล์หลักฐานการชำระเงิน'
+    'please_attach_proof' => 'กรุณาแนบไฟล์หลักฐานการชำระเงิน',
+
+    //admin_transactions.php
+    // Manage Transactions Page (เพิ่มใหม่)
+    'manage_appointments_title' => 'จัดการการนัดหมายและรายได้',
+    'manage_appointments_subtitle' => 'แสดงรายการนัดหมายและรายได้ทั้งหมดของคุณ',
+    'property' => 'สินทรัพย์',
+    'all_properties' => '-- ทั้งหมด --',
+    'all_statuses' => '-- ทั้งหมด --',
+    'appointment_date_range' => 'ช่วงวันที่นัดหมาย',
+    'to_date' => 'ถึงวันที่',
+    'export_button' => 'Export',
+    'id' => 'รหัส',
+    'renter' => 'ผู้เช่า',
+    'appointment_date' => 'วันที่นัดหมาย',
+    'move_in_date' => 'วันที่ต้องการเข้าพัก',
+    'payment_date' => 'วันที่ชำระเงิน',
+    'agree_to_rent' => 'ตกลงเช่า',
+    'disagree_to_rent' => 'ไม่ตกลง',
+    'no_show' => 'ไม่มาตามนัด',
+    'verify_payment' => 'ยืนยันชำระเงิน',
+    'view_document' => 'ดูเอกสาร',
+    'no_data_found' => 'ไม่พบข้อมูลตามเงื่อนไขที่ระบุ',
+    'confirm_agreement' => 'ยืนยันว่าลูกค้าตกลงเช่า (เพื่อรอชำระเงิน)?',
+    'confirm_disagreement' => 'ยืนยันว่าลูกค้าไม่ตกลงเข้าพัก?',
+    'confirm_no_show' => 'ยืนยันว่าลูกค้าไม่มาตามนัด?',
+    'confirm_payment_verification' => 'ยืนยันการชำระเงิน?',
+    'update_status_success' => 'อัปเดตสถานะรายการ #',
+    'update_status_error' => 'เกิดข้อผิดพลาดในการอัปเดตสถานะ',
+    'no_permission' => 'คุณไม่มีสิทธิ์ในการดำเนินการนี้',
+    
+    // Statuses
+    'status_appointed' => 'นัดหมาย',
+    'status_cancelled' => 'ไม่ตกลง',
+    'status_no_show' => 'ไม่มาตามนัด',
+    'status_waiting_payment' => 'รอชำระเงิน',
+    'status_waiting_verification' => 'รอยืนยัน',
+    'status_paid' => 'ชำระเงินแล้ว',
+    'status_unknown' => 'ไม่ระบุ',
+
+    // Renter Detail Modal
+    'renter_information' => 'ข้อมูลผู้เช่า',
+    'full_name' => 'ชื่อ - นามสกุล',
+    'phone_number' => 'เบอร์โทร',
+    'id_card_no' => 'เลขบัตรประชาชน',
+    'passport_no' => 'พาสปอร์ต',
+    'id_card_or_passport' => 'เลขบัตร/พาสปอร์ต',
+    'attached_documents' => 'เอกสารแนบ',
+    'id_card' => 'บัตรประชาชน',
+    'passport' => 'พาสปอร์ต',
+    'cannot_load_data' => 'ไม่สามารถโหลดข้อมูลได้',
+    'scan_qr_line' => 'สแกนเพื่อเพิ่มเพื่อนใน Line',
+    'view_image' => 'ดูรูปภาพ',
+    'close_button' => 'ปิด'
 
 ];
 ?>

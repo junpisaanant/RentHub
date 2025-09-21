@@ -290,6 +290,59 @@ $lang = [
     'error_creating_attachment_group' => 'Error creating file attachment group.',
     'error_uploading_file' => 'Sorry, there was an error uploading your file.',
     'file_not_image' => 'File is not an image.',
-    'please_attach_proof' => 'Please attach the proof of payment.'
+    'please_attach_proof' => 'Please attach the proof of payment.',
+
+    //admin_transactions.php
+    // Manage Transactions Page (New)
+    'manage_appointments_title' => 'Manage Appointments and Income',
+    'manage_appointments_subtitle' => 'View all your appointments and income records',
+    'property' => 'Property',
+    'all_properties' => '-- All --',
+    'all_statuses' => '-- All --',
+    'appointment_date_range' => 'Appointment Date Range',
+    'to_date' => 'To',
+    'export_button' => 'Export',
+    'id' => 'ID',
+    'renter' => 'Renter',
+    'appointment_date' => 'Appointment Date',
+    'move_in_date' => 'Move-in Date',
+    'payment_date' => 'Payment Date',
+    'agree_to_rent' => 'Agree to Rent',
+    'disagree_to_rent' => 'Disagree',
+    'no_show' => 'No Show',
+    'verify_payment' => 'Verify Payment',
+    'view_document' => 'View Document',
+    'no_data_found' => 'No data found based on the specified criteria',
+    'confirm_agreement' => 'Confirm that the customer agrees to rent (to await payment)?',
+    'confirm_disagreement' => 'Confirm that the customer disagrees to stay?',
+    'confirm_no_show' => 'Confirm that the customer did not show up?',
+    'confirm_payment_verification' => 'Confirm payment verification?',
+    'update_status_success' => 'Successfully updated status for item #',
+    'update_status_error' => 'An error occurred while updating the status',
+    'no_permission' => 'You do not have permission for this action',
+
+    // Statuses
+    'status_appointed' => 'Appointed',
+    'status_cancelled' => 'Disagreed',
+    'status_no_show' => 'No Show',
+    'status_waiting_payment' => 'Waiting for Payment',
+    'status_waiting_verification' => 'Waiting Verification',
+    'status_paid' => 'Paid',
+    'status_unknown' => 'Unknown',
+
+    // Renter Detail Modal
+    'renter_information' => 'Renter Information',
+    'full_name' => 'Full Name',
+    'phone_number' => 'Phone',
+    'id_card_no' => 'ID Card No.',
+    'passport_no' => 'Passport No.',
+    'id_card_or_passport' => 'ID Card/Passport',
+    'attached_documents' => 'Attached Documents',
+    'id_card' => 'ID Card',
+    'passport' => 'Passport',
+    'cannot_load_data' => 'Could not load data',
+    'scan_qr_line' => 'Scan to add friend on Line',
+    'view_image' => 'View Image',
+    'close_button' => 'Close'
 ];
 ?>
