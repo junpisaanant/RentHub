@@ -6,27 +6,56 @@
 $mode = 'home';
 include 'header.php'; 
 
+// Include language file
+if (isset($_SESSION['lang'])) {
+    include 'languages/' . $_SESSION['lang'] . '.php';
+} else {
+    include 'languages/th.php'; // Default language
+}
+
 //ดึงข้อมูลมาแสดงในหน้าจอ
 include 'db.php'; // เชื่อมต่อฐานข้อมูลด้วย mysqli
 
 $id = $_REQUEST['id'];
 $name = $_REQUEST['name'];
+
+// Language suffix mapping
+$lang_suffix = '';
+if (isset($_SESSION['lang'])) {
+    if ($_SESSION['lang'] == 'en') {
+        $lang_suffix = '_en';
+    } elseif ($_SESSION['lang'] == 'cn') {
+        $lang_suffix = '_cn';
+    }
+}
+
+
 //Query ดึงข้อมูลของห้องเช่านี้
-$sql = "SELECT RP.id, RP.name
-, RP.price, RP.size, RP.room_qty, RP.toilet_qty, RP.description
-, RP.address,P.name AS province_name , D.name AS district_name, SD.name AS sub_district_name
-, CONCAT(RU.firstname, ' ', RU.lastname) AS fullname, RU.phone_no, RP.map_url
-, CASE RP.type 
-            WHEN 'H' THEN 'บ้านเดี่ยว'
-            WHEN 'C' THEN 'คอนโด'
-            WHEN 'A' THEN 'อพาร์ทเม้นท์'
-            WHEN 'V' THEN 'วิลล่า'
-            WHEN 'T' THEN 'ทาวน์เฮ้าส์'
-            WHEN 'L' THEN 'ที่ดิน'
+$sql = "SELECT RP.id, 
+       COALESCE(NULLIF(RP.name" . $lang_suffix . ", ''), RP.name) AS name,
+       RP.price, 
+       RP.size, 
+       RP.room_qty, 
+       RP.toilet_qty, 
+       COALESCE(NULLIF(RP.description" . $lang_suffix . ", ''), RP.description) AS description,
+       COALESCE(NULLIF(RP.address" . $lang_suffix . ", ''), RP.address) AS address,
+       COALESCE(NULLIF(P.name" . $lang_suffix . ", ''), P.name) AS province_name, 
+       COALESCE(NULLIF(D.name" . $lang_suffix . ", ''), D.name) AS district_name, 
+       COALESCE(NULLIF(SD.name" . $lang_suffix . ", ''), SD.name) AS sub_district_name,
+       CONCAT(RU.firstname, ' ', RU.lastname) AS fullname, 
+       RU.phone_no, 
+       RP.map_url,
+       CASE RP.type 
+            WHEN 'H' THEN '" . $lang['house'] . "'
+            WHEN 'C' THEN '" . $lang['condo'] . "'
+            WHEN 'A' THEN '" . $lang['apartment'] . "'
+            WHEN 'V' THEN '" . $lang['villa'] . "'
+            WHEN 'T' THEN '" . $lang['townhouse'] . "'
+            WHEN 'L' THEN '" . $lang['land'] . "'
             ELSE RP.type
-        END AS property_type
-, CONCAT(RU.id, '/',RUF.name) AS user_image
-, CONCAT(RP.id, '/', RPA.name, '/',RPF.name) AS map_image
+        END AS property_type,
+       CONCAT(RU.id, '/',RUF.name) AS user_image,
+       CONCAT(RP.id, '/', RPA.name, '/',RPF.name) AS map_image
 FROM RENT_PLACE RP
 INNER JOIN RENT_PROVINCE P ON (P.id = RP.province_id)
 INNER JOIN RENT_DISTRICT D ON (D.id = RP.district_id)
@@ -34,7 +63,6 @@ INNER JOIN RENT_SUB_DISTRICT SD ON (SD.id = RP.sub_district_id)
 INNER JOIN RENT_USER RU ON (RU.id = RP.user_id)
 LEFT JOIN RENT_ATTACH RUA ON (RU.attach_id = RUA.id)
 LEFT JOIN RENT_FILE RUF ON (RUF.attach_id = RUA.id)
-
 LEFT JOIN RENT_ATTACH RPA ON (RP.attach_id = RPA.id)
 LEFT JOIN RENT_FILE RPF ON (RPF.attach_id = RPA.id)
 WHERE 1=1
@@ -259,7 +287,10 @@ if ($result && $result->num_rows > 0) {
 }
 
 //Query ดึงข้อมูลจุดเด่นของห้องเช่านี้
-$sql = "SELECT RF.id, RF.name, RF.icon, RF.description
+$sql = "SELECT RF.id, 
+       COALESCE(NULLIF(RF.name" . $lang_suffix . ", ''), RF.name) AS name, 
+       RF.icon, 
+       COALESCE(NULLIF(RF.description" . $lang_suffix . ", ''), RF.description) AS description
 FROM RENT_PLACE RP
 LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RPF.rent_place_id = RP.id)
 LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
@@ -281,7 +312,10 @@ if ($result && $result->num_rows > 0) {
     }
 }
 //Query ดึงข้อมูลสิ่งอำนวยความสะดวกของห้องเช่านี้
-$sql = "SELECT RF.id, RF.name, RF.icon, RF.description
+$sql = "SELECT RF.id, 
+       COALESCE(NULLIF(RF.name" . $lang_suffix . ", ''), RF.name) AS name, 
+       RF.icon, 
+       COALESCE(NULLIF(RF.description" . $lang_suffix . ", ''), RF.description) AS description
 FROM RENT_PLACE RP
 LEFT JOIN RENT_PLACE_FACILITIES RPF ON (RPF.rent_place_id = RP.id)
 LEFT JOIN RENT_FACILITIES RF ON (RPF.rent_facilities_id = RF.id)
@@ -303,13 +337,16 @@ if ($result && $result->num_rows > 0) {
     }
 }
 //สถานที่สำคัญ Landmark
-$sql = "SELECT RL.id, RL.name, RL.type, RL.location_url,
-CASE WHEN RL.type = 'D' THEN 'fa-solid fa-store'
-WHEN RL.type = 'S' THEN 'fa-solid fa-school'
-WHEN RL.type = 'P' THEN 'fa-solid fa-fan'
-WHEN RL.type = 'M' THEN 'fa-solid fa-train-subway'
-ELSE 'fa-solid fa-road'
-END AS icon
+$sql = "SELECT RL.id, 
+       COALESCE(NULLIF(RL.name" . $lang_suffix . ", ''), RL.name) AS name, 
+       RL.type, 
+       RL.location_url,
+       CASE WHEN RL.type = 'D' THEN 'fa-solid fa-store'
+            WHEN RL.type = 'S' THEN 'fa-solid fa-school'
+            WHEN RL.type = 'P' THEN 'fa-solid fa-fan'
+            WHEN RL.type = 'M' THEN 'fa-solid fa-train-subway'
+            ELSE 'fa-solid fa-road'
+       END AS icon
 FROM RENT_PLACE RP
 LEFT JOIN RENT_PLACE_LANDMARKS RPL ON (RPL.rent_place_id = RP.id)
 LEFT JOIN RENT_LANDMARKS RL ON (RPL.rent_landmark_id = RL.id)
@@ -331,7 +368,6 @@ if ($result && $result->num_rows > 0) {
 }
 ?>
   <main class="main">
-    <!-- รายละเอียด Section -->
     <section id="real-estate-2" class="real-estate-2 section">
 
       <div class="container" data-aos="fade-up">
@@ -364,7 +400,7 @@ if ($result && $result->num_rows > 0) {
 				</div>
 				<?php endforeach; ?>
 			<?php else: ?>
-			<p>ไม่พบข้อมูลสำหรับ Hero Section</p>
+			<p><?php echo $lang['no_data_hero']; ?></p>
 			<?php endif; ?>
 
           </div>
@@ -388,70 +424,55 @@ if ($result && $result->num_rows > 0) {
                   <img src="assets/rent_user/<?php echo $data['user_image']; ?>" class="testimonial-img" alt="">
                   <h3><?php echo $data['fullname']; ?></h3>
                   <?php if (isset($_SESSION['user_id'])) { ?>
-                  <!-- ปุ่ม ติดต่อขอเช่า -->
                   <a href="contact.php?rent_place_id=<?php echo $data['id']; ?>"
                     class="filter-button mt-2">
-                    ติดต่อขอเช่า
+                    <?php echo $lang['contact_for_rent']; ?>
                   </a>
                   <?php }else{ ?>
-                      กรุณา Log in เพื่อติดต่อขอเช่า
+                      <?php echo $lang['login_to_contact']; ?>
                   <?php } ?>
                 </div>
               </div>
-            </div><!-- End Portfolio Description -->
-
-            <!-- Tabs -->
-            <ul class="nav nav-pills mb-3">
-              <li><a class="nav-link active" data-bs-toggle="pill" href="#real-estate-2-tab1">Video</a></li>
+            </div><ul class="nav nav-pills mb-3">
+              <li><a class="nav-link active" data-bs-toggle="pill" href="#real-estate-2-tab1"><?php echo $lang['video']; ?></a></li>
               <?php if($data['map_image']){ ?>
-                <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab2">Map Image</a></li>
+                <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab2"><?php echo $lang['map_image']; ?></a></li>
               <?php } ?> 
               <?php if($data['map_url']){ ?>
-                <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab3">Location</a></li>
+                <li><a class="nav-link" data-bs-toggle="pill" href="#real-estate-2-tab3"><?php echo $lang['location']; ?></a></li>
               <?php } ?> 
-            </ul><!-- End Tabs -->
-
-            <!-- Tab Content -->
-            <div class="tab-content">
+            </ul><div class="tab-content">
 
               <div class="tab-pane fade show active" id="real-estate-2-tab1">
                 <video width="100%" controls style="max-width: 800px; border-radius: 8px;">
                     <source src="<?php echo htmlspecialchars($video_file_path); ?>" type="video/mp4">
-                    เบราว์เซอร์ของคุณไม่รองรับการแสดงวิดีโอ
+                    <?php echo $lang['browser_no_support_video']; ?>
                 </video>
-              </div><!-- End Tab 1 Content -->
-
-              <div class="tab-pane fade" id="real-estate-2-tab2">
+              </div><div class="tab-pane fade" id="real-estate-2-tab2">
                 <img src="assets/rent_place/<?php echo $data['map_image'];?>" alt="" class="img-fluid">
-              </div><!-- End Tab 2 Content -->
-
-              <div class="tab-pane fade" id="real-estate-2-tab3">
+              </div><div class="tab-pane fade" id="real-estate-2-tab3">
               <iframe style="border:0; width: 100%; height: 400px;" src="<?php echo $data['map_url'];?>" frameborder="0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-              </div><!-- End Tab 3 Content -->
-
-            </div><!-- End Tab Content -->
-
-          </div>
+              </div></div></div>
 
           <div class="col-lg-3" data-aos="fade-up" data-aos-delay="100">
             <div class="portfolio-info">
-              <h3>Quick Summary</h3>
+              <h3><?php echo $lang['quick_summary']; ?></h3>
               <ul>
-                <li><strong>Price:</strong><?php 
+                <li><strong><?php echo $lang['price']; ?>:</strong><?php 
                 if($data['price']=='0.00'){
-                  echo "ราคาตามตกลง";
+                  echo $lang['price_negotiable'];
                 }else{
                   echo number_format($data['price']).' ฿'; 
                 }
                 
                 
                 ?> </li>
-                <li><strong>Property ID:</strong><?php echo $data['id']; ?></li>
-                <li><strong>Location:</strong><?php echo $data['address'] . '<br>' . $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></li>
-                <li><strong>Property Type:</strong><?php echo $data['property_type']; ?></li>
-                <li><strong>Area:</strong> <span><?php echo $data['size']; ?> m <sup>2</sup></span></li>
-                <li><strong>Beds:</strong><?php echo $data['room_qty']; ?></li>
-                <li><strong>Baths:</strong><?php echo $data['toilet_qty']; ?></li>
+                <li><strong><?php echo $lang['property_id']; ?>:</strong><?php echo $data['id']; ?></li>
+                <li><strong><?php echo $lang['location']; ?>:</strong><?php echo $data['address'] . '<br>' . $data['sub_district_name'] . ' ' . $data['district_name'] . ' ' . $data['province_name']; ?></li>
+                <li><strong><?php echo $lang['property_type']; ?>:</strong><?php echo $data['property_type']; ?></li>
+                <li><strong><?php echo $lang['area']; ?>:</strong> <span><?php echo $data['size']; ?> m <sup>2</sup></span></li>
+                <li><strong><?php echo $lang['beds']; ?>:</strong><?php echo $data['room_qty']; ?></li>
+                <li><strong><?php echo $lang['baths']; ?>:</strong><?php echo $data['toilet_qty']; ?></li>
               </ul>
             </div>
           </div>
@@ -460,16 +481,12 @@ if ($result && $result->num_rows > 0) {
 
       </div>
 
-    </section><!-- /Real Estate 2 Section -->
-
-    <!-- จุดเด่น และสถานที่สำคัฯ Section -->
-    <?php if (!empty($points)){ ?> 
+    </section><?php if (!empty($points)){ ?> 
     <section id="services" class="services section">
-      <!-- จุดเด่น -->
       <div class="container">
         <div class="row" style="row-gap: 0 !important;">
             <div class="container section-title" data-aos="fade-up" style="margin-bottom: 0px;">
-            <h2>จุดเด่น</h2>
+            <h2><?php echo $lang['highlights']; ?></h2>
             </div>
             <?php foreach ($points as $index => $item): ?>
                 <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
@@ -480,21 +497,17 @@ if ($result && $result->num_rows > 0) {
                     <h3><?php echo $item['name'];?></h3>
                     <p><?php echo $item['description'];?></p>
                     </div>
-                </div><!-- End Service Item -->
-            <?php endforeach; ?>
+                </div><?php endforeach; ?>
         </div>
       </div>
-    </section><!-- /Services Section -->
-    <?php } ?>
+    </section><?php } ?>
 
     <?php if (!empty($facilities)){ ?> 
-      <!-- สิ่งอำนวยความสะดวก -->
       <section id="facilities" class="services section">
-        <!-- สิ่งอำนวยความสะดวก -->
         <div class="container">
           <div class="row" style="row-gap: 0 !important;">
               <div class="container section-title" data-aos="fade-up" style="margin-bottom: 0px;">
-              <h2>สิ่งอำนวยความสะดวก</h2>
+              <h2><?php echo $lang['facilities']; ?></h2>
               </div>
               <?php foreach ($facilities as $index => $item): ?>
                   <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
@@ -505,21 +518,17 @@ if ($result && $result->num_rows > 0) {
                       <h3><?php echo $item['name'];?></h3>
                       <p><?php echo $item['description'];?></p>
                       </div>
-                  </div><!-- End Service Item -->
-              <?php endforeach; ?>
+                  </div><?php endforeach; ?>
           </div>
         </div>
-      </section><!-- /Services Section -->
-    <?php } ?>
+      </section><?php } ?>
     <?php if (!empty($landmarks)){ ?> 
-      <!-- สถานที่สำคัญ Landmark -->
       <section id="facilities" class="services section" style="row-gap: 0 !important;">
-        <!-- สถานที่สำคัญ Landmark -->
         <div class="container">
           <div class="row" style="row-gap: 0 !important;">
           
               <div class="container section-title" data-aos="fade-up" style="margin-bottom: 0px;">
-              <h2>สถานที่สำคัญ</h2>
+              <h2><?php echo $lang['landmarks']; ?></h2>
               </div>
               <?php foreach ($landmarks as $index => $item): ?>
                   <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
@@ -529,16 +538,14 @@ if ($result && $result->num_rows > 0) {
                       </div>
                       <h3><?php echo $item['name'];?></h3>
                       </div>
-                  </div><!-- End Service Item -->
-              <?php endforeach; ?>
+                  </div><?php endforeach; ?>
               
 
           </div>
 
         </div>
 
-      </section><!-- /Services Section -->
-    <?php } ?>
+      </section><?php } ?>
 
     <?php include 'footer.php'; ?>
 
