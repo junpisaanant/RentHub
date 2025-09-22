@@ -454,6 +454,9 @@ $lang = [
     "FORGOT_PASS_BODY1" => "我们收到了重置您帐户密码的请求。这是您的新临时密码：",
     "FORGOT_PASS_BODY2" => "新密码：",
     "FORGOT_PASS_BODY3" => "为了您的安全，我们强烈建议您立即登录并更改此临时密码。",
-    "FORGOT_PASS_REGARDS" => "诚挚的问候"
+    "FORGOT_PASS_REGARDS" => "诚挚的问候",
+    "FORGOT_PASS_SUCCESS" => "新密码已发送到您的电子邮件。",
+    "EMAIL_SEND_ERROR" => "无法发送电子邮件。请联系管理员。",
+    "EMAIL_NOT_FOUND" => "系统中未找到此电子邮件。"
 ];
 ?>

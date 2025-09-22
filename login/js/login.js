@@ -64,28 +64,44 @@ $(document).ready(function() {
     });
 
     // Handle Forgot Password submission
-    $('#forgotPasswordSubmit').click(function(event) {
-        event.preventDefault();
-        var email = $('input[name="forgot_email"]').val().trim();
+    $('#forgotPasswordForm').on('submit', function(event) {
+        event.preventDefault(); // หยุดการทำงานของฟอร์ม
+
+        // 1. ดึงข้อมูลฟอร์มด้วย FormData ซึ่งเป็นวิธีที่แน่นอนที่สุด
+        const form = event.target;
+        const formData = new FormData(form);
+        const email = formData.get('forgot_email').trim();
+
+        // 2. ตรวจสอบว่าอีเมลว่างเปล่าหรือไม่
         if (email === '') {
             alert('Please enter your email.');
             return;
         }
 
-        $.ajax({
-            url: 'forgot_password_process.php',
-            type: 'POST',
-            data: { email: email },
-            dataType: 'json',
-            success: function(response) {
-                alert(response.message);
-                if (response.success) {
-                    $('#forgotPasswordDialog').hide();
-                }
-            },
-            error: function() {
-                alert('An error occurred. Please try again.');
+        // 3. ส่งข้อมูลด้วย Fetch API (มาตรฐานของเบราว์เซอร์)
+        fetch('forgot_password_process.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            // ตรวจสอบว่า Server ตอบกลับมาสำเร็จหรือไม่
+            if (!response.ok) {
+                // ถ้า Server error (เช่น 500), ให้โยน error ไปที่ .catch
+                throw new Error('Network response was not ok');
             }
+            return response.json(); // แปลงข้อมูลที่ตอบกลับเป็น JSON
+        })
+        .then(data => {
+            // 4. แสดง message ที่ได้จาก PHP
+            alert(data.message); 
+            if (data.success) {
+                $('#forgotPasswordDialog').hide();
+            }
+        })
+        .catch(error => {
+            // 5. แสดงข้อผิดพลาดหากการเชื่อมต่อล้มเหลว
+            console.error('Fetch Error:', error);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
         });
     });
 

@@ -453,6 +453,9 @@ $lang = [
     "FORGOT_PASS_BODY1" => "We have received a request to reset your password. Here is your new temporary password:",
     "FORGOT_PASS_BODY2" => "New Password:",
     "FORGOT_PASS_BODY3" => "For your security, we strongly recommend that you log in and change this temporary password immediately.",
-    "FORGOT_PASS_REGARDS" => "Best regards"
+    "FORGOT_PASS_REGARDS" => "Best regards",
+    "FORGOT_PASS_SUCCESS" => "A new password has been sent to your email.",
+    "EMAIL_SEND_ERROR" => "Could not send email. Please contact the administrator.",
+    "EMAIL_NOT_FOUND" => "This email was not found in the system."
 ];
 ?>

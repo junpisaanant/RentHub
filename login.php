@@ -114,25 +114,26 @@ if (isset($user_id)) {
 	</div>
 	
 	<div id="forgotPasswordDialog" class="modal">
-		<div class="modal-content">
-			<span class="close-button">&times;</span>
-			<h2><?php echo $lang['forgot_password']; ?></h2>
-			<div class="p-b-9">
-				<span class="txt1">
-					<?php echo $lang['email']; ?>
-				</span>
+		<form id="forgotPasswordForm">
+			<div class="modal-content">
+				<span class="close-button">&times;</span>
+				<h2><?php echo $lang['forgot_password']; ?></h2>
+				<div class="p-b-9">
+					<span class="txt1">
+						<?php echo $lang['email']; ?>
+					</span>
+				</div>
+				<div class="wrap-input100 validate-input" data-validate="<?php echo $lang['valid_email_is_required']; ?>">
+					<input class="input100" type="text" name="forgot_email">
+					<span class="focus-input100"></span>
+				</div>
+				<div class="container-login100-form-btn m-t-17">
+					<button class="login100-form-btn" id="forgotPasswordSubmit">
+						<?php echo $lang['send_new_password']; ?>
+					</button>
+				</div>
 			</div>
-			<div class="wrap-input100 validate-input" data-validate="<?php echo $lang['valid_email_is_required']; ?>">
-				<input class="input100" type="text" name="forgot_email">
-				<span class="focus-input100"></span>
-			</div>
-			<div class="container-login100-form-btn m-t-17">
-				<button class="login100-form-btn" id="forgotPasswordSubmit">
-					<?php echo $lang['send_new_password']; ?>
-				</button>
-			</div>
-		</div>
-		
+		</form>
 	</div>
 
 	<div id="registerDialog" class="modal">
