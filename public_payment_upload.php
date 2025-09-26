@@ -13,7 +13,7 @@ $stmt = $conn->prepare("
     SELECT p.name, pa.price AS total_price, pa.date AS appointment_date
     FROM RENT_PLACE_APPOINTMENT pa
     JOIN RENT_PLACE p ON pa.rent_place_id = p.id
-    WHERE pa.id = ? AND pa.status = 'A' -- Only show for approved appointments
+    WHERE pa.id = ? AND pa.status = 'W' -- Only show for approved appointments
 ");
 $stmt->bind_param("i", $apptId);
 $stmt->execute();
