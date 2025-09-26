@@ -69,7 +69,7 @@ function sendSecurityDepositRequestEmail($userEmail, $userName, $transactionId) 
                     <p>" . $lang_en['DEPOSIT_REQUEST_THANK_YOU'] . "</p>
                     <p>" . $lang_en['DEPOSIT_REQUEST_INSTRUCTIONS'] . "</p>
                     <p>" . $lang_en['DEPOSIT_REQUEST_LOGIN_PROMPT'] . "</p>
-                    <p><a href='https://the-prestige-living.com/transaction.php?id=" . $transactionId . "'>" . $lang_en['DEPOSIT_REQUEST_LINK_TEXT'] . "</a></p>
+                    <p><a href='https://the-prestige-living.com/public_payment_upload.php?id=" . $transactionId . "'>" . $lang_en['DEPOSIT_REQUEST_LINK_TEXT'] . "</a></p>
                     <p>" . $lang_en['DEPOSIT_REQUEST_REGARDS'] . ",<br>The Prestige Living Team</p>
                 </div>
 
@@ -80,7 +80,7 @@ function sendSecurityDepositRequestEmail($userEmail, $userName, $transactionId) 
                     <p>" . $lang_th['DEPOSIT_REQUEST_THANK_YOU'] . "</p>
                     <p>" . $lang_th['DEPOSIT_REQUEST_INSTRUCTIONS'] . "</p>
                     <p>" . $lang_th['DEPOSIT_REQUEST_LOGIN_PROMPT'] . "</p>
-                    <p><a href='https://the-prestige-living.com/transaction.php?id=" . $transactionId . "'>" . $lang_th['DEPOSIT_REQUEST_LINK_TEXT'] . "</a></p>
+                    <p><a href='https://the-prestige-living.com/public_payment_upload.php?id=" . $transactionId . "'>" . $lang_th['DEPOSIT_REQUEST_LINK_TEXT'] . "</a></p>
                     <p>" . $lang_th['DEPOSIT_REQUEST_REGARDS'] . ",<br>ทีมงาน The Prestige Living</p>
                 </div>
 
@@ -91,7 +91,7 @@ function sendSecurityDepositRequestEmail($userEmail, $userName, $transactionId) 
                     <p>" . $lang_cn['DEPOSIT_REQUEST_THANK_YOU'] . "</p>
                     <p>" . $lang_cn['DEPOSIT_REQUEST_INSTRUCTIONS'] . "</p>
                     <p>" . $lang_cn['DEPOSIT_REQUEST_LOGIN_PROMPT'] . "</p>
-                    <p><a href='https://the-prestige-living.com/transaction.php?id=" . $transactionId . "'>" . $lang_cn['DEPOSIT_REQUEST_LINK_TEXT'] . "</a></p>
+                    <p><a href='https://the-prestige-living.com/public_payment_upload.php?id=" . $transactionId . "'>" . $lang_cn['DEPOSIT_REQUEST_LINK_TEXT'] . "</a></p>
                     <p>" . $lang_cn['DEPOSIT_REQUEST_REGARDS'] . ",<br>The Prestige Living 团队</p>
                 </div>
 
