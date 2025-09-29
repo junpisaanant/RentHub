@@ -46,12 +46,14 @@ $apptId       = $_POST['appointment_id'];
 $transferDate = $_POST['transfer_date'];
 
 $userId = 'GUEST'; // Default value
-$stmt_user = $conn->prepare("SELECT rent_user_id AS user_id FROM RENT_PLACE_APPOINTMENT WHERE id = ?");
+$userName = 'Guest User';
+$stmt_user = $conn->prepare("SELECT a.rent_user_id AS user_id, u.name AS user_name FROM RENT_PLACE_APPOINTMENT a JOIN RENT_USER u ON a.rent_user_id = u.id WHERE a.id = ?");
 $stmt_user->bind_param("i", $apptId);
 $stmt_user->execute();
 $result_user = $stmt_user->get_result();
 if($row_user = $result_user->fetch_assoc()) {
     $userId = $row_user['user_id'];
+    $userName = $row_user['user_name'];
 }
 $stmt_user->close();
 
@@ -76,12 +78,47 @@ try {
   // 5) Update RENT_PLACE_APPOINTMENT
   $stmt = $conn->prepare("
     UPDATE RENT_PLACE_APPOINTMENT
-       SET transfer_date = ?, attach_id = ?, status='T'
-     WHERE id = ?
+        SET transfer_date = ?, attach_id = ?, status='T'
+      WHERE id = ?
   ");
   $stmt->bind_param("sii", $transferDate, $attachId, $apptId);
   $stmt->execute();
   $stmt->close();
+  
+  // ****** START: NEW FEATURE - SEND EMAIL TO ADMIN ******
+  $adminEmail = "admin@the-prestige-living.com";
+  $subject = "แจ้งเตือน: มีการอัปโหลดเอกสารใหม่เข้าระบบ";
+  
+  // Create a link for the admin to view the documents
+  // Note: Replace 'yourwebsite.com' with your actual domain name
+  $actual_link = "http://$_SERVER[HTTP_HOST]".dirname($_SERVER['PHP_SELF'])."/../public_view_attachment.php?id=" . $apptId;
+  
+  $message = "
+  <html>
+  <head>
+    <title>แจ้งเตือนการอัปโหลดเอกสาร</title>
+  </head>
+  <body>
+    <p>เรียน ทีมงานแอดมิน,</p>
+    <p>ผู้ใช้งานชื่อ: <strong>" . htmlspecialchars($userName) . "</strong> ได้ทำการอัปโหลดเอกสารสำหรับการนัดหมายเข้าระบบเรียบร้อยแล้ว</p>
+    <p>กรุณาคลิกที่ลิงก์ด้านล่างเพื่อตรวจสอบเอกสารและดำเนินการยืนยันข้อมูล:</p>
+    <p><a href='" . $actual_link . "'>ตรวจสอบเอกสาร</a></p>
+    <br>
+    <p>ขอแสดงความนับถือ,<br>ระบบ RentHub</p>
+  </body>
+  </html>
+  ";
+  
+  // To send HTML mail, the Content-type header must be set
+  $headers = "MIME-Version: 1.0" . "\r\n";
+  $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+  
+  // More headers
+  $headers .= 'From: RentHub System <noreply@yourwebsite.com>' . "\r\n";
+  
+  // Send the email
+  @mail($adminEmail, $subject, $message, $headers);
+  // ****** END: NEW FEATURE - SEND EMAIL TO ADMIN ******
 
   $conn->commit();
   header("Location: ../payment_success.php");
